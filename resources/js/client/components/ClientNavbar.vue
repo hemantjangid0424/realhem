@@ -1,14 +1,6 @@
 <template>
-    <header
-        class="sticky top-0 z-40 transition-all duration-200 shadow-sm"
-        :class="isScrolled ? 'text-white shadow-md' : 'bg-white text-slate-800 border-b border-slate-200'"
-        :style="isScrolled ? { backgroundColor: brandPrimaryColor } : {}"
-    >
-        <!-- Top Micro-bar (Hidden when scrolled down for compact sticky layout) -->
-        <div
-            v-if="!isScrolled"
-            class="bg-slate-900 text-slate-300 text-[11px] py-1.5 px-4 sm:px-8 border-b border-slate-800 transition-all"
-        >
+    <!-- Top Micro-bar (Non-sticky, scrolls away naturally with zero layout shift) -->
+    <div class="bg-slate-900 text-slate-300 text-[11px] py-1.5 px-4 sm:px-8 border-b border-slate-800">
             <div class="max-w-7xl mx-auto flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span class="flex items-center gap-1.5 text-blue-400 font-semibold">
@@ -32,169 +24,179 @@
             </div>
         </div>
 
-        <!-- Main Navigation Bar -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-18 transition-all">
-                <!-- Left: Logo & City/Locality Selector -->
-                <div class="flex items-center gap-3 sm:gap-5 flex-shrink-0">
-                    <router-link to="/" class="flex items-center gap-2.5 group">
-                        <div
-                            v-if="companyLogoUrl"
-                            class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 shadow-sm transition-transform group-hover:scale-105"
-                        >
-                            <img :src="companyLogoUrl" :alt="companyName" class="w-full h-full object-contain" />
-                        </div>
-                        <div
-                            v-else
-                            class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105"
-                            :class="isScrolled ? 'bg-white' : 'text-white'"
-                            :style="isScrolled ? { color: brandPrimaryColor } : { backgroundColor: brandPrimaryColor }"
-                        >
-                            {{ companyShortName }}
-                        </div>
-                        <div class="flex flex-col">
-                            <span
-                                class="font-black text-xl tracking-tight leading-none"
-                                :class="isScrolled ? 'text-white' : 'text-slate-900'"
+        <!-- Sticky Header Bar (Fixed height, smooth color transition) -->
+        <header
+            class="sticky top-0 z-40 transition-colors duration-200 ease-out shadow-sm"
+            :class="isScrolled ? 'text-white shadow-md' : 'bg-white text-slate-800 border-b border-slate-200'"
+            :style="isScrolled ? { backgroundColor: brandPrimaryColor } : {}"
+        >
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 transition-all duration-200">
+                    <!-- Left: Logo & City/Locality Selector -->
+                    <div class="flex items-center gap-3 sm:gap-5 flex-shrink-0">
+                        <router-link to="/" class="flex items-center gap-2.5 group">
+                            <div
+                                v-if="companyLogoUrl"
+                                class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 shadow-sm transition-transform group-hover:scale-105"
                             >
-                                {{ companyName }}<span :class="isScrolled ? 'text-amber-400' : 'text-blue-600'">.</span>
-                            </span>
-                            <span
-                                v-if="!isScrolled"
-                                class="text-[9px] font-bold tracking-wide uppercase text-slate-400"
+                                <img :src="companyLogoUrl" :alt="companyName" class="w-full h-full object-contain" />
+                            </div>
+                            <div
+                                v-else
+                                class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105"
+                                :class="isScrolled ? 'bg-white' : 'text-white'"
+                                :style="isScrolled ? { color: brandPrimaryColor } : { backgroundColor: brandPrimaryColor }"
                             >
-                                {{ companyTagline }}
-                            </span>
-                        </div>
-                    </router-link>
+                                {{ companyShortName }}
+                            </div>
+                            <div class="flex flex-col">
+                                <span
+                                    class="font-black text-xl tracking-tight leading-none"
+                                    :class="isScrolled ? 'text-white' : 'text-slate-900'"
+                                >
+                                    {{ companyName }}<span :class="isScrolled ? 'text-amber-400' : 'text-blue-600'">.</span>
+                                </span>
+                                <span
+                                    class="text-[9px] font-bold tracking-wide uppercase transition-all duration-200"
+                                    :class="isScrolled ? 'text-white/80' : 'text-slate-400'"
+                                >
+                                    {{ companyTagline }}
+                                </span>
+                            </div>
+                        </router-link>
 
-                    <!-- City / Area Selector Dropdown -->
-                    <div class="relative hidden sm:block">
-                        <div
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                            :class="isScrolled ? 'text-white/95 hover:bg-white/10' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200'"
-                        >
-                            <span v-if="isScrolled" class="capitalize font-normal text-white/80">{{ stickySearchType }} in</span>
-                            <select
-                                :value="selectedCity"
-                                @change="handleCitySelectChange"
-                                class="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-4 appearance-none"
-                                :class="isScrolled ? 'text-white' : 'text-slate-800'"
+                        <!-- City / Area Selector Dropdown -->
+                        <div class="relative hidden sm:block">
+                            <div
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                                :class="isScrolled ? 'text-white/95 hover:bg-white/10' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200'"
                             >
-                                <option class="text-blue-600 font-bold bg-blue-50" value="__DETECT__">📍 Detect My Location</option>
-                                <option class="text-slate-900 bg-white" value="Delhi NCR">Delhi NCR</option>
-                                <option class="text-slate-900 bg-white" value="Ahmedabad">Ahmedabad</option>
-                                <option class="text-slate-900 bg-white" value="Mumbai">Mumbai</option>
-                                <option class="text-slate-900 bg-white" value="Bangalore">Bangalore</option>
-                                <option class="text-slate-900 bg-white" value="Pune">Pune</option>
-                                <option class="text-slate-900 bg-white" value="Hyderabad">Hyderabad</option>
-                                <option class="text-slate-900 bg-white" value="Chennai">Chennai</option>
-                                <option class="text-slate-900 bg-white" value="Kolkata">Kolkata</option>
-                            </select>
-                            <svg class="w-3.5 h-3.5 -ml-3 pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                <span v-if="isScrolled" class="capitalize font-normal text-white/80">{{ stickySearchType }} in</span>
+                                <select
+                                    :value="selectedCity"
+                                    @change="handleCitySelectChange"
+                                    class="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-4 appearance-none"
+                                    :class="isScrolled ? 'text-white' : 'text-slate-800'"
+                                >
+                                    <option class="text-blue-600 font-bold bg-blue-50" value="__DETECT__">📍 Detect My Location</option>
+                                    <option class="text-slate-900 bg-white" value="Delhi NCR">Delhi NCR</option>
+                                    <option class="text-slate-900 bg-white" value="Ahmedabad">Ahmedabad</option>
+                                    <option class="text-slate-900 bg-white" value="Mumbai">Mumbai</option>
+                                    <option class="text-slate-900 bg-white" value="Bangalore">Bangalore</option>
+                                    <option class="text-slate-900 bg-white" value="Pune">Pune</option>
+                                    <option class="text-slate-900 bg-white" value="Hyderabad">Hyderabad</option>
+                                    <option class="text-slate-900 bg-white" value="Chennai">Chennai</option>
+                                    <option class="text-slate-900 bg-white" value="Kolkata">Kolkata</option>
+                                </select>
+                                <svg class="w-3.5 h-3.5 -ml-3 pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- CENTER: STICKY SEARCH BAR (Shown when scrolled down past hero) -->
-                <div v-if="isScrolled" class="flex-1 max-w-xl mx-4 animate-fadeIn">
-                    <form
-                        @submit.prevent="handleStickySearch"
-                        class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5"
-                    >
-                        <!-- Type selector (Buy, Rent, Commercial, Plots) -->
-                        <div class="relative flex-shrink-0">
-                            <select
-                                v-model="stickySearchType"
-                                class="bg-transparent border-none text-xs font-bold text-slate-800 outline-none cursor-pointer pr-4 appearance-none capitalize pl-1"
-                            >
-                                <option value="buy">Buy</option>
-                                <option value="rent">Rent</option>
-                                <option value="commercial">Commercial</option>
-                                <option value="plots">Plots</option>
-                            </select>
-                            <svg class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
+                    <!-- CENTER: STICKY SEARCH BAR OR NAV LINKS (Smooth Crossfade with Fixed Layout) -->
+                    <div class="flex-1 max-w-xl mx-2 sm:mx-6 flex items-center justify-center min-w-0">
+                        <transition name="nav-fade" mode="out-in">
+                            <!-- Sticky Search Bar -->
+                            <div v-if="isScrolled" key="search" class="w-full">
+                                <form
+                                    @submit.prevent="handleStickySearch"
+                                    class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5 w-full"
+                                >
+                                    <!-- Type selector (Buy, Rent, Commercial, Plots) -->
+                                    <div class="relative flex-shrink-0">
+                                        <select
+                                            v-model="stickySearchType"
+                                            class="bg-transparent border-none text-xs font-bold text-slate-800 outline-none cursor-pointer pr-4 appearance-none capitalize pl-1"
+                                        >
+                                            <option value="buy">Buy</option>
+                                            <option value="rent">Rent</option>
+                                            <option value="commercial">Commercial</option>
+                                            <option value="plots">Plots</option>
+                                        </select>
+                                        <svg class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
 
-                        <!-- Divider -->
-                        <div class="h-4 w-px bg-slate-200 mx-2.5"></div>
+                                    <!-- Divider -->
+                                    <div class="h-4 w-px bg-slate-200 mx-2.5 flex-shrink-0"></div>
 
-                        <!-- Input -->
-                        <input
-                            v-model="stickyKeyword"
-                            type="text"
-                            placeholder="Enter Locality / Project / Landmark"
-                            class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent"
-                        />
+                                    <!-- Input -->
+                                    <input
+                                        v-model="stickyKeyword"
+                                        type="text"
+                                        placeholder="Enter Locality / Project / Landmark"
+                                        class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent min-w-0"
+                                    />
 
-                        <!-- Actions Icons -->
-                        <div class="flex items-center gap-2 pl-2">
-                            <!-- GPS / Near Me Icon with Geolocation Detection -->
-                            <button
-                                type="button"
-                                @click="handleDetectLocation"
-                                :disabled="isDetectingLocation"
-                                :title="isDetectingLocation ? 'Detecting location...' : 'Detect My Location'"
-                                class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center rounded-full hover:bg-slate-100"
-                            >
-                                <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </button>
+                                    <!-- Actions Icons -->
+                                    <div class="flex items-center gap-2 pl-2 flex-shrink-0">
+                                        <!-- GPS / Near Me Icon with Geolocation Detection -->
+                                        <button
+                                            type="button"
+                                            @click="handleDetectLocation"
+                                            :disabled="isDetectingLocation"
+                                            :title="isDetectingLocation ? 'Detecting location...' : 'Detect My Location'"
+                                            class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center rounded-full hover:bg-slate-100"
+                                        >
+                                            <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        </button>
 
-                            <!-- Voice / Mic Icon -->
-                            <button
-                                type="button"
-                                @click="startVoiceSearch"
-                                title="Voice Search"
-                                class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                            </button>
+                                        <!-- Voice / Mic Icon -->
+                                        <button
+                                            type="button"
+                                            @click="startVoiceSearch"
+                                            title="Voice Search"
+                                            class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                        </button>
 
-                            <!-- Search Magnifying Glass Button -->
-                            <button
-                                type="submit"
-                                class="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition flex-shrink-0"
-                            >
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                                        <!-- Search Magnifying Glass Button -->
+                                        <button
+                                            type="submit"
+                                            class="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition flex-shrink-0"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
 
-                <!-- CENTER: DEFAULT NAVIGATION LINKS (When at top of page) -->
-                <nav v-else class="hidden lg:flex items-center gap-1">
-                    <router-link
-                        to="/listings?type=buy"
-                        class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
-                    >
-                        Buy
-                    </router-link>
-                    <router-link
-                        to="/listings?type=rent"
-                        class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
-                    >
-                        Rent
-                    </router-link>
-                    <router-link
-                        to="/listings?type=commercial"
-                        class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
-                    >
-                        Commercial
-                    </router-link>
-                    <router-link
-                        to="/listings?type=plots"
-                        class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
-                    >
-                        Plots / Land
-                    </router-link>
-                    <router-link
-                        to="/brokers"
-                        class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
-                    >
-                        Brokers &amp; Builders
-                    </router-link>
-                </nav>
+                            <!-- Default Navigation Links -->
+                            <nav v-else key="nav" class="hidden lg:flex items-center gap-1">
+                                <router-link
+                                    to="/listings?type=buy"
+                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                >
+                                    Buy
+                                </router-link>
+                                <router-link
+                                    to="/listings?type=rent"
+                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                >
+                                    Rent
+                                </router-link>
+                                <router-link
+                                    to="/listings?type=commercial"
+                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                >
+                                    Commercial
+                                </router-link>
+                                <router-link
+                                    to="/listings?type=plots"
+                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                >
+                                    Plots / Land
+                                </router-link>
+                                <router-link
+                                    to="/brokers"
+                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                >
+                                    Brokers &amp; Builders
+                                </router-link>
+                            </nav>
+                        </transition>
+                    </div>
 
                 <!-- Right Side Actions: Post Property, User Profile, Hamburger -->
                 <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
@@ -423,9 +425,21 @@ const userInitials = computed(() => {
     return currentUser.value.name.slice(0, 2).toUpperCase();
 });
 
+let ticking = false;
 const handleScroll = () => {
-    // When scrolled past the top hero section (~260px), trigger sticky searchbar
-    isScrolled.value = window.scrollY > 260;
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+            // Hysteresis threshold: activate at 200px, deactivate only below 120px to prevent jitter
+            if (!isScrolled.value && scrollY > 200) {
+                isScrolled.value = true;
+            } else if (isScrolled.value && scrollY < 120) {
+                isScrolled.value = false;
+            }
+            ticking = false;
+        });
+        ticking = true;
+    }
 };
 
 const handleStickySearch = () => {
@@ -556,7 +570,7 @@ onUnmounted(() => {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(-6px);
+        transform: translateY(-4px);
     }
     to {
         opacity: 1;
@@ -565,7 +579,18 @@ onUnmounted(() => {
 }
 
 .animate-fadeIn {
-    animation: fadeIn 0.22s ease-out forwards;
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.nav-fade-enter-active,
+.nav-fade-leave-active {
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.nav-fade-enter-from,
+.nav-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
 }
 </style>
 
