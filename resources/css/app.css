@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+:root {
+    --brand-primary: #005ca8;
+    --brand-secondary: #1e40af;
+    --brand-accent: #ff6b35;
+    --theme-radius: 16px;
+    --theme-font: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+    font-family: var(--theme-font);
+}
+
+.bg-brand-primary {
+    background-color: var(--brand-primary) !important;
+}
+.text-brand-primary {
+    color: var(--brand-primary) !important;
+}
+.border-brand-primary {
+    border-color: var(--brand-primary) !important;
+}
+
+.bg-brand-secondary {
+    background-color: var(--brand-secondary) !important;
+}
+.text-brand-secondary {
+    color: var(--brand-secondary) !important;
+}
+
+.bg-brand-accent {
+    background-color: var(--brand-accent) !important;
+}
+.text-brand-accent {
+    color: var(--brand-accent) !important;
+}
+.border-brand-accent {
+    border-color: var(--brand-accent) !important;
+}
+
+.bg-brand-gradient {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)) !important;
+}
