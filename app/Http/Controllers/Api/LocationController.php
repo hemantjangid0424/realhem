@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Locality;
 use App\Models\State;
+use App\Services\GeocodingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -60,40 +61,81 @@ class LocationController extends Controller
     }
 
     /**
+     * Resolve latitude, longitude, and pincode based on locality, city, and address.
+     */
+    public function resolve(Request $request): JsonResponse
+    {
+        $resolved = GeocodingService::resolve(
+            city: $request->query('city') ?? $request->input('city'),
+            locality: $request->query('locality') ?? $request->input('locality'),
+            projectName: $request->query('project_name') ?? $request->input('project_name'),
+            subLocality: $request->query('sub_locality') ?? $request->input('sub_locality'),
+            address: $request->query('address') ?? $request->input('address'),
+            landmark: $request->query('landmark') ?? $request->input('landmark'),
+            pincode: $request->query('pincode') ?? $request->input('pincode'),
+            latitude: $request->query('lat') ? (float) $request->query('lat') : ($request->input('latitude') ? (float) $request->input('latitude') : null),
+            longitude: $request->query('lng') ? (float) $request->query('lng') : ($request->input('longitude') ? (float) $request->input('longitude') : null),
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $resolved,
+        ]);
+    }
+
+    /**
      * Autocomplete search for localities, landmarks, and cities.
      */
     public function search(Request $request): JsonResponse
     {
         $q = trim($request->query('q', ''));
+        $city = trim((string) $request->query('city', ''));
 
-        if (strlen($q) < 2) {
+        if (strlen($q) < 1) {
             return response()->json([]);
         }
 
-        // Search in localities
-        $localities = Locality::with('city.state')
-            ->where('name', 'LIKE', "%{$q}%")
-            ->orWhere('pincode', 'LIKE', "%{$q}%")
-            ->take(8)
-            ->get()
-            ->map(function ($loc) {
-                return [
-                    'id' => $loc->id,
-                    'name' => $loc->name,
-                    'type' => 'locality',
-                    'city' => $loc->city?->name,
-                    'state' => $loc->city?->state?->name,
-                    'display' => "{$loc->name}, {$loc->city?->name}",
-                    'pincode' => $loc->pincode,
-                    'avg_price_per_sqft' => $loc->avg_price_per_sqft,
-                    'yoy_growth_percent' => $loc->yoy_growth_percent,
-                ];
+        // 1. Search in database localities
+        $locQuery = Locality::with('city.state')
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'LIKE', "%{$q}%")
+                    ->orWhere('pincode', 'LIKE', "%{$q}%");
             });
 
-        // Search in cities
+        if (! empty($city)) {
+            $locQuery->whereHas('city', fn ($c) => $c->where('name', 'LIKE', "%{$city}%"));
+        }
+
+        $localities = $locQuery->take(8)->get()->map(function ($loc) {
+            $cityName = $loc->city?->name;
+            $coords = GeocodingService::resolve(
+                city: $cityName,
+                locality: $loc->name,
+                projectName: $loc->name,
+                address: $loc->name
+            );
+
+            return [
+                'id' => $loc->id,
+                'name' => $loc->name,
+                'type' => 'locality',
+                'city' => $cityName,
+                'locality' => $loc->name,
+                'sub_locality' => null,
+                'state' => $loc->city?->state?->name,
+                'display' => $cityName ? "{$loc->name}, {$cityName}" : $loc->name,
+                'pincode' => $loc->pincode ?: $coords['pincode'],
+                'latitude' => $coords['latitude'],
+                'longitude' => $coords['longitude'],
+                'avg_price_per_sqft' => $loc->avg_price_per_sqft,
+                'yoy_growth_percent' => $loc->yoy_growth_percent,
+            ];
+        });
+
+        // 2. Search in database cities
         $cities = City::with('state')
             ->where('name', 'LIKE', "%{$q}%")
-            ->take(4)
+            ->take(3)
             ->get()
             ->map(function ($c) {
                 return [
@@ -101,14 +143,21 @@ class LocationController extends Controller
                     'name' => $c->name,
                     'type' => 'city',
                     'city' => $c->name,
+                    'locality' => null,
+                    'sub_locality' => null,
                     'state' => $c->state?->name,
                     'display' => "{$c->name}, {$c->state?->name}",
+                    'pincode' => null,
+                    'latitude' => null,
+                    'longitude' => null,
                 ];
             });
 
-        $results = $localities->concat($cities)->take(10);
+        $combined = $localities->concat($cities)->unique(function ($item) {
+            return strtolower(trim(($item['name'] ?? '').' '.($item['city'] ?? '')));
+        })->values()->take(10);
 
-        return response()->json($results);
+        return response()->json($combined);
     }
 
     /**

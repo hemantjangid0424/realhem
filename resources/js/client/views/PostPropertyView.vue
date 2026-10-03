@@ -370,15 +370,50 @@
                                         <option value="Kolkata">Kolkata</option>
                                     </select>
                                 </div>
-                                <div>
+                                <div class="relative">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Locality / Area <span class="text-rose-500">*</span></label>
-                                    <input
-                                        v-model="form.locality"
-                                        type="text"
-                                        placeholder="e.g. SG Highway, Vastral, Bopal, Whitefield"
-                                        required
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
-                                    />
+                                    <div class="relative">
+                                        <input
+                                            v-model="form.locality"
+                                            @input="onLocalityInput"
+                                            @focus="onLocalityInput"
+                                            type="text"
+                                            placeholder="e.g. SG Highway, Vastral, Bopal, Whitefield"
+                                            required
+                                            autocomplete="off"
+                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                                        />
+                                        <div v-if="isLocalityLoading" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div class="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Locality Suggestions Dropdown -->
+                                    <div
+                                        v-if="showLocalitySuggestions && localitySuggestions.length > 0"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                    >
+                                        <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
+                                            <span>Suggested Localities</span>
+                                            <button type="button" @click="showLocalitySuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
+                                        </div>
+                                        <button
+                                            v-for="(item, idx) in localitySuggestions"
+                                            :key="idx"
+                                            type="button"
+                                            @click="selectLocalitySuggestion(item)"
+                                            class="w-full text-left px-3 py-2 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                        >
+                                            <div class="flex items-center gap-2 overflow-hidden">
+                                                <span class="text-sm flex-shrink-0">📍</span>
+                                                <div class="truncate">
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.locality || item.name }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.display || item.city }}</p>
+                                                </div>
+                                            </div>
+                                            <span v-if="item.pincode" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-medium flex-shrink-0">{{ item.pincode }}</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1694,7 +1729,63 @@ const form = ref({
     open_sides: 2,
     boundary_wall: true,
     gated_community: true,
+    pincode: '',
+    latitude: null,
+    longitude: null,
 });
+
+// Locality autocomplete suggestions
+const localitySuggestions = ref([]);
+const isLocalityLoading = ref(false);
+const showLocalitySuggestions = ref(false);
+let localityDebounce = null;
+
+const onLocalityInput = () => {
+    if (localityDebounce) clearTimeout(localityDebounce);
+    const q = (form.value.locality || '').trim();
+    if (q.length < 2) {
+        localitySuggestions.value = [];
+        showLocalitySuggestions.value = false;
+        return;
+    }
+    localityDebounce = setTimeout(async () => {
+        isLocalityLoading.value = true;
+        try {
+            const res = await fetch(`/api/locations/search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(form.value.city || '')}`);
+            if (res.ok) {
+                const data = await res.json();
+                localitySuggestions.value = Array.isArray(data) ? data : [];
+                showLocalitySuggestions.value = localitySuggestions.value.length > 0;
+            }
+        } catch (e) {
+            localitySuggestions.value = [];
+        } finally {
+            isLocalityLoading.value = false;
+        }
+    }, 200);
+};
+
+const selectLocalitySuggestion = (item) => {
+    form.value.locality = item.locality || item.name;
+    if (item.sub_locality && !form.value.landmark) {
+        form.value.landmark = item.sub_locality;
+    }
+    if (item.city) {
+        const knownCities = ['Ahmedabad', 'Delhi NCR', 'Mumbai', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Kolkata'];
+        const matched = knownCities.find(c => c.toLowerCase() === item.city.toLowerCase() || item.city.toLowerCase().includes(c.toLowerCase()));
+        if (matched) {
+            form.value.city = matched;
+        }
+    }
+    if (item.pincode) {
+        form.value.pincode = item.pincode;
+    }
+    if (item.latitude && item.longitude) {
+        form.value.latitude = item.latitude;
+        form.value.longitude = item.longitude;
+    }
+    showLocalitySuggestions.value = false;
+};
 
 const handlePropertyTypeChange = (pt) => {
     form.value.property_type = pt;
@@ -1998,6 +2089,9 @@ const submitProperty = async () => {
             price_negotiable: Boolean(form.value.price_negotiable),
             title: form.value.title || undefined,
             description: form.value.description || undefined,
+            pincode: form.value.pincode || undefined,
+            latitude: form.value.latitude ? Number(form.value.latitude) : undefined,
+            longitude: form.value.longitude ? Number(form.value.longitude) : undefined,
             amenities: form.value.amenities,
             photos: photoUrls,
         };
