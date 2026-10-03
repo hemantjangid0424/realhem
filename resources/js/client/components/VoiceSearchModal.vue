@@ -271,12 +271,12 @@ watch(
     (newVal) => {
         if (newVal) {
             // Contextual sample phrases based on selected city or type
-            const city = voiceSearchContext.value?.city || 'Noida';
+            const city = voiceSearchContext.value?.city || 'Ahmedabad';
             samplePhrases.value = [
-                `Find 2BHK flats in Sector 100 ${city}`,
-                `3BHK Villas in ${city}`,
-                `Ready to move flats near me`,
-                `Affordable 1 BHK in ${city}`,
+                `3 BHK in ${city}`,
+                `3BHK Flat in SG Highway ${city}`,
+                `Ready to move 2 BHK in ${city}`,
+                `3 BHK Villas in ${city}`,
             ];
             initSpeechRecognition();
         } else {

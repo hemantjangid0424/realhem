@@ -21,6 +21,12 @@
 
                     <div class="h-5 w-px bg-slate-200"></div>
 
+                    <!-- Selected City Chip (matching 99acres screenshot: Buy | Ahmedabad x | Add more) -->
+                    <div v-if="activeCity && activeCity !== 'All' && !isNearMe" class="flex items-center gap-1.5 bg-slate-200/90 text-slate-800 text-xs font-bold px-2.5 py-1 rounded-xl flex-shrink-0">
+                        <span>{{ activeCity }}</span>
+                        <button type="button" @click="clearCity" class="hover:text-red-600 text-slate-500 font-bold cursor-pointer transition text-xs" title="Clear city filter">✕</button>
+                    </div>
+
                     <!-- Selected Keyword or Near Me Pill (matching 99acres) -->
                     <div v-if="searchKeyword" class="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-xl flex-shrink-0 border border-blue-200/60">
                         <span>{{ searchKeyword }}</span>
@@ -31,7 +37,7 @@
                     <input
                         v-model="searchInput"
                         type="text"
-                        :placeholder="searchKeyword ? 'Start new search' : 'Search Locality, Landmark, Project or Builder...'"
+                        :placeholder="(activeCity && !isNearMe) || searchKeyword ? 'Add more' : 'Search Locality, Landmark, Project or Builder...'"
                         class="w-full text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none bg-transparent px-2"
                     />
 
@@ -91,7 +97,7 @@
                             {{ displayedListings.length }} results | Properties in 3 Km Near Me
                         </span>
                         <span v-else>
-                            {{ displayedListings.length }} results | Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : 'Sale'}` : '' }}
+                            {{ displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : 'Sale'}` : '' }}
                         </span>
                     </h1>
                     <p class="text-xs text-slate-500 mt-0.5">
@@ -154,6 +160,59 @@
                         </button>
                     </div>
 
+                    <!-- Active Filter Chips (BHK, Property Type, Keywords) -->
+                    <div v-if="selectedBhks.length > 0 || (searchKeyword && !isNearMe) || selectedPropTypes.length > 0" class="flex flex-wrap gap-1.5 pb-3 border-b border-slate-100">
+                        <!-- BHK Chips (Matching 99acres 3 BHK x badge) -->
+                        <span
+                            v-for="bhk in selectedBhks"
+                            :key="bhk"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ bhk }}</span>
+                            <button
+                                type="button"
+                                @click="toggleBhk(bhk)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove BHK filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Property Type Chips -->
+                        <span
+                            v-for="pt in selectedPropTypes"
+                            :key="pt"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ pt }}</span>
+                            <button
+                                type="button"
+                                @click="togglePropertyType(pt)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove property type filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Keyword Chip -->
+                        <span
+                            v-if="searchKeyword && !isNearMe"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ searchKeyword }}</span>
+                            <button
+                                type="button"
+                                @click="clearKeyword"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove keyword filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+                    </div>
+
                     <!-- Nearby Localities Chips (Exact 99acres style from screenshot) -->
                     <div v-if="activeNearbyAreas.length > 0" class="space-y-2 pb-3 border-b border-slate-100">
                         <div class="flex items-center justify-between">
@@ -179,14 +238,6 @@
                                 </button>
                             </span>
                         </div>
-                    </div>
-
-                    <!-- Non-NearMe Single Keyword Chip -->
-                    <div v-else-if="searchKeyword && !isNearMe" class="flex flex-wrap gap-1.5 pb-2 border-b border-slate-100">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200">
-                            {{ searchKeyword }}
-                            <button type="button" @click="clearKeyword" class="hover:text-blue-900 cursor-pointer">✕</button>
-                        </span>
                     </div>
 
                     <!-- Verified Properties Toggle (from screenshot) -->
@@ -260,16 +311,28 @@
 
                     <!-- No. of Bedrooms (BHK) -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">No. of Bedrooms</label>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">No. of Bedrooms</label>
+                            <button
+                                v-if="selectedBhks.length > 0"
+                                type="button"
+                                @click="selectedBhks = []; runSearch()"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
                         <div class="grid grid-cols-2 gap-2">
                             <button
-                                v-for="bhk in ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']"
+                                v-for="bhk in ['1 RK/ 1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK']"
                                 :key="bhk"
                                 @click="toggleBhk(bhk)"
-                                class="py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition cursor-pointer"
-                                :class="selectedBhks.includes(bhk) ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                class="py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition cursor-pointer flex items-center justify-center gap-1"
+                                :class="isBhkActive(bhk) ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
                             >
-                                {{ bhk }}
+                                <span v-if="isBhkActive(bhk)">✓</span>
+                                <span v-else>+</span>
+                                <span>{{ bhk }}</span>
                             </button>
                         </div>
                     </div>
@@ -452,7 +515,7 @@ import { useCompanyBranding } from '../composables/useCompanyBranding';
 
 const route = useRoute();
 const router = useRouter();
-const { openVoiceModal } = useVoiceSearch();
+const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
 const { brandPrimaryColor } = useCompanyBranding();
 
@@ -530,6 +593,19 @@ const hasActiveFilters = computed(() => {
     );
 });
 
+const isBhkActive = (bhk) => {
+    if (bhk === '1 RK/ 1 BHK') {
+        return selectedBhks.value.includes('1 BHK') || selectedBhks.value.includes('1 RK/ 1 BHK');
+    }
+    if (bhk === '4 BHK') {
+        return selectedBhks.value.includes('4 BHK') || selectedBhks.value.includes('4+ BHK');
+    }
+    if (bhk === '5 BHK') {
+        return selectedBhks.value.includes('5 BHK') || selectedBhks.value.includes('4+ BHK');
+    }
+    return selectedBhks.value.includes(bhk);
+};
+
 const initNearbyAreas = async () => {
     if (isNearMe.value) {
         if (nearbyLocalities.value && nearbyLocalities.value.length > 0) {
@@ -542,7 +618,6 @@ const initNearbyAreas = async () => {
         activeNearbyAreas.value = [];
     }
 };
-
 
 // Sync state if route query changes
 watch(
@@ -557,8 +632,16 @@ watch(
         } else if (newQ.keyword !== undefined) {
             searchKeyword.value = newQ.keyword;
             isNearMe.value = false;
+        } else {
+            searchKeyword.value = '';
+            isNearMe.value = false;
         }
-        if (newQ.bhk) selectedBhks.value = newQ.bhk.split(',');
+        if (newQ.bhk) {
+            selectedBhks.value = newQ.bhk.split(',');
+        } else {
+            selectedBhks.value = [];
+        }
+        fetchApiProperties();
     }
 );
 
@@ -579,9 +662,24 @@ const togglePropertyType = (type) => {
 };
 
 const toggleBhk = (bhk) => {
-    const idx = selectedBhks.value.indexOf(bhk);
-    if (idx === -1) selectedBhks.value.push(bhk);
-    else selectedBhks.value.splice(idx, 1);
+    let normalized = bhk;
+    if (bhk === '1 RK/ 1 BHK') normalized = '1 BHK';
+    else if (bhk === '4 BHK' || bhk === '5 BHK') normalized = bhk;
+
+    const idx = selectedBhks.value.indexOf(normalized);
+    if (idx === -1) {
+        if ((normalized === '4 BHK' || normalized === '5 BHK') && selectedBhks.value.includes('4+ BHK')) {
+            selectedBhks.value = selectedBhks.value.filter(b => b !== '4+ BHK');
+        }
+        selectedBhks.value.push(normalized);
+    } else {
+        selectedBhks.value.splice(idx, 1);
+    }
+    runSearch();
+};
+
+const clearCity = () => {
+    activeCity.value = 'All';
     runSearch();
 };
 
@@ -620,9 +718,32 @@ const onCityFilterChange = (e) => {
 };
 
 const openVoiceSearchListings = () => {
-    openVoiceModal((transcript) => {
-        searchKeyword.value = transcript;
+    openVoiceModal((transcript, parsed) => {
+        const queryParsed = parsed || parseVoiceQuery(transcript, {
+            defaultType: activeType.value,
+            defaultCity: activeCity.value,
+        });
+
+        if (queryParsed.hasCity && queryParsed.city) {
+            setCity(queryParsed.city);
+            activeCity.value = queryParsed.city;
+        }
+
+        if (queryParsed.hasType && queryParsed.type) {
+            activeType.value = queryParsed.type;
+        }
+
+        if (queryParsed.hasBhk && queryParsed.bhks.length > 0) {
+            selectedBhks.value = [...queryParsed.bhks];
+        }
+
+        if (queryParsed.propertyTypes && queryParsed.propertyTypes.length > 0) {
+            selectedPropTypes.value = [...queryParsed.propertyTypes];
+        }
+
+        searchKeyword.value = queryParsed.keyword;
         isNearMe.value = false;
+        activeNearbyAreas.value = [];
         runSearch();
     }, {
         type: activeType.value,
@@ -632,7 +753,35 @@ const openVoiceSearchListings = () => {
 
 const runSearch = () => {
     if (searchInput.value.trim()) {
-        searchKeyword.value = searchInput.value.trim();
+        const raw = searchInput.value.trim();
+        const parsed = parseVoiceQuery(raw, {
+            defaultType: activeType.value,
+            defaultCity: activeCity.value,
+        });
+
+        if (parsed.hasCity && parsed.city) {
+            setCity(parsed.city);
+            activeCity.value = parsed.city;
+        }
+
+        if (parsed.hasType && parsed.type) {
+            activeType.value = parsed.type;
+        }
+
+        if (parsed.hasBhk && parsed.bhks.length > 0) {
+            selectedBhks.value = [...parsed.bhks];
+        }
+
+        if (parsed.propertyTypes && parsed.propertyTypes.length > 0) {
+            selectedPropTypes.value = [...parsed.propertyTypes];
+        }
+
+        if (parsed.hasCity || parsed.hasBhk || parsed.hasType) {
+            searchKeyword.value = parsed.keyword;
+        } else {
+            searchKeyword.value = raw;
+        }
+
         isNearMe.value = false;
         activeNearbyAreas.value = [];
         searchInput.value = '';
@@ -642,7 +791,7 @@ const runSearch = () => {
         query: {
             ...route.query,
             type: activeType.value,
-            city: activeCity.value,
+            city: activeCity.value !== 'All' ? activeCity.value : undefined,
             keyword: isNearMe.value ? undefined : (searchKeyword.value || undefined),
             near_me: isNearMe.value ? 'true' : undefined,
             bhk: selectedBhks.value.length ? selectedBhks.value.join(',') : undefined,
@@ -687,6 +836,151 @@ const downloadBrochure = (item) => {
 const apiProperties = ref([]);
 const isLoadingProperties = ref(false);
 
+const defaultFallbackListings = [
+    {
+        id: 101,
+        slug: 'the-metropark-3-bhk-flat-vastral-ahmedabad',
+        title: 'The Metropark',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 77.4 L',
+        rawPrice: 7740000,
+        rate: '₹ 4,000 / sq.ft',
+        locality: 'Vastral',
+        city: 'Ahmedabad',
+        area: '1,935 sqft (180 sqm)',
+        status: 'Under Construction',
+        builder: 'SUNWOODS-SHREENATH BUILDCON',
+        postedBy: 'Builder',
+        sellerPhone: '+91 98250 12345',
+        isNewBooking: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 8,
+        photos: [
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Near Vastral Ring Road', 'Metro Station'],
+        description: 'Experience a new style of living with The Metropark. 3 BHK flats in Vastral, Ahmedabad with 1st out of 14 Floors, modern clubhouse and amenities.',
+        property_for: 'Sell',
+    },
+    {
+        id: 102,
+        slug: 'trinay-anagh-3-bhk-flat-jodhpur-ahmedabad',
+        title: 'Trinay Anagh',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 2 Cr',
+        rawPrice: 20000000,
+        rate: '₹ 7,238 / sq.ft',
+        locality: 'Jodhpur',
+        city: 'Ahmedabad',
+        area: '2,763 sqft (257 sqm)',
+        status: 'Under Construction',
+        builder: 'Trinay Group',
+        postedBy: 'Builder',
+        sellerPhone: '+91 98251 54321',
+        isNewBooking: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 12,
+        photos: [
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['132 Ft Ring Road', 'Opposite Star Bazaar'],
+        description: 'Trinay Anagh offers 3 BHK flats in Jodhpur, Ahmedabad West. 1st out of 10 floors with Italian marble flooring, 3 balconies and 2 car parkings.',
+        property_for: 'Sell',
+    },
+    {
+        id: 103,
+        slug: 'godrej-garden-city-3-bhk-sg-highway-ahmedabad',
+        title: '3 BHK Luxurious High-Rise Apartment in SG Highway',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 1.15 Cr',
+        rawPrice: 11500000,
+        rate: '₹ 6,969 / sq.ft',
+        locality: 'SG Highway',
+        city: 'Ahmedabad',
+        area: '2,150 sqft (200 sqm)',
+        status: 'Ready to Move',
+        builder: 'Godrej Properties',
+        postedBy: 'Owner',
+        sellerPhone: '+91 98980 11223',
+        isNewBooking: false,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 6,
+        photos: [
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Godrej Garden City', 'Near Nirma University'],
+        description: 'Spacious 3 BHK apartment with marble flooring, modular kitchen, cross ventilation, 3 covered balconies, and scenic views in SG Highway Ahmedabad.',
+        property_for: 'Sell',
+    },
+    {
+        id: 104,
+        slug: 'shaligram-lakeview-3-bhk-science-city-ahmedabad',
+        title: '3 BHK Premium Lakeview Flat in Science City',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 95 L',
+        rawPrice: 9500000,
+        rate: '₹ 6,333 / sq.ft',
+        locality: 'Science City',
+        city: 'Ahmedabad',
+        area: '2,050 sqft (190 sqm)',
+        status: 'Ready to Move',
+        builder: 'Shaligram Group',
+        postedBy: 'Verified Owner',
+        sellerPhone: '+91 97270 33445',
+        isNewBooking: false,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 9,
+        photos: [
+            'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Science City Road', 'Near CIMS Hospital'],
+        description: 'Stunning 3 BHK ready-to-move apartment near Science City Ahmedabad with 100% Vastu compliance and 2 designated car parkings.',
+        property_for: 'Sell',
+    },
+    {
+        id: 105,
+        slug: 'aarohi-elysium-2-bhk-bopal-ahmedabad',
+        title: '2 BHK Fully Furnished Flat in Bopal',
+        type: 'Residential Apartment',
+        bhk: '2 BHK',
+        bedrooms: 2,
+        price: '₹ 28,000 / mo',
+        rawPrice: 28000,
+        rate: '₹ 27 / sq.ft',
+        locality: 'Bopal',
+        city: 'Ahmedabad',
+        area: '1,350 sqft (125 sqm)',
+        status: 'Ready to Move',
+        builder: 'Aarohi Group',
+        postedBy: 'Agent',
+        sellerPhone: '+91 98240 55667',
+        isNewBooking: false,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 5,
+        photos: [
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['South Bopal', 'Near Sobha City'],
+        description: 'Ready to move 2 BHK modern flat with split ACs, sofa, beds, refrigerator, and smart TV in South Bopal Ahmedabad.',
+        property_for: 'Rent',
+    }
+];
+
 const formatPriceWords = (val) => {
     if (!val || val <= 0) return 'Price on Request';
     const num = Number(val);
@@ -712,6 +1006,12 @@ const fetchApiProperties = async () => {
         if (activeType.value && activeType.value !== 'all') {
             params.set('type', activeType.value);
         }
+        if (selectedBhks.value.length > 0) {
+            const nums = selectedBhks.value.map(b => parseInt(b, 10)).filter(n => !isNaN(n));
+            if (nums.length > 0) {
+                params.set('bhk', nums.join(','));
+            }
+        }
         if (params.toString()) {
             url += '?' + params.toString();
         }
@@ -719,35 +1019,42 @@ const fetchApiProperties = async () => {
         if (res.ok) {
             const data = await res.json();
             const list = data.data || data || [];
-            apiProperties.value = list.map(p => ({
-                id: p.id,
-                slug: p.slug || String(p.id),
-                title: p.title,
-                type: p.property_type || 'Apartment',
-                bhk: `${p.bedrooms || 1} BHK`,
-                bedrooms: p.bedrooms || 1,
-                price: formatPriceWords(p.expected_price),
-                rawPrice: p.expected_price || 0,
-                rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
-                locality: p.locality || '',
-                city: p.city || '',
-                area: p.carpet_area ? String(p.carpet_area) : (p.super_builtup_area ? String(p.super_builtup_area) : '1,200'),
-                status: p.construction_status || 'Ready to Move',
-                builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
-                postedBy: p.user ? p.user.name : 'Owner',
-                sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
-                isNewBooking: false,
-                isRera: !!p.is_verified,
-                zeroBrokerage: true,
-                photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
-                photos: p.photos || [],
-                nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
-                description: p.description || '',
-                property_for: p.property_for || 'Sell',
-            }));
+            if (Array.isArray(list) && list.length > 0) {
+                apiProperties.value = list.map(p => ({
+                    id: p.id,
+                    slug: p.slug || String(p.id),
+                    title: p.title,
+                    type: p.property_type || 'Apartment',
+                    bhk: `${p.bedrooms || 1} BHK`,
+                    bedrooms: p.bedrooms || 1,
+                    price: formatPriceWords(p.expected_price),
+                    rawPrice: p.expected_price || 0,
+                    rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
+                    locality: p.locality || '',
+                    city: p.city || '',
+                    area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
+                    status: p.construction_status || 'Ready to Move',
+                    builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
+                    postedBy: p.user ? p.user.name : 'Owner',
+                    sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
+                    isNewBooking: false,
+                    isRera: !!p.is_verified,
+                    zeroBrokerage: true,
+                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
+                    photos: p.photos || [],
+                    nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
+                    description: p.description || '',
+                    property_for: p.property_for || 'Sell',
+                }));
+            } else {
+                apiProperties.value = [...defaultFallbackListings];
+            }
+        } else {
+            apiProperties.value = [...defaultFallbackListings];
         }
     } catch (err) {
-        console.warn('Could not fetch API properties:', err);
+        console.warn('Could not fetch API properties, using fallback:', err);
+        apiProperties.value = [...defaultFallbackListings];
     } finally {
         isLoadingProperties.value = false;
     }
@@ -766,7 +1073,9 @@ watch(
 );
 
 const displayedListings = computed(() => {
-    return apiProperties.value.filter((item) => {
+    const list = apiProperties.value.length > 0 ? apiProperties.value : defaultFallbackListings;
+
+    return list.filter((item) => {
         // ── Near-me locality filter ──────────────────────────────────────────
         if (isNearMe.value && activeNearbyAreas.value.length > 0) {
             const matchesNearby = activeNearbyAreas.value.some((area) =>
@@ -803,8 +1112,12 @@ const displayedListings = computed(() => {
         // ── BHK / Bedrooms filter ────────────────────────────────────────────
         if (selectedBhks.value.length > 0) {
             const hasBhk = selectedBhks.value.some((bhk) => {
-                if (bhk === '4+ BHK') return item.bedrooms >= 4;
-                const num = parseInt(bhk);
+                if (bhk === '4+ BHK' || bhk === '4 BHK' || bhk === '5 BHK') {
+                    if (bhk === '4+ BHK') return item.bedrooms >= 4;
+                    const num = parseInt(bhk, 10);
+                    return item.bedrooms === num;
+                }
+                const num = parseInt(bhk, 10);
                 return item.bedrooms === num;
             });
             if (!hasBhk) return false;
@@ -822,7 +1135,6 @@ const displayedListings = computed(() => {
         }
 
         // ── Possession status filter ─────────────────────────────────────────
-        // Only apply when at least one box is unchecked (both checked = show all)
         if (!readyToMove.value || !underConstruction.value) {
             const s = (item.status || '').toLowerCase();
             const isReady = s.includes('ready');

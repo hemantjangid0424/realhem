@@ -478,7 +478,7 @@ import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
 
 const router = useRouter();
-const { openVoiceModal } = useVoiceSearch();
+const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
     companyName,
@@ -497,7 +497,7 @@ const selectedBhks = ref([]);
 const verifiedOnly = ref(false);
 
 const searchForm = ref({
-    city: currentCity.value || 'Delhi NCR',
+    city: currentCity.value || 'Ahmedabad',
     keyword: '',
     budget: '',
 });
@@ -517,9 +517,39 @@ const handleCityChange = (e) => {
 };
 
 const openVoiceSearchHero = () => {
-    openVoiceModal((transcript) => {
-        searchForm.value.keyword = transcript;
-        handleSearch();
+    openVoiceModal((transcript, parsed) => {
+        const queryParsed = parsed || parseVoiceQuery(transcript, {
+            defaultType: activeTab.value,
+            defaultCity: searchForm.value.city,
+        });
+
+        if (queryParsed.hasCity && queryParsed.city) {
+            setCity(queryParsed.city);
+            searchForm.value.city = queryParsed.city;
+        }
+
+        if (queryParsed.hasType && queryParsed.type) {
+            activeTab.value = queryParsed.type;
+        }
+
+        let targetBhks = selectedBhks.value;
+        if (queryParsed.hasBhk && queryParsed.bhks.length > 0) {
+            selectedBhks.value = [...queryParsed.bhks];
+            targetBhks = queryParsed.bhks;
+        }
+
+        searchForm.value.keyword = queryParsed.keyword;
+
+        router.push({
+            path: '/listings',
+            query: {
+                type: queryParsed.type || activeTab.value,
+                city: queryParsed.city || searchForm.value.city,
+                keyword: queryParsed.keyword || undefined,
+                budget: searchForm.value.budget || undefined,
+                bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
+            },
+        });
     }, {
         type: activeTab.value,
         city: searchForm.value.city,
@@ -535,8 +565,8 @@ const searchTabs = [
 ];
 
 const majorCities = [
-    'Delhi NCR',
     'Ahmedabad',
+    'Delhi NCR',
     'Mumbai',
     'Bangalore',
     'Pune',
@@ -569,14 +599,46 @@ const useCurrentLocation = () => {
 };
 
 const handleSearch = () => {
+    const raw = searchForm.value.keyword || '';
+    const parsed = parseVoiceQuery(raw, {
+        defaultType: activeTab.value,
+        defaultCity: searchForm.value.city,
+    });
+
+    let targetCity = searchForm.value.city;
+    let targetBhks = [...selectedBhks.value];
+    let targetKeyword = searchForm.value.keyword;
+    let targetType = activeTab.value;
+
+    if (parsed.hasCity && parsed.city) {
+        setCity(parsed.city);
+        targetCity = parsed.city;
+        searchForm.value.city = parsed.city;
+    }
+
+    if (parsed.hasBhk && parsed.bhks.length > 0) {
+        targetBhks = parsed.bhks;
+        selectedBhks.value = parsed.bhks;
+    }
+
+    if (parsed.hasType && parsed.type) {
+        targetType = parsed.type;
+        activeTab.value = parsed.type;
+    }
+
+    if (parsed.hasCity || parsed.hasBhk || parsed.hasType) {
+        targetKeyword = parsed.keyword;
+        searchForm.value.keyword = parsed.keyword;
+    }
+
     router.push({
         path: '/listings',
         query: {
-            type: activeTab.value,
-            city: searchForm.value.city,
-            keyword: searchForm.value.keyword || undefined,
+            type: targetType,
+            city: targetCity,
+            keyword: targetKeyword || undefined,
             budget: searchForm.value.budget || undefined,
-            bhk: selectedBhks.value.join(',') || undefined,
+            bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
         },
     });
 };

@@ -336,7 +336,7 @@ import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
 
 const router = useRouter();
-const { openVoiceModal } = useVoiceSearch();
+const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity: selectedCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
     companyName,
@@ -383,9 +383,31 @@ const handleCitySelectChange = (e) => {
 };
 
 const startVoiceSearch = () => {
-    openVoiceModal((transcript) => {
-        stickyKeyword.value = transcript;
-        handleStickySearch();
+    openVoiceModal((transcript, parsed) => {
+        const queryParsed = parsed || parseVoiceQuery(transcript, {
+            defaultType: stickySearchType.value,
+            defaultCity: selectedCity.value,
+        });
+
+        if (queryParsed.hasCity && queryParsed.city) {
+            setCity(queryParsed.city);
+        }
+
+        if (queryParsed.hasType && queryParsed.type) {
+            stickySearchType.value = queryParsed.type;
+        }
+
+        stickyKeyword.value = queryParsed.keyword;
+
+        router.push({
+            path: '/listings',
+            query: {
+                type: queryParsed.type || stickySearchType.value,
+                city: queryParsed.city || selectedCity.value,
+                keyword: queryParsed.keyword || undefined,
+                bhk: queryParsed.bhks.length > 0 ? queryParsed.bhks.join(',') : undefined,
+            },
+        });
     }, {
         type: stickySearchType.value,
         city: selectedCity.value,
@@ -407,12 +429,43 @@ const handleScroll = () => {
 };
 
 const handleStickySearch = () => {
+    const raw = stickyKeyword.value || '';
+    const parsed = parseVoiceQuery(raw, {
+        defaultType: stickySearchType.value,
+        defaultCity: selectedCity.value,
+    });
+
+    let targetCity = selectedCity.value;
+    let targetKeyword = stickyKeyword.value;
+    let targetBhks = [];
+    let targetType = stickySearchType.value;
+
+    if (parsed.hasCity && parsed.city) {
+        setCity(parsed.city);
+        targetCity = parsed.city;
+    }
+
+    if (parsed.hasBhk && parsed.bhks.length > 0) {
+        targetBhks = parsed.bhks;
+    }
+
+    if (parsed.hasType && parsed.type) {
+        targetType = parsed.type;
+        stickySearchType.value = parsed.type;
+    }
+
+    if (parsed.hasCity || parsed.hasBhk || parsed.hasType) {
+        targetKeyword = parsed.keyword;
+        stickyKeyword.value = parsed.keyword;
+    }
+
     router.push({
         path: '/listings',
         query: {
-            type: stickySearchType.value,
-            city: selectedCity.value,
-            keyword: stickyKeyword.value || undefined,
+            type: targetType,
+            city: targetCity,
+            keyword: targetKeyword || undefined,
+            bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
         },
     });
 };
