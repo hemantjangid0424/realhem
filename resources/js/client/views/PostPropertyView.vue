@@ -109,7 +109,12 @@
 
                 <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-left text-xs space-y-1.5 text-slate-600">
                     <div class="flex justify-between"><span>Location:</span> <strong class="text-slate-800">{{ form.locality }}, {{ form.city }}</strong></div>
-                    <div class="flex justify-between"><span>Configuration:</span> <strong class="text-slate-800">{{ form.bedrooms }} BHK ({{ form.carpet_area }} {{ form.carpet_area_unit }})</strong></div>
+                    <div class="flex justify-between">
+                        <span>Configuration:</span>
+                        <strong class="text-slate-800">
+                            {{ isResidential ? `${form.bedrooms} BHK (${form.carpet_area} ${form.carpet_area_unit})` : `${form.carpet_area} ${form.carpet_area_unit} ${form.property_type}` }}
+                        </strong>
+                    </div>
                     <div class="flex justify-between"><span>Expected Price:</span> <strong class="text-blue-700 font-black">{{ formatPriceWords(form.expected_price) }}</strong></div>
                     <div class="flex justify-between"><span>Status:</span> <span class="text-emerald-700 font-bold">Active &amp; Verified</span></div>
                 </div>
@@ -317,7 +322,7 @@
                                         ]"
                                         :key="pt"
                                         type="button"
-                                        @click="form.property_type = pt"
+                                        @click="handlePropertyTypeChange(pt)"
                                         class="py-2.5 px-3 rounded-xl text-xs font-semibold border transition cursor-pointer text-left flex items-center justify-between"
                                         :class="form.property_type === pt ? 'bg-blue-50 border-blue-600 text-blue-700 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
                                     >
@@ -430,16 +435,19 @@
                         </div>
 
                         <!-- ========================================================================= -->
-                        <!-- STEP 3: PROPERTY PROFILE ("Tell us about your property" - EXACT SCREENSHOT) -->
+                        <!-- STEP 3: PROPERTY PROFILE ("Tell us about your property")                  -->
                         <!-- ========================================================================= -->
                         <div v-else-if="currentStep === 3" class="space-y-6 animate-fadeIn">
                             <div>
                                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tell us about your property</h2>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    {{ isResidential ? 'Specify bedrooms, area, furnishing, and pricing.' : (isPlot ? 'Specify land area, plot dimensions, open sides, and price.' : 'Specify office/shop layout, seating, area, and commercial terms.') }}
+                                </p>
                             </div>
 
-                            <!-- 1. Your apartment is a -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-2">Your apartment is a</label>
+                            <!-- 1. BHK Selection: Residential Only -->
+                            <div v-if="isResidential">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Your apartment / home is a</label>
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <button
                                         type="button"
@@ -474,22 +482,24 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Add Area Details (with ? tooltip and sq.ft. dropdown) -->
+                            <!-- 2. Area Details (Carpet Area / Plot Area) -->
                             <div>
                                 <div class="flex items-center gap-1.5 mb-1">
-                                    <label class="text-xs font-bold text-slate-800">Add Area Details</label>
+                                    <label class="text-xs font-bold text-slate-800">
+                                        {{ isPlot ? 'Add Plot / Land Area' : 'Add Area Details' }}
+                                    </label>
                                     <span class="text-slate-400 cursor-help" title="At least one area is required to calculate price per sq.ft.">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     </span>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mb-2">Atleast one area type is mandatory</p>
+                                <p class="text-[11px] text-slate-400 mb-2">At least one area type is mandatory</p>
 
-                                <!-- Primary Carpet Area Input with Unit Dropdown -->
+                                <!-- Primary Area Input with Unit Dropdown -->
                                 <div class="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition bg-white">
                                     <input
                                         v-model="form.carpet_area"
                                         type="number"
-                                        placeholder="Carpet Area"
+                                        :placeholder="isPlot ? 'Plot Area' : (isCommercial ? 'Super / Carpet Area' : 'Carpet Area')"
                                         @input="recalculatePerSqFt"
                                         class="flex-1 py-2.5 px-3.5 text-xs font-bold text-slate-800 placeholder-slate-400 outline-none bg-transparent"
                                         required
@@ -514,8 +524,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Optional Area Toggles: + Built-up Area, + Super Built-up Area -->
-                                <div class="flex items-center gap-3 mt-2 text-xs">
+                                <!-- Optional Area Toggles: + Built-up Area, + Super Built-up Area (for non-plots) -->
+                                <div v-if="!isPlot" class="flex items-center gap-3 mt-2 text-xs">
                                     <button
                                         v-if="!showBuiltupArea"
                                         type="button"
@@ -535,7 +545,7 @@
                                 </div>
 
                                 <!-- Built-up Area Input (if opened) -->
-                                <div v-if="showBuiltupArea" class="mt-2.5 flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-500 bg-white animate-fadeIn">
+                                <div v-if="showBuiltupArea && !isPlot" class="mt-2.5 flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-500 bg-white animate-fadeIn">
                                     <input
                                         v-model="form.builtup_area"
                                         type="number"
@@ -555,7 +565,7 @@
                                 </div>
 
                                 <!-- Super Built-up Area Input (if opened) -->
-                                <div v-if="showSuperBuiltupArea" class="mt-2.5 flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-500 bg-white animate-fadeIn">
+                                <div v-if="showSuperBuiltupArea && !isPlot" class="mt-2.5 flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-500 bg-white animate-fadeIn">
                                     <input
                                         v-model="form.super_builtup_area"
                                         type="number"
@@ -575,8 +585,8 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Add Room Details -->
-                            <div class="space-y-4 pt-1">
+                            <!-- 3A. Residential Room Details (Bedrooms, Bathrooms, Balconies) -->
+                            <div v-if="isResidential" class="space-y-4 pt-1">
                                 <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Add Room Details</h3>
 
                                 <!-- No. of Bedrooms -->
@@ -820,8 +830,228 @@
                                 </div>
                             </div>
 
-                            <!-- 4. Floor Details -->
-                            <div class="space-y-1.5 pt-1">
+                            <!-- 3B. Commercial Office Setup Details -->
+                            <div v-else-if="isCommercialOffice" class="space-y-4 pt-1">
+                                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Office Setup &amp; Capacity</h3>
+
+                                <!-- Cabins / Meeting Rooms -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Cabins / Executive Rooms</label>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            v-for="num in [0, 1, 2, 3, 4, 5]"
+                                            :key="num"
+                                            type="button"
+                                            @click="form.cabins = num"
+                                            class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer"
+                                            :class="form.cabins === num ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
+                                        >
+                                            {{ num === 0 ? 'None' : (num === 5 ? '5+' : num) }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Workstations / Seats -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="border border-slate-300 rounded-xl p-2 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+                                        <label class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Workstations / Seats</label>
+                                        <input
+                                            v-model="form.workstations"
+                                            type="number"
+                                            placeholder="e.g. 25"
+                                            class="w-full text-xs font-bold text-slate-900 outline-none bg-transparent pt-0.5"
+                                        />
+                                    </div>
+                                    <div class="border border-slate-300 rounded-xl p-2 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+                                        <label class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider">Conference Rooms</label>
+                                        <input
+                                            v-model="form.conference_rooms"
+                                            type="number"
+                                            placeholder="e.g. 1"
+                                            class="w-full text-xs font-bold text-slate-900 outline-none bg-transparent pt-0.5"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Washrooms & Pantry -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Washroom</label>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button
+                                                v-for="w in ['Private', 'Shared', 'None']"
+                                                :key="w"
+                                                type="button"
+                                                @click="form.washrooms_type = w; form.bathrooms = w === 'None' ? 0 : (w === 'Private' ? 1 : 1)"
+                                                class="py-2 px-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.washrooms_type === w ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ w }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pantry</label>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button
+                                                v-for="p in ['Wet Pantry', 'Dry Pantry', 'None']"
+                                                :key="p"
+                                                type="button"
+                                                @click="form.pantry = p"
+                                                class="py-2 px-1 text-center rounded-xl text-[11px] font-bold border transition cursor-pointer"
+                                                :class="form.pantry === p ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ p }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3C. Commercial Shop Setup Details -->
+                            <div v-else-if="isCommercialShop" class="space-y-4 pt-1">
+                                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Shop &amp; Retail Specifications</h3>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Washroom</label>
+                                        <div class="flex gap-2">
+                                            <button
+                                                v-for="w in ['Private', 'Shared', 'None']"
+                                                :key="w"
+                                                type="button"
+                                                @click="form.washrooms_type = w; form.bathrooms = w === 'None' ? 0 : 1"
+                                                class="flex-1 py-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.washrooms_type === w ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ w }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Main Road Facing</label>
+                                        <div class="flex gap-2">
+                                            <button
+                                                v-for="opt in [{ id: true, label: 'Yes' }, { id: false, label: 'No' }]"
+                                                :key="opt.label"
+                                                type="button"
+                                                @click="form.main_road_facing = opt.id"
+                                                class="flex-1 py-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.main_road_facing === opt.id ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ opt.label }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Corner Shop</label>
+                                        <div class="flex gap-2">
+                                            <button
+                                                v-for="opt in [{ id: true, label: 'Yes' }, { id: false, label: 'No' }]"
+                                                :key="opt.label"
+                                                type="button"
+                                                @click="form.corner_property = opt.id"
+                                                class="flex-1 py-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.corner_property === opt.id ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ opt.label }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3D. Plot / Land Specifications -->
+                            <div v-else-if="isPlot" class="space-y-4 pt-1">
+                                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Plot &amp; Land Details</h3>
+
+                                <!-- Open Sides -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. of Open Sides</label>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <button
+                                            v-for="side in [1, 2, 3, 4]"
+                                            :key="side"
+                                            type="button"
+                                            @click="form.open_sides = side"
+                                            class="py-2.5 px-3 rounded-xl text-xs font-bold border transition cursor-pointer text-center"
+                                            :class="form.open_sides === side ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                        >
+                                            {{ side }} Side{{ side > 1 ? 's' : '' }} Open
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Boundary Wall & Gated Colony -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Boundary Wall Made?</label>
+                                        <div class="flex gap-2">
+                                            <button
+                                                type="button"
+                                                @click="form.boundary_wall = true"
+                                                class="flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.boundary_wall ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700'"
+                                            >
+                                                Yes (Constructed)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="form.boundary_wall = false"
+                                                class="flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="!form.boundary_wall ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700'"
+                                            >
+                                                No
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Gated Community / Society?</label>
+                                        <div class="flex gap-2">
+                                            <button
+                                                type="button"
+                                                @click="form.gated_community = true"
+                                                class="flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="form.gated_community ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700'"
+                                            >
+                                                Yes
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="form.gated_community = false"
+                                                class="flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer"
+                                                :class="!form.gated_community ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-slate-200 text-slate-700'"
+                                            >
+                                                No
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Furnishing Status (For Residential & Commercial only) -->
+                            <div v-if="!isPlot" class="space-y-2 pt-1">
+                                <label class="block text-xs font-bold text-slate-800">
+                                    {{ isCommercial ? 'Commercial Furnishing' : 'Furnishing Status' }}
+                                </label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button
+                                        v-for="furn in (isCommercial
+                                            ? [{ id: 'Furnished', label: 'Fully Furnished (Plug & Play)' }, { id: 'Semi-Furnished', label: 'Semi-Furnished' }, { id: 'Unfurnished', label: 'Bare Shell (Unfurnished)' }]
+                                            : [{ id: 'Furnished', label: 'Furnished' }, { id: 'Semi-Furnished', label: 'Semi-Furnished' }, { id: 'Unfurnished', label: 'Unfurnished' }])"
+                                        :key="furn.id"
+                                        type="button"
+                                        @click="form.furnishing_status = furn.id"
+                                        class="py-2.5 px-3 rounded-xl text-xs font-bold border transition cursor-pointer text-center"
+                                        :class="form.furnishing_status === furn.id ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
+                                    >
+                                        {{ furn.label }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 5. Floor Details / Floors Allowed -->
+                            <div v-if="!isPlot" class="space-y-1.5 pt-1">
                                 <label class="block text-xs font-bold text-slate-800">Floor Details</label>
                                 <p class="text-[11px] text-slate-400">Total no of floors and your floor details</p>
 
@@ -863,31 +1093,48 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 5. Availability Status -->
-                            <div class="space-y-2 pt-1">
-                                <label class="block text-xs font-bold text-slate-800">Availability Status</label>
-                                <div class="flex items-center gap-3">
+                            <div v-else class="space-y-1.5 pt-1">
+                                <label class="block text-xs font-bold text-slate-800">Floors Allowed For Construction</label>
+                                <div class="grid grid-cols-4 gap-2 pt-1">
                                     <button
+                                        v-for="fl in [2, 3, 4, 5]"
+                                        :key="fl"
                                         type="button"
-                                        @click="form.construction_status = 'Ready to Move'"
-                                        class="px-5 py-2 rounded-full text-xs font-bold border transition cursor-pointer"
-                                        :class="form.construction_status === 'Ready to Move' ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
+                                        @click="form.total_floors = fl"
+                                        class="py-2 px-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer"
+                                        :class="form.total_floors === fl ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
                                     >
-                                        Ready to move
-                                    </button>
-                                    <button
-                                        type="button"
-                                        @click="form.construction_status = 'Under Construction'"
-                                        class="px-5 py-2 rounded-full text-xs font-bold border transition cursor-pointer"
-                                        :class="form.construction_status === 'Under Construction' ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
-                                    >
-                                        Under construction
+                                        {{ fl === 5 ? '5+ Floors' : `${fl} Floors` }}
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 6. Price Details -->
+                            <!-- 6. Availability Status -->
+                            <div class="space-y-2 pt-1">
+                                <label class="block text-xs font-bold text-slate-800">
+                                    {{ isPlot ? 'Possession / Availability' : 'Availability Status' }}
+                                </label>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        @click="form.construction_status = isPlot ? 'Immediate Possession' : 'Ready to Move'"
+                                        class="px-5 py-2 rounded-full text-xs font-bold border transition cursor-pointer"
+                                        :class="(form.construction_status === 'Ready to Move' || form.construction_status === 'Immediate Possession') ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
+                                    >
+                                        {{ isPlot ? 'Immediate Possession' : 'Ready to move' }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="form.construction_status = isPlot ? 'Under Development' : 'Under Construction'"
+                                        class="px-5 py-2 rounded-full text-xs font-bold border transition cursor-pointer"
+                                        :class="(form.construction_status === 'Under Construction' || form.construction_status === 'Under Development') ? 'bg-blue-50 border-blue-600 text-blue-700 font-extrabold shadow-2xs' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
+                                    >
+                                        {{ isPlot ? 'Under Development' : 'Under construction' }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 7. Price Details -->
                             <div class="space-y-3 pt-2 border-t border-slate-100">
                                 <label class="block text-xs font-bold text-slate-800">Price Details</label>
 
@@ -1189,7 +1436,7 @@
                     <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2 text-xs">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Listing Summary</span>
                         <div class="font-black text-slate-800 line-clamp-1">
-                            {{ form.bedrooms }} BHK {{ form.property_type }}
+                            {{ isResidential ? `${form.bedrooms} BHK ${form.property_type}` : `${form.carpet_area || 0} ${form.carpet_area_unit} ${form.property_type}` }}
                         </div>
                         <div class="text-[11px] text-slate-500">
                             📍 {{ form.locality || 'Locality' }}, {{ form.city }}
@@ -1210,6 +1457,14 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import AuthModal from '../components/AuthModal.vue';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import {
+    PROPERTY_FOR,
+    PROPERTY_TYPES,
+    isResidentialType,
+    isCommercialType,
+    isPlotType,
+    getPropertyIntentLabel,
+} from '../constants/propertyConstants';
 
 const { companyName } = useCompanyBranding();
 const router = useRouter();
@@ -1299,11 +1554,21 @@ const finishCustomBalconies = () => {
     }
 };
 
+const isResidential = computed(() => isResidentialType(form.value.property_type));
+
+const isCommercialOffice = computed(() => form.value.property_type === PROPERTY_TYPES.COMMERCIAL_OFFICE);
+
+const isCommercialShop = computed(() => [PROPERTY_TYPES.COMMERCIAL_SHOP, PROPERTY_TYPES.COMMERCIAL_SHOWROOM].includes(form.value.property_type));
+
+const isCommercial = computed(() => isCommercialType(form.value.property_type));
+
+const isPlot = computed(() => isPlotType(form.value.property_type));
+
 const steps = computed(() => [
     {
         id: 1,
         title: 'Basic Details',
-        subtitle: `${form.value.property_type || 'Apartment'} for ${form.value.property_for === 'Sell' ? 'Sale' : 'Rent'}`
+        subtitle: `${form.value.property_type || 'Property'} for ${getPropertyIntentLabel(form.value.property_for)}`
     },
     {
         id: 2,
@@ -1315,7 +1580,9 @@ const steps = computed(() => [
     {
         id: 3,
         title: 'Property Profile',
-        subtitle: `${form.value.bedrooms} BHK (${form.value.carpet_area} ${form.value.carpet_area_unit})`
+        subtitle: isResidential.value
+            ? `${form.value.bedrooms} BHK (${form.value.carpet_area} ${form.value.carpet_area_unit})`
+            : `${form.value.carpet_area} ${form.value.carpet_area_unit} ${form.value.property_type}`
     },
     {
         id: 4,
@@ -1329,7 +1596,7 @@ const steps = computed(() => [
     },
 ]);
 
-const availableAmenities = [
+const residentialAmenities = [
     { name: 'Lift', icon: '🛗' },
     { name: '24x7 Security', icon: '👮' },
     { name: 'Reserved Parking', icon: '🚗' },
@@ -1343,6 +1610,42 @@ const availableAmenities = [
     { name: 'Intercom', icon: '📞' },
     { name: 'CCTV Surveillance', icon: '📹' },
 ];
+
+const commercialAmenities = [
+    { name: 'Central AC', icon: '❄️' },
+    { name: '24x7 Power Backup', icon: '⚡' },
+    { name: 'High-Speed Elevators', icon: '🛗' },
+    { name: 'Reserved Parking', icon: '🚗' },
+    { name: 'Visitor Parking', icon: '🅿️' },
+    { name: '24x7 Security & CCTV', icon: '📹' },
+    { name: 'Fire Safety System', icon: '🧯' },
+    { name: 'Cafeteria / Food Court', icon: '☕' },
+    { name: 'Conference Facility', icon: '💼' },
+    { name: 'High-Speed Internet / Fiber', icon: '🌐' },
+    { name: 'Reception & Waiting Lounge', icon: '🛋️' },
+    { name: 'ATM in Campus', icon: '🏧' },
+];
+
+const plotAmenities = [
+    { name: 'Boundary Wall', icon: '🧱' },
+    { name: 'Gated Community', icon: '⛩️' },
+    { name: '24x7 Security Guard', icon: '👮' },
+    { name: 'Street Lighting', icon: '💡' },
+    { name: 'Water Connection', icon: '🚰' },
+    { name: 'Electricity Connection', icon: '⚡' },
+    { name: 'Sewage / Drainage Line', icon: '🛣️' },
+    { name: 'Wide Asphalt / Concrete Road', icon: '🛣️' },
+    { name: 'Corner Plot', icon: '📐' },
+    { name: 'Park Facing', icon: '🌳' },
+    { name: 'Rainwater Harvesting', icon: '🌧️' },
+    { name: 'Clear Title / NA Approved', icon: '📜' },
+];
+
+const availableAmenities = computed(() => {
+    if (isCommercial.value) return commercialAmenities;
+    if (isPlot.value) return plotAmenities;
+    return residentialAmenities;
+});
 
 const form = ref({
     user_type: 'Owner',
@@ -1379,15 +1682,73 @@ const form = ref({
     description: '',
     amenities: ['Lift', '24x7 Security', 'Reserved Parking', 'Power Backup', 'Gym'],
     photos: [],
+    // Commercial fields
+    cabins: 2,
+    workstations: 20,
+    conference_rooms: 1,
+    pantry: 'Wet Pantry',
+    washrooms_type: 'Private',
+    main_road_facing: true,
+    corner_property: false,
+    // Plot fields
+    open_sides: 2,
+    boundary_wall: true,
+    gated_community: true,
 });
+
+const handlePropertyTypeChange = (pt) => {
+    form.value.property_type = pt;
+
+    if (isCommercialType(pt)) {
+        form.value.bedrooms = 0;
+        form.value.balconies = 0;
+        if (form.value.bathrooms === 0) form.value.bathrooms = 1;
+        form.value.carpet_area_unit = 'sq.ft.';
+        if (form.value.furnishing_status === 'Unfurnished') {
+            form.value.furnishing_status = 'Semi-Furnished';
+        }
+        form.value.amenities = ['Central AC', '24x7 Power Backup', 'High-Speed Elevators', 'Reserved Parking', 'Visitor Parking', '24x7 Security & CCTV'];
+    } else if (isPlotType(pt)) {
+        form.value.bedrooms = 0;
+        form.value.bathrooms = 0;
+        form.value.balconies = 0;
+        form.value.carpet_area_unit = 'sq.yards';
+        form.value.furnishing_status = 'Unfurnished';
+        form.value.construction_status = 'Immediate Possession';
+        form.value.amenities = ['Boundary Wall', 'Gated Community', '24x7 Security Guard', 'Street Lighting', 'Water Connection', 'Electricity Connection'];
+    } else {
+        // Residential
+        if (!form.value.bedrooms || form.value.bedrooms === 0) form.value.bedrooms = 2;
+        if (!form.value.bathrooms || form.value.bathrooms === 0) form.value.bathrooms = 2;
+        if (form.value.balconies === 0) form.value.balconies = 2;
+        form.value.carpet_area_unit = 'sq.ft.';
+        form.value.furnishing_status = 'Semi-Furnished';
+        form.value.construction_status = 'Ready to Move';
+        form.value.amenities = ['Lift', '24x7 Security', 'Reserved Parking', 'Power Backup', 'Gym'];
+    }
+
+    recalculatePerSqFt();
+    autoGenerateTitle();
+    autoGenerateDescription();
+};
 
 // Dynamic Property Score Calculation
 const propertyScore = computed(() => {
     let score = 0;
     if (form.value.property_type && form.value.property_for) score += 15;
     if (form.value.city && form.value.locality) score += 15;
-    if (form.value.carpet_area && form.value.bedrooms && form.value.expected_price) score += 30;
-    if (form.value.floor_no && form.value.total_floors) score += 10;
+    if (form.value.carpet_area && form.value.expected_price) {
+        if (isResidential.value) {
+            if (form.value.bedrooms) score += 30;
+        } else {
+            score += 30;
+        }
+    }
+    if (isPlot.value) {
+        if (form.value.open_sides) score += 10;
+    } else {
+        if (form.value.floor_no && form.value.total_floors) score += 10;
+    }
     if (form.value.photos.length > 0) score += 15;
     if (form.value.amenities.length > 0) score += 10;
     if (form.value.title || form.value.description) score += 5;
@@ -1407,6 +1768,7 @@ const setQuickBhk = (num) => {
     form.value.bedrooms = num;
     isOtherBhkSelected.value = false;
     recalculatePerSqFt();
+    autoGenerateTitle();
 };
 
 const recalculatePerSqFt = () => {
@@ -1545,14 +1907,34 @@ const formatPriceWords = (val) => {
 };
 
 const autoGenerateTitle = () => {
-    const forText = form.value.property_for === 'Sell' ? 'Sale' : form.value.property_for;
+    const forText = getPropertyIntentLabel(form.value.property_for);
     const soc = form.value.project_name ? ` in ${form.value.project_name}` : '';
-    form.value.title = `${form.value.bedrooms} BHK ${form.value.property_type} for ${forText}${soc}, ${form.value.locality}, ${form.value.city}`;
+
+    if (isResidential.value) {
+        form.value.title = `${form.value.bedrooms} BHK ${form.value.property_type} for ${forText}${soc}, ${form.value.locality}, ${form.value.city}`;
+    } else if (isPlot.value) {
+        form.value.title = `${form.value.carpet_area} ${form.value.carpet_area_unit} ${form.value.property_type} for ${forText}${soc}, ${form.value.locality}, ${form.value.city}`;
+    } else {
+        const furnish = form.value.furnishing_status === 'Furnished' ? 'Fully Furnished ' : (form.value.furnishing_status === 'Semi-Furnished' ? 'Semi-Furnished ' : '');
+        form.value.title = `${form.value.carpet_area} ${form.value.carpet_area_unit} ${furnish}${form.value.property_type} for ${forText}${soc}, ${form.value.locality}, ${form.value.city}`;
+    }
 };
 
 const autoGenerateDescription = () => {
     const forText = form.value.property_for === 'Sell' ? 'sale' : 'rent';
-    form.value.description = `Spacious and beautifully designed ${form.value.bedrooms} BHK ${form.value.property_type} available for ${forText} in ${form.value.locality}, ${form.value.city}. Features ${form.value.furnishing_status.toLowerCase()} interiors, ${form.value.carpet_area} ${form.value.carpet_area_unit} carpet area, ${form.value.facing} facing entrance, good sunlight and cross-ventilation. Located in a secure gated community with modern clubhouse and amenities.`;
+    const proj = form.value.project_name ? ` at ${form.value.project_name}` : '';
+
+    if (isResidential.value) {
+        form.value.description = `Spacious and beautifully designed ${form.value.bedrooms} BHK ${form.value.property_type} available for ${forText}${proj} in ${form.value.locality}, ${form.value.city}. Features ${form.value.furnishing_status.toLowerCase()} interiors, ${form.value.carpet_area} ${form.value.carpet_area_unit} carpet area, ${form.value.facing} facing entrance, good sunlight and cross-ventilation. Located in a secure gated community with modern clubhouse and amenities.`;
+    } else if (isCommercialOffice.value) {
+        form.value.description = `Prime ${form.value.carpet_area} ${form.value.carpet_area_unit} Commercial Office space available for ${forText}${proj} in ${form.value.locality}, ${form.value.city}. Ideal for IT / corporate firms, startups, and consulting agencies. Features modern ${form.value.furnishing_status.toLowerCase()} layout, high-speed elevators, 24x7 power backup, and ample reserved parking with excellent road connectivity.`;
+    } else if (isCommercialShop.value) {
+        form.value.description = `High-footfall ${form.value.carpet_area} ${form.value.carpet_area_unit} Commercial Retail Shop available for ${forText}${proj} in prime commercial hub of ${form.value.locality}, ${form.value.city}. Excellent frontage, main road visibility, heavy customer footfall, suitable for retail brand, clinic, pharmacy, boutique or café.`;
+    } else if (isPlot.value) {
+        form.value.description = `Prime ${form.value.carpet_area} ${form.value.carpet_area_unit} ${form.value.property_type} available for ${forText}${proj} in fast-growing locality of ${form.value.locality}, ${form.value.city}. Clear title, NA/commercial approved, wide approach road with immediate registry and electricity/water connectivity. High investment appreciation potential.`;
+    } else {
+        form.value.description = `Well-maintained ${form.value.carpet_area} ${form.value.carpet_area_unit} ${form.value.property_type} available for ${forText}${proj} in ${form.value.locality}, ${form.value.city}. Ready for immediate possession.`;
+    }
 };
 
 const submitProperty = async () => {
@@ -1601,14 +1983,14 @@ const submitProperty = async () => {
             project_name: form.value.project_name || undefined,
             address: form.value.address || undefined,
             landmark: form.value.landmark || undefined,
-            bedrooms: Number(form.value.bedrooms),
-            bathrooms: Number(form.value.bathrooms),
-            balconies: Number(form.value.balconies),
+            bedrooms: isResidential.value ? Number(form.value.bedrooms) : 0,
+            bathrooms: Number(form.value.bathrooms || 0),
+            balconies: isResidential.value ? Number(form.value.balconies || 0) : 0,
             carpet_area: Number(form.value.carpet_area),
             super_builtup_area: form.value.super_builtup_area ? Number(form.value.super_builtup_area) : undefined,
-            furnishing_status: form.value.furnishing_status,
-            floor_no: form.value.floor_no || '1',
-            total_floors: form.value.total_floors ? Number(form.value.total_floors) : 10,
+            furnishing_status: isPlot.value ? 'Unfurnished' : form.value.furnishing_status,
+            floor_no: isPlot.value ? undefined : (form.value.floor_no || '1'),
+            total_floors: form.value.total_floors ? Number(form.value.total_floors) : (isPlot.value ? 2 : 10),
             facing: form.value.facing || 'East',
             construction_status: form.value.construction_status,
             expected_price: Number(form.value.expected_price),
@@ -1666,5 +2048,6 @@ onMounted(() => {
     checkAuth();
     recalculatePerSqFt();
     autoGenerateTitle();
+    autoGenerateDescription();
 });
 </script>

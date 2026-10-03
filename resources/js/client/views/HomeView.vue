@@ -80,14 +80,21 @@
                         </div>
 
                         <!-- Locality / Builder Search Box -->
-                        <div class="md:col-span-6">
+                        <div class="md:col-span-6 relative">
                             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Search Locality, Project or Builder</label>
                             <div class="relative">
                                 <input
                                     v-model="searchForm.keyword"
                                     type="text"
-                                    placeholder="e.g. Golf Course Road, Whitefield, Bandra, Sector 150..."
-                                    class="w-full bg-slate-50 border border-slate-200 text-xs font-semibold py-2.5 pl-9 pr-20 rounded-xl outline-none focus:border-blue-500 transition"
+                                    placeholder="Search City, Locality, Project or Title..."
+                                    @input="onKeywordInput"
+                                    @focus="onKeywordFocus"
+                                    @blur="closeSuggestionsWithDelay"
+                                    @keydown.down.prevent="navigateSuggestions(1)"
+                                    @keydown.up.prevent="navigateSuggestions(-1)"
+                                    @keydown.enter="selectActiveSuggestionOrSubmit"
+                                    @keydown.esc="isSuggestionsOpen = false"
+                                    class="w-full bg-slate-50 border border-slate-200 text-xs font-semibold py-2.5 pl-9 pr-20 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition"
                                 />
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -115,6 +122,46 @@
                                         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     </button>
                                 </div>
+                            </div>
+
+                            <!-- Autocomplete Suggestions Dropdown -->
+                            <div
+                                v-if="isSuggestionsOpen && (suggestions.length > 0 || isSuggestionsLoading)"
+                                class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 text-left animate-fadeIn max-h-[360px] overflow-y-auto divide-y divide-slate-100"
+                            >
+                                <div v-if="isSuggestionsLoading" class="p-3 text-xs text-slate-500 flex items-center gap-2 bg-slate-50">
+                                    <svg class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span>Finding matching cities, apartments &amp; properties...</span>
+                                </div>
+
+                                <button
+                                    v-for="(item, idx) in suggestions"
+                                    :key="idx"
+                                    type="button"
+                                    @mousedown.prevent="handleSelectSuggestion(item)"
+                                    @mouseenter="activeSuggestionIndex = idx"
+                                    class="w-full px-4 py-2.5 flex items-center justify-between text-left transition cursor-pointer"
+                                    :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
+                                >
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="text-base shrink-0">{{ item.icon }}</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold truncate flex items-center gap-2">
+                                                <span class="truncate">{{ item.title }}</span>
+                                                <span
+                                                    class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shrink-0"
+                                                    :class="item.type === 'city' ? 'bg-indigo-100 text-indigo-700' : item.type === 'project' ? 'bg-emerald-100 text-emerald-700' : item.type === 'property' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
+                                                >
+                                                    {{ item.category }}
+                                                </span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-500 truncate mt-0.5">
+                                                {{ item.subtitle }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-blue-600 font-bold shrink-0 ml-2">Select &rarr;</span>
+                                </button>
                             </div>
                         </div>
 
@@ -234,7 +281,14 @@
                         </span>
 
                         <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between">
-                            <span class="text-white font-extrabold text-sm">{{ prop.bhk }}</span>
+                            <span class="text-white font-extrabold text-sm">
+                                <template v-if="isResidentialType(prop.category) && prop.bedrooms > 0">
+                                    {{ prop.bedrooms }} BHK
+                                </template>
+                                <template v-else>
+                                    {{ prop.category }}
+                                </template>
+                            </span>
                             <span class="text-slate-300 text-[11px] font-medium">{{ prop.area }} sq.ft</span>
                         </div>
                     </div>
@@ -476,6 +530,8 @@ import { useRouter } from 'vue-router';
 import { useVoiceSearch } from '../composables/useVoiceSearch';
 import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import { useSearchSuggestions } from '../composables/useSearchSuggestions';
+import { isResidentialType } from '../constants/propertyConstants';
 
 const router = useRouter();
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
@@ -491,16 +547,96 @@ const {
     bannerBadge,
     bannerLink,
 } = useCompanyBranding();
+const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
 
 const activeTab = ref('buy');
 const selectedBhks = ref([]);
 const verifiedOnly = ref(false);
+const isSuggestionsOpen = ref(false);
+const activeSuggestionIndex = ref(-1);
 
 const searchForm = ref({
     city: currentCity.value || 'Ahmedabad',
     keyword: '',
     budget: '',
 });
+
+const onKeywordInput = () => {
+    activeSuggestionIndex.value = -1;
+    if (searchForm.value.keyword.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(searchForm.value.keyword, searchForm.value.city);
+    } else {
+        isSuggestionsOpen.value = false;
+        clearSuggestions();
+    }
+};
+
+const onKeywordFocus = () => {
+    if (searchForm.value.keyword.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(searchForm.value.keyword, searchForm.value.city);
+    }
+};
+
+const closeSuggestionsWithDelay = () => {
+    setTimeout(() => {
+        isSuggestionsOpen.value = false;
+    }, 200);
+};
+
+const navigateSuggestions = (dir) => {
+    if (!suggestions.value.length) return;
+    activeSuggestionIndex.value = (activeSuggestionIndex.value + dir + suggestions.value.length) % suggestions.value.length;
+};
+
+const selectActiveSuggestionOrSubmit = () => {
+    if (isSuggestionsOpen.value && activeSuggestionIndex.value >= 0 && suggestions.value[activeSuggestionIndex.value]) {
+        handleSelectSuggestion(suggestions.value[activeSuggestionIndex.value]);
+    } else {
+        handleSearch();
+    }
+};
+
+const handleSelectSuggestion = (item) => {
+    isSuggestionsOpen.value = false;
+    clearSuggestions();
+
+    if (item.type === 'property' && item.slug) {
+        router.push(`/property/${item.slug}`);
+        return;
+    }
+
+    if (item.type === 'city') {
+        setCity(item.city);
+        searchForm.value.city = item.city;
+        searchForm.value.keyword = '';
+        router.push({
+            path: '/listings',
+            query: {
+                type: activeTab.value,
+                city: item.city,
+            },
+        });
+        return;
+    }
+
+    if (item.city) {
+        setCity(item.city);
+        searchForm.value.city = item.city;
+    }
+    searchForm.value.keyword = item.keyword || item.title;
+
+    router.push({
+        path: '/listings',
+        query: {
+            type: activeTab.value,
+            city: item.city || searchForm.value.city,
+            keyword: item.keyword || item.title,
+            bhk: selectedBhks.value.length > 0 ? selectedBhks.value.map(b => b.replace(/\D/g, '')).join(',') : undefined,
+        },
+    });
+};
 
 watch(currentCity, (newCity) => {
     if (newCity) searchForm.value.city = newCity;
@@ -703,23 +839,28 @@ const fetchHomeProperties = async () => {
         if (res.ok) {
             const data = await res.json();
             const list = data.data || data || [];
-            apiProperties.value = list.map(p => ({
-                id: p.id,
-                slug: p.slug || String(p.id),
-                title: p.title,
-                category: p.property_type || 'Apartment',
-                bhk: `${p.bedrooms || 1} BHK`,
-                price: formatPriceWords(p.expected_price),
-                rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')}/sq.ft` : '',
-                locality: p.locality || '',
-                city: p.city || '',
-                area: p.carpet_area ? String(p.carpet_area) : (p.super_builtup_area ? String(p.super_builtup_area) : '1,200'),
-                possession: p.construction_status || 'Ready to Move',
-                badge: p.is_verified ? 'Verified' : 'Owner',
-                photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
-                photos: p.photos || [],
-                sellerType: p.user_type || (p.user ? p.user.role : 'Owner'),
-            }));
+            apiProperties.value = list.map(p => {
+                const isRes = isResidentialType(p.property_type);
+                const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
+                return {
+                    id: p.id,
+                    slug: p.slug || String(p.id),
+                    title: p.title,
+                    category: p.property_type || 'Apartment',
+                    bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
+                    bedrooms: bedrooms,
+                    price: formatPriceWords(p.expected_price),
+                    rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')}/sq.ft` : '',
+                    locality: p.locality || '',
+                    city: p.city || '',
+                    area: p.carpet_area ? String(p.carpet_area) : (p.super_builtup_area ? String(p.super_builtup_area) : '1,200'),
+                    possession: p.construction_status || 'Ready to Move',
+                    badge: p.is_verified ? 'Verified' : 'Owner',
+                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
+                    photos: p.photos || [],
+                    sellerType: p.user_type || (p.user ? p.user.role : 'Owner'),
+                };
+            });
         }
     } catch (err) {
         console.warn('Could not fetch home properties:', err);

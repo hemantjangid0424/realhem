@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PropertyFor;
 use Database\Factories\PropertyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -58,11 +59,17 @@ class Property extends Model
     {
         static::created(function (Property $property) {
             if (empty($property->slug)) {
+                $propertyFor = $property->property_for instanceof PropertyFor
+                    ? $property->property_for
+                    : PropertyFor::tryFromQuery($property->property_for);
+
+                $forLabel = $propertyFor ? strtolower($propertyFor->label()) : 'sale';
+
                 $base = Str::slug(implode(' ', array_filter([
                     $property->bedrooms ? $property->bedrooms.' bhk' : null,
                     $property->property_type,
                     'for',
-                    $property->property_for === 'Sell' ? 'sale' : strtolower($property->property_for),
+                    $forLabel,
                     'in',
                     $property->locality,
                     $property->city,
@@ -91,6 +98,7 @@ class Property extends Model
     protected function casts(): array
     {
         return [
+            'property_for' => PropertyFor::class,
             'amenities' => 'array',
             'photos' => 'array',
             'price_negotiable' => 'boolean',

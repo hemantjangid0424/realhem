@@ -65,9 +65,9 @@
 
                         <!-- For Sale / Rent badge -->
                         <div class="absolute top-3 right-3 z-10">
-                            <span :class="property.property_for === 'Sell' ? 'bg-emerald-600/90 text-white' : 'bg-orange-500/90 text-white'"
+                            <span :class="property.property_for === PROPERTY_FOR.SELL ? 'bg-emerald-600/90 text-white' : 'bg-orange-500/90 text-white'"
                                 class="px-2.5 py-1 rounded-xl font-black text-[11px] uppercase tracking-wide backdrop-blur-sm">
-                                For {{ property.property_for === 'Sell' ? 'Sale' : property.property_for }}
+                                For {{ getPropertyIntentLabel(property.property_for) }}
                             </span>
                         </div>
 
@@ -124,18 +124,48 @@
 
                         <!-- Key Specs -->
                         <div class="grid grid-cols-3 gap-3 text-center border-b border-slate-100 pb-4">
-                            <div class="space-y-1">
-                                <div class="text-lg font-black text-slate-900">{{ property.bedrooms }}</div>
-                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Beds</div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="text-lg font-black text-slate-900">{{ property.bathrooms }}</div>
-                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Baths</div>
-                            </div>
-                            <div class="space-y-1">
-                                <div class="text-lg font-black text-slate-900">{{ property.carpet_area }}</div>
-                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">sq.ft</div>
-                            </div>
+                            <template v-if="isResidential">
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.bedrooms }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Beds</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.bathrooms }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Baths</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.carpet_area }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">sq.ft</div>
+                                </div>
+                            </template>
+                            <template v-else-if="isCommercial">
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.carpet_area }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">sq.ft Area</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.bathrooms > 0 ? property.bathrooms : '1' }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Washroom</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-xs font-black text-slate-900 truncate mt-1">{{ property.furnishing_status || 'Bare Shell' }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Furnishing</div>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.carpet_area }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Plot Area</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-lg font-black text-slate-900">{{ property.facing || 'East' }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Facing</div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="text-xs font-black text-slate-900 truncate mt-1">{{ property.construction_status || 'Ready' }}</div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Status</div>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Seller Info -->
@@ -182,10 +212,11 @@
                 <div class="flex items-start justify-between gap-4 flex-wrap">
                     <div>
                         <h1 class="text-xl font-black text-slate-900 leading-tight">{{ property.title }}</h1>
-                        <p class="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                        <p class="text-sm text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
                             <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span>
                                 {{ [property.address, property.sub_locality, property.locality, property.city].filter(Boolean).join(', ') }}
+                                <strong v-if="property.pincode" class="text-slate-800 font-bold"> - {{ property.pincode }}</strong>
                                 <span v-if="property.landmark" class="text-slate-400"> · Near {{ property.landmark }}</span>
                             </span>
                         </p>
@@ -241,6 +272,33 @@
                                 <span>{{ amenityIcon(amenity) }}</span>
                                 <span>{{ amenity }}</span>
                             </span>
+                        </div>
+                    </div>
+
+                    <!-- Map Location & Neighborhood Pin -->
+                    <div v-if="property.latitude && property.longitude" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Map &amp; Neighborhood Location</h2>
+                            <span class="text-xs font-mono font-bold text-slate-500">{{ Number(property.latitude).toFixed(4) }}° N, {{ Number(property.longitude).toFixed(4) }}° E</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                    <span>📍</span>
+                                    <span>{{ property.project_name ? `${property.project_name}, ` : '' }}{{ property.locality }}, {{ property.city }}{{ property.pincode ? ' - ' + property.pincode : '' }}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-500">
+                                    Precision geocoded location coordinates saved for this property.
+                                </div>
+                            </div>
+                            <a
+                                :href="`https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 shrink-0"
+                            >
+                                <span>Open in Maps &rarr;</span>
+                            </a>
                         </div>
                     </div>
 
@@ -336,6 +394,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import {
+    PROPERTY_FOR,
+    isResidentialType,
+    isCommercialType,
+    isPlotType,
+    getPropertyIntentLabel,
+} from '../constants/propertyConstants';
 
 const { companyName, brandPrimaryColor, brandAccentColor } = useCompanyBranding();
 
@@ -400,22 +465,49 @@ const listedDate = computed(() => {
     });
 });
 
+const isResidential = computed(() => {
+    if (!property.value?.property_type) return true;
+    return isResidentialType(property.value.property_type);
+});
+
+const isCommercial = computed(() => {
+    if (!property.value?.property_type) return false;
+    return isCommercialType(property.value.property_type);
+});
+
+const isPlot = computed(() => {
+    if (!property.value?.property_type) return false;
+    return isPlotType(property.value.property_type);
+});
+
 const propertySpecs = computed(() => {
     if (!property.value) return [];
     const p = property.value;
 
-    return [
-        { label: 'Bedrooms', value: `${p.bedrooms} BHK` },
-        { label: 'Bathrooms', value: p.bathrooms },
-        { label: 'Balconies', value: p.balconies || '—' },
-        { label: 'Carpet Area', value: p.carpet_area ? `${Number(p.carpet_area).toLocaleString('en-IN')} sq.ft` : '—' },
-        { label: 'Built-up Area', value: p.super_builtup_area ? `${Number(p.super_builtup_area).toLocaleString('en-IN')} sq.ft` : '—' },
-        { label: 'Floor', value: p.floor_no && p.total_floors ? `${p.floor_no} of ${p.total_floors}` : (p.floor_no || '—') },
-        { label: 'Furnishing', value: p.furnishing_status || '—' },
-        { label: 'Facing', value: p.facing || '—' },
-        { label: 'Status', value: p.construction_status || '—' },
-        { label: 'Project', value: p.project_name || '—' },
-    ].filter((s) => s.value && s.value !== '—');
+    const specs = [];
+    if (isResidential.value) {
+        if (p.bedrooms) specs.push({ label: 'Bedrooms', value: `${p.bedrooms} BHK` });
+        if (p.bathrooms) specs.push({ label: 'Bathrooms', value: p.bathrooms });
+        if (p.balconies) specs.push({ label: 'Balconies', value: p.balconies });
+    } else if (isCommercial.value) {
+        specs.push({ label: 'Washroom', value: p.bathrooms > 0 ? `${p.bathrooms} Washroom(s)` : 'Available / Shared' });
+    }
+
+    if (p.carpet_area) specs.push({ label: isPlot.value ? 'Plot Area' : 'Carpet Area', value: `${Number(p.carpet_area).toLocaleString('en-IN')} sq.ft` });
+    if (p.super_builtup_area) specs.push({ label: 'Super Built-up Area', value: `${Number(p.super_builtup_area).toLocaleString('en-IN')} sq.ft` });
+    if (!isPlot.value && (p.floor_no || p.total_floors)) {
+        specs.push({ label: 'Floor', value: p.floor_no && p.total_floors ? `${p.floor_no} of ${p.total_floors}` : (p.floor_no || '—') });
+    }
+    if (!isPlot.value && p.furnishing_status) specs.push({ label: 'Furnishing', value: p.furnishing_status });
+    if (p.facing) specs.push({ label: 'Facing', value: p.facing });
+    if (p.construction_status) specs.push({ label: isPlot.value ? 'Possession' : 'Status', value: p.construction_status });
+    if (p.project_name) specs.push({ label: 'Project / Society', value: p.project_name });
+    if (p.pincode) specs.push({ label: 'Pincode', value: p.pincode });
+    if (p.latitude && p.longitude) {
+        specs.push({ label: 'Coordinates', value: `${Number(p.latitude).toFixed(4)}° N, ${Number(p.longitude).toFixed(4)}° E` });
+    }
+
+    return specs.filter((s) => s.value && s.value !== '—');
 });
 
 const prevPhoto = () => {

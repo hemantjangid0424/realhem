@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\PropertyFor;
+use App\Enums\PropertyType;
 use App\Http\Controllers\Controller;
+use App\Models\City;
+use App\Models\Locality;
 use App\Models\Property;
+use App\Services\GeocodingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PropertyController extends Controller
 {
@@ -19,7 +25,8 @@ class PropertyController extends Controller
     private const INDEX_COLUMNS = [
         'id', 'user_id', 'user_type', 'property_for', 'property_type',
         'title', 'slug', 'description', 'project_name', 'city', 'locality',
-        'sub_locality', 'landmark', 'bedrooms', 'bathrooms', 'balconies',
+        'sub_locality', 'address', 'landmark', 'pincode', 'latitude', 'longitude',
+        'bedrooms', 'bathrooms', 'balconies',
         'carpet_area', 'super_builtup_area', 'furnishing_status', 'floor_no',
         'total_floors', 'facing', 'construction_status', 'expected_price',
         'price_per_sqft', 'maintenance_charge', 'price_negotiable',
@@ -40,16 +47,10 @@ class PropertyController extends Controller
             $query->where('city', $request->query('city'));
         }
 
-        // Property For (Sell, Rent, PG)
-        if ($request->filled('property_for')) {
-            $query->where('property_for', $request->query('property_for'));
-        } elseif ($request->filled('type')) {
-            $type = strtolower($request->query('type'));
-            if ($type === 'rent') {
-                $query->where('property_for', 'Rent');
-            } elseif ($type === 'buy' || $type === 'sale') {
-                $query->where('property_for', 'Sell');
-            }
+        // Property For (Sell, Rent, PG) - normalized via PropertyFor enum
+        $propertyFor = PropertyFor::tryFromQuery($request->query('property_for') ?? $request->query('type'));
+        if ($propertyFor) {
+            $query->where('property_for', $propertyFor->value);
         }
 
         // Bedrooms filter (e.g. 1,2,3 or comma-separated)
@@ -158,7 +159,7 @@ class PropertyController extends Controller
         $validated = $request->validate([
             // Step 1: Basic & Location Details
             'user_type' => ['nullable', 'string', 'in:Owner,Agent,Builder'],
-            'property_for' => ['required', 'string', 'in:Sell,Rent,PG'],
+            'property_for' => ['required', Rule::enum(PropertyFor::class)],
             'property_type' => ['required', 'string', 'max:100'],
             'city' => ['required', 'string', 'max:100'],
             'locality' => ['required', 'string', 'max:150'],
@@ -166,21 +167,23 @@ class PropertyController extends Controller
             'project_name' => ['nullable', 'string', 'max:150'],
             'address' => ['nullable', 'string'],
             'landmark' => ['nullable', 'string', 'max:150'],
+            'pincode' => ['nullable', 'string', 'max:10'],
+            'latitude' => ['nullable', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
 
             // Step 2: Property Profile & Layout
-            'bedrooms' => ['required', 'integer', 'min:1', 'max:20'],
-            'bathrooms' => ['required', 'integer', 'min:1', 'max:20'],
+            'bedrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'bathrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
             'balconies' => ['nullable', 'integer', 'min:0', 'max:10'],
-            'carpet_area' => ['required', 'integer', 'min:50'],
+            'carpet_area' => ['required', 'integer', 'min:10'],
             'super_builtup_area' => ['nullable', 'integer'],
-            'furnishing_status' => ['required', 'string', 'in:Unfurnished,Semi-Furnished,Furnished'],
+            'furnishing_status' => ['nullable', 'string'],
             'floor_no' => ['nullable', 'string', 'max:50'],
             'total_floors' => ['nullable', 'integer', 'min:1', 'max:150'],
             'facing' => ['nullable', 'string', 'max:50'],
-            'construction_status' => ['required', 'string', 'in:Ready to Move,Under Construction,New Launch'],
+            'construction_status' => ['nullable', 'string', 'max:100'],
 
             // Step 3: Photos & Amenities
-            // Photos must be public storage paths or URLs (not base64 blobs)
             'amenities' => ['nullable', 'array'],
             'amenities.*' => ['string', 'max:100'],
             'photos' => ['nullable', 'array', 'max:10'],
@@ -204,8 +207,14 @@ class PropertyController extends Controller
         // Auto-generate title if missing
         $title = $validated['title'] ?? null;
         if (empty($title)) {
-            $for = $validated['property_for'] === 'Sell' ? 'Sale' : $validated['property_for'];
-            $title = "{$validated['bedrooms']} BHK {$validated['property_type']} for {$for} in {$validated['locality']}, {$validated['city']}";
+            $forEnum = PropertyFor::tryFrom($validated['property_for']) ?? PropertyFor::Sell;
+            $forLabel = $forEnum->label();
+            $bedrooms = (int) ($validated['bedrooms'] ?? 0);
+            if (PropertyType::isResidentialType($validated['property_type']) && $bedrooms > 0) {
+                $title = "{$bedrooms} BHK {$validated['property_type']} for {$forLabel} in {$validated['locality']}, {$validated['city']}";
+            } else {
+                $title = "{$carpetArea} sq.ft. {$validated['property_type']} for {$forLabel} in {$validated['locality']}, {$validated['city']}";
+            }
         }
 
         // Determine user type
@@ -217,6 +226,19 @@ class PropertyController extends Controller
                 default => 'Owner',
             };
         }
+
+        // Resolve coordinates and pincode based on locality, project name, city, address
+        $resolvedLocation = GeocodingService::resolve(
+            city: $validated['city'],
+            locality: $validated['locality'],
+            projectName: $validated['project_name'] ?? null,
+            subLocality: $validated['sub_locality'] ?? null,
+            address: $validated['address'] ?? null,
+            landmark: $validated['landmark'] ?? null,
+            pincode: $validated['pincode'] ?? null,
+            latitude: isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+            longitude: isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+        );
 
         // Create the property
         $property = Property::create([
@@ -232,16 +254,19 @@ class PropertyController extends Controller
             'sub_locality' => $validated['sub_locality'] ?? null,
             'address' => $validated['address'] ?? null,
             'landmark' => $validated['landmark'] ?? null,
-            'bedrooms' => (int) $validated['bedrooms'],
-            'bathrooms' => (int) $validated['bathrooms'],
-            'balconies' => isset($validated['balconies']) ? (int) $validated['balconies'] : 1,
+            'pincode' => $resolvedLocation['pincode'],
+            'latitude' => $resolvedLocation['latitude'],
+            'longitude' => $resolvedLocation['longitude'],
+            'bedrooms' => (int) ($validated['bedrooms'] ?? 0),
+            'bathrooms' => (int) ($validated['bathrooms'] ?? 0),
+            'balconies' => isset($validated['balconies']) ? (int) $validated['balconies'] : 0,
             'carpet_area' => $carpetArea,
             'super_builtup_area' => isset($validated['super_builtup_area']) ? (int) $validated['super_builtup_area'] : (int) round($carpetArea * 1.25),
-            'furnishing_status' => $validated['furnishing_status'],
+            'furnishing_status' => $validated['furnishing_status'] ?? 'Unfurnished',
             'floor_no' => $validated['floor_no'] ?? '1',
-            'total_floors' => $validated['total_floors'] ?? 10,
+            'total_floors' => $validated['total_floors'] ?? 1,
             'facing' => $validated['facing'] ?? 'East',
-            'construction_status' => $validated['construction_status'],
+            'construction_status' => $validated['construction_status'] ?? 'Ready to Move',
             'expected_price' => $expectedPrice,
             'price_per_sqft' => $pricePerSqft,
             'maintenance_charge' => isset($validated['maintenance_charge']) ? (int) $validated['maintenance_charge'] : 0,
@@ -284,22 +309,27 @@ class PropertyController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'property_for' => ['required', 'string', 'in:Sell,Rent,PG'],
+            'property_for' => ['required', Rule::enum(PropertyFor::class)],
             'property_type' => ['required', 'string', 'max:100'],
             'city' => ['required', 'string', 'max:100'],
             'locality' => ['required', 'string', 'max:150'],
             'sub_locality' => ['nullable', 'string', 'max:150'],
             'project_name' => ['nullable', 'string', 'max:150'],
-            'bedrooms' => ['required', 'integer', 'min:1', 'max:20'],
-            'bathrooms' => ['required', 'integer', 'min:1', 'max:20'],
+            'address' => ['nullable', 'string'],
+            'landmark' => ['nullable', 'string', 'max:150'],
+            'pincode' => ['nullable', 'string', 'max:10'],
+            'latitude' => ['nullable', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
+            'bedrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'bathrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
             'balconies' => ['nullable', 'integer', 'min:0', 'max:10'],
-            'carpet_area' => ['required', 'integer', 'min:50'],
+            'carpet_area' => ['required', 'integer', 'min:10'],
             'super_builtup_area' => ['nullable', 'integer'],
-            'furnishing_status' => ['required', 'string'],
+            'furnishing_status' => ['nullable', 'string'],
             'floor_no' => ['nullable', 'string', 'max:50'],
             'total_floors' => ['nullable', 'integer'],
             'facing' => ['nullable', 'string'],
-            'construction_status' => ['required', 'string'],
+            'construction_status' => ['nullable', 'string'],
             'expected_price' => ['required', 'numeric', 'min:1000'],
             'maintenance_charge' => ['nullable', 'numeric'],
             'price_negotiable' => ['nullable', 'boolean'],
@@ -313,8 +343,25 @@ class PropertyController extends Controller
         $expectedPrice = (int) $validated['expected_price'];
         $pricePerSqft = $carpetArea > 0 ? (int) round($expectedPrice / $carpetArea) : null;
 
+        $localityChanged = $validated['locality'] !== $property->locality || $validated['city'] !== $property->city;
+
+        $resolvedLocation = GeocodingService::resolve(
+            city: $validated['city'],
+            locality: $validated['locality'],
+            projectName: $validated['project_name'] ?? ($localityChanged ? null : $property->project_name),
+            subLocality: $validated['sub_locality'] ?? ($localityChanged ? null : $property->sub_locality),
+            address: $validated['address'] ?? ($localityChanged ? null : $property->address),
+            landmark: $validated['landmark'] ?? ($localityChanged ? null : $property->landmark),
+            pincode: $validated['pincode'] ?? ($localityChanged ? null : $property->pincode),
+            latitude: isset($validated['latitude']) ? (float) $validated['latitude'] : ($localityChanged ? null : $property->latitude),
+            longitude: isset($validated['longitude']) ? (float) $validated['longitude'] : ($localityChanged ? null : $property->longitude),
+        );
+
         $property->update(array_merge($validated, [
             'price_per_sqft' => $pricePerSqft,
+            'pincode' => $resolvedLocation['pincode'],
+            'latitude' => $resolvedLocation['latitude'],
+            'longitude' => $resolvedLocation['longitude'],
         ]));
 
         return response()->json([
@@ -363,5 +410,126 @@ class PropertyController extends Controller
             'status' => 'success',
             'message' => 'Property listing deleted successfully.',
         ]);
+    }
+
+    /**
+     * Real-time search suggestions for cities, localities, apartment/project names, and matching property titles.
+     */
+    public function suggestions(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        $city = trim((string) $request->query('city', ''));
+
+        if (strlen($q) < 1) {
+            return response()->json([]);
+        }
+
+        $suggestions = collect();
+
+        // 1. Matching Cities
+        $matchingCities = City::query()
+            ->where('name', 'LIKE', "{$q}%")
+            ->orWhere('name', 'LIKE', "%{$q}%")
+            ->take(3)
+            ->get(['id', 'name'])
+            ->map(function ($c) {
+                return [
+                    'type' => 'city',
+                    'category' => 'City',
+                    'icon' => '📍',
+                    'title' => $c->name,
+                    'subtitle' => 'City in India',
+                    'city' => $c->name,
+                    'keyword' => '',
+                ];
+            });
+        $suggestions = $suggestions->concat($matchingCities);
+
+        // 2. Matching Localities / Areas
+        $locQuery = Locality::query()->with('city:id,name');
+        if (! empty($city)) {
+            $locQuery->whereHas('city', fn ($cq) => $cq->where('name', $city));
+        }
+        $matchingLocalities = $locQuery
+            ->where('name', 'LIKE', "%{$q}%")
+            ->take(4)
+            ->get()
+            ->map(function ($loc) {
+                $cityName = $loc->city?->name ?? '';
+
+                return [
+                    'type' => 'locality',
+                    'category' => 'Locality / Area',
+                    'icon' => '🏘️',
+                    'title' => $loc->name,
+                    'subtitle' => $cityName ? "Locality in {$cityName}" : 'Locality',
+                    'city' => $cityName,
+                    'keyword' => $loc->name,
+                ];
+            });
+        $suggestions = $suggestions->concat($matchingLocalities);
+
+        // 3. Matching Projects / Societies / Apartments
+        $projQuery = Property::query()
+            ->whereNotNull('project_name')
+            ->where('project_name', '!=', '')
+            ->where('project_name', 'LIKE', "%{$q}%");
+        if (! empty($city)) {
+            $projQuery->where('city', $city);
+        }
+        $matchingProjects = $projQuery
+            ->select(['project_name', 'locality', 'city'])
+            ->distinct()
+            ->take(4)
+            ->get()
+            ->map(function ($prop) {
+                return [
+                    'type' => 'project',
+                    'category' => 'Apartment / Project',
+                    'icon' => '🏢',
+                    'title' => $prop->project_name,
+                    'subtitle' => implode(', ', array_filter([$prop->locality, $prop->city])),
+                    'city' => $prop->city,
+                    'keyword' => $prop->project_name,
+                ];
+            });
+        $suggestions = $suggestions->concat($matchingProjects);
+
+        // 4. Matching Property Titles / Direct Listings
+        $propQuery = Property::query()
+            ->where(function ($query) use ($q) {
+                $query->where('title', 'LIKE', "%{$q}%")
+                    ->orWhere('locality', 'LIKE', "%{$q}%")
+                    ->orWhere('sub_locality', 'LIKE', "%{$q}%");
+            });
+        if (! empty($city)) {
+            $propQuery->where('city', $city);
+        }
+        $matchingProperties = $propQuery
+            ->select(['id', 'title', 'slug', 'locality', 'city', 'expected_price', 'bedrooms', 'property_type'])
+            ->take(4)
+            ->get()
+            ->map(function ($prop) {
+                $formattedPrice = $prop->expected_price ? '₹ '.(
+                    $prop->expected_price >= 10000000
+                        ? round($prop->expected_price / 10000000, 2).' Cr'
+                        : round($prop->expected_price / 100000, 2).' Lac'
+                ) : '';
+
+                return [
+                    'type' => 'property',
+                    'category' => 'Property Listing',
+                    'icon' => '🏠',
+                    'title' => $prop->title,
+                    'subtitle' => implode(' • ', array_filter([$prop->locality.', '.$prop->city, $formattedPrice])),
+                    'city' => $prop->city,
+                    'keyword' => $prop->title,
+                    'slug' => $prop->slug,
+                    'id' => $prop->id,
+                ];
+            });
+        $suggestions = $suggestions->concat($matchingProperties);
+
+        return response()->json($suggestions->values()->take(10));
     }
 }

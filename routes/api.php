@@ -37,6 +37,7 @@ Route::prefix('locations')->group(function () {
 
 // Property Marketplace APIs
 Route::get('/properties', [PropertyController::class, 'index']);
+Route::get('/search/suggestions', [PropertyController::class, 'suggestions']);
 Route::get('/properties/{property}', [PropertyController::class, 'show']);
 // Slug-based single property lookup (preferred, SEO-friendly)
 Route::get('/property/{property:slug}', [PropertyController::class, 'show']);

@@ -97,10 +97,10 @@
                     <div class="flex-1 max-w-xl mx-2 sm:mx-6 flex items-center justify-center min-w-0">
                         <transition name="nav-fade" mode="out-in">
                             <!-- Sticky Search Bar -->
-                            <div v-if="isScrolled" key="search" class="w-full">
+                            <div v-if="isScrolled" key="search" class="w-full relative">
                                 <form
-                                    @submit.prevent="handleStickySearch"
-                                    class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5 w-full"
+                                    @submit.prevent="selectActiveSuggestionOrSubmit"
+                                    class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5 w-full focus-within:ring-2 focus-within:ring-blue-400/40 transition"
                                 >
                                     <!-- Type selector (Buy, Rent, Commercial, Plots) -->
                                     <div class="relative flex-shrink-0">
@@ -123,7 +123,13 @@
                                     <input
                                         v-model="stickyKeyword"
                                         type="text"
-                                        placeholder="Enter Locality / Project / Landmark"
+                                        placeholder="Search City, Locality, Project or Title..."
+                                        @input="onStickyKeywordInput"
+                                        @focus="onStickyKeywordFocus"
+                                        @blur="closeSuggestionsWithDelay"
+                                        @keydown.down.prevent="navigateSuggestions(1)"
+                                        @keydown.up.prevent="navigateSuggestions(-1)"
+                                        @keydown.esc="isSuggestionsOpen = false"
                                         class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent min-w-0"
                                     />
 
@@ -160,6 +166,46 @@
                                         </button>
                                     </div>
                                 </form>
+
+                                <!-- Autocomplete Suggestions Dropdown -->
+                                <div
+                                    v-if="isSuggestionsOpen && (suggestions.length > 0 || isSuggestionsLoading)"
+                                    class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 text-left animate-fadeIn max-h-[360px] overflow-y-auto divide-y divide-slate-100"
+                                >
+                                    <div v-if="isSuggestionsLoading" class="p-3 text-xs text-slate-500 flex items-center gap-2 bg-slate-50">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span>Finding matching cities, apartments &amp; properties...</span>
+                                    </div>
+
+                                    <button
+                                        v-for="(item, idx) in suggestions"
+                                        :key="idx"
+                                        type="button"
+                                        @mousedown.prevent="handleSelectSuggestion(item)"
+                                        @mouseenter="activeSuggestionIndex = idx"
+                                        class="w-full px-4 py-2.5 flex items-center justify-between text-left transition cursor-pointer"
+                                        :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
+                                    >
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                                            <div class="min-w-0">
+                                                <div class="text-xs font-bold truncate flex items-center gap-2">
+                                                    <span class="truncate">{{ item.title }}</span>
+                                                    <span
+                                                        class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shrink-0"
+                                                        :class="item.type === 'city' ? 'bg-indigo-100 text-indigo-700' : item.type === 'project' ? 'bg-emerald-100 text-emerald-700' : item.type === 'property' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
+                                                    >
+                                                        {{ item.category }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] text-slate-500 truncate mt-0.5">
+                                                    {{ item.subtitle }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] text-blue-600 font-bold shrink-0 ml-2">Select &rarr;</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Default Navigation Links -->
@@ -336,6 +382,7 @@ import AuthModal from './AuthModal.vue';
 import { useVoiceSearch } from '../composables/useVoiceSearch';
 import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import { useSearchSuggestions } from '../composables/useSearchSuggestions';
 
 const router = useRouter();
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
@@ -349,15 +396,92 @@ const {
     brandPrimaryColor,
     brandAccentColor,
 } = useCompanyBranding();
+const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
 
 const isAuthModalOpen = ref(false);
 const currentUser = ref(null);
 const isUserDropdownOpen = ref(false);
 
-// Sticky Header State
+// Sticky Header & Autocomplete Search State
 const isScrolled = ref(false);
 const stickySearchType = ref('buy');
 const stickyKeyword = ref('');
+const isSuggestionsOpen = ref(false);
+const activeSuggestionIndex = ref(-1);
+
+const onStickyKeywordInput = () => {
+    activeSuggestionIndex.value = -1;
+    if (stickyKeyword.value.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(stickyKeyword.value, selectedCity.value);
+    } else {
+        isSuggestionsOpen.value = false;
+        clearSuggestions();
+    }
+};
+
+const onStickyKeywordFocus = () => {
+    if (stickyKeyword.value.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(stickyKeyword.value, selectedCity.value);
+    }
+};
+
+const closeSuggestionsWithDelay = () => {
+    setTimeout(() => {
+        isSuggestionsOpen.value = false;
+    }, 200);
+};
+
+const navigateSuggestions = (dir) => {
+    if (!suggestions.value.length) return;
+    activeSuggestionIndex.value = (activeSuggestionIndex.value + dir + suggestions.value.length) % suggestions.value.length;
+};
+
+const selectActiveSuggestionOrSubmit = () => {
+    if (isSuggestionsOpen.value && activeSuggestionIndex.value >= 0 && suggestions.value[activeSuggestionIndex.value]) {
+        handleSelectSuggestion(suggestions.value[activeSuggestionIndex.value]);
+    } else {
+        handleStickySearch();
+    }
+};
+
+const handleSelectSuggestion = (item) => {
+    isSuggestionsOpen.value = false;
+    clearSuggestions();
+
+    if (item.type === 'property' && item.slug) {
+        router.push(`/property/${item.slug}`);
+        return;
+    }
+
+    if (item.type === 'city') {
+        setCity(item.city);
+        stickyKeyword.value = '';
+        router.push({
+            path: '/listings',
+            query: {
+                type: stickySearchType.value,
+                city: item.city,
+            },
+        });
+        return;
+    }
+
+    if (item.city) {
+        setCity(item.city);
+    }
+    stickyKeyword.value = item.keyword || item.title;
+
+    router.push({
+        path: '/listings',
+        query: {
+            type: stickySearchType.value,
+            city: item.city || selectedCity.value,
+            keyword: item.keyword || item.title,
+        },
+    });
+};
 
 const handleDetectLocation = () => {
     detectLocation((data) => {

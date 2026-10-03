@@ -402,7 +402,7 @@
                                             {{ prop.status || 'Active' }}
                                         </span>
                                         <span class="text-[11px] font-bold text-slate-500">
-                                            {{ prop.property_for === 'Sell' ? 'For Sale' : 'For Rent' }}
+                                            For {{ getPropertyIntentLabel(prop.property_for) }}
                                         </span>
                                         <span class="text-[11px] text-slate-400">&middot;</span>
                                         <span class="text-[11px] text-slate-500 font-mono">#PROP-{{ prop.id }}</span>
@@ -415,9 +415,18 @@
                                     <div class="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
                                         <span>📍 {{ prop.locality }}, {{ prop.city }}</span>
                                         <span>&middot;</span>
-                                        <span>{{ prop.bedrooms }} BHK ({{ prop.carpet_area }} sq.ft)</span>
-                                        <span>&middot;</span>
-                                        <span class="capitalize">{{ prop.furnishing_status }}</span>
+                                        <span>
+                                            <template v-if="isResidentialType(prop.property_type) && prop.bedrooms > 0">
+                                                {{ prop.bedrooms }} BHK ({{ prop.carpet_area }} sq.ft)
+                                            </template>
+                                            <template v-else>
+                                                {{ prop.carpet_area }} sq.ft {{ prop.property_type }}
+                                            </template>
+                                        </span>
+                                        <template v-if="prop.furnishing_status && prop.furnishing_status !== 'Unfurnished'">
+                                            <span>&middot;</span>
+                                            <span class="capitalize">{{ prop.furnishing_status }}</span>
+                                        </template>
                                     </div>
 
                                     <div class="pt-1 flex items-baseline gap-2">
@@ -580,6 +589,7 @@
 import { ref, computed, onMounted } from 'vue';
 import AuthModal from '../components/AuthModal.vue';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import { isResidentialType, getPropertyIntentLabel } from '../constants/propertyConstants';
 
 const { companyName, brandPrimaryColor, brandAccentColor, heroGradient } = useCompanyBranding();
 
