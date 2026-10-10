@@ -1,8 +1,8 @@
 <template>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <!-- Top Search Bar (99acres style with Voice Search & Category Switcher) -->
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 relative">
-            <div class="w-full md:max-w-2xl flex-1 relative">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 relative z-30">
+            <div class="w-full md:max-w-2xl flex-1 relative z-40">
                 <form @submit.prevent="selectActiveSuggestionOrSubmit" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-1.5 flex items-center gap-2 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
                     <!-- Buy/Rent Type Dropdown -->
                     <div class="relative flex-shrink-0 pl-2">

@@ -21,14 +21,16 @@
 
         <!-- 99acres Signature Hero & Search Box -->
         <section
-            class="relative text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden transition-all duration-300"
+            class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300"
             :style="{ background: heroGradient }"
         >
             <!-- Decorative backdrop glow -->
-            <div class="absolute -top-32 -left-32 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute top-1/2 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <div class="absolute -top-32 -left-32 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute top-1/2 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+            </div>
 
-            <div class="max-w-5xl mx-auto relative z-10 text-center space-y-6">
+            <div class="max-w-5xl mx-auto relative z-20 text-center space-y-6">
                 <!-- Portal Badge -->
                 <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-xs font-semibold backdrop-blur-md">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -46,7 +48,7 @@
                 </p>
 
                 <!-- Floating 99acres Style Search Card -->
-                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto">
+                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto relative z-30">
                     <!-- Tab Pills: Buy | Rent | Commercial | Plots | PG/Co-living -->
                     <div class="flex items-center gap-2 border-b border-slate-100 pb-3.5 overflow-x-auto">
                         <button
@@ -65,7 +67,7 @@
                     <!-- Search Input Bar -->
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-4">
                         <!-- Locality, City, Project or Builder Search Box -->
-                        <div class="md:col-span-9 relative">
+                        <div class="md:col-span-9 relative z-40">
                             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Search City, Locality, Project or Builder</label>
                             <div class="relative">
                                 <input
@@ -205,7 +207,7 @@
         </section>
 
         <!-- Quick Real Estate Services Ribbon (99acres style) -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
             <div class="bg-white rounded-2xl shadow-md border border-slate-200/80 p-4 sm:p-5 grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div v-for="service in quickServices" :key="service.title" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition cursor-pointer">
                     <div
