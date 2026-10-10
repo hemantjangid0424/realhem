@@ -64,24 +64,9 @@
 
                     <!-- Search Input Bar -->
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-4">
-                        <!-- City Selector -->
-                        <div class="md:col-span-3">
-                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">City</label>
-                            <div class="relative">
-                                <select
-                                    :value="currentCity"
-                                    @change="handleCityChange"
-                                    class="w-full bg-slate-50 border border-slate-200 text-xs font-bold py-2.5 pl-3 pr-8 rounded-xl outline-none focus:border-blue-500 transition cursor-pointer"
-                                >
-                                    <option class="text-blue-600 font-bold bg-blue-50" value="__DETECT__">📍 Detect My Location</option>
-                                    <option v-for="city in majorCities" :key="city" :value="city">{{ city }}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Locality / Builder Search Box -->
-                        <div class="md:col-span-6 relative">
-                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Search Locality, Project or Builder</label>
+                        <!-- Locality, City, Project or Builder Search Box -->
+                        <div class="md:col-span-9 relative">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Search City, Locality, Project or Builder</label>
                             <div class="relative">
                                 <input
                                     v-model="searchForm.keyword"
@@ -94,7 +79,7 @@
                                     @keydown.up.prevent="navigateSuggestions(-1)"
                                     @keydown.enter="selectActiveSuggestionOrSubmit"
                                     @keydown.esc="isSuggestionsOpen = false"
-                                    class="w-full bg-slate-50 border border-slate-200 text-xs font-semibold py-2.5 pl-9 pr-20 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition"
+                                    class="w-full bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold py-2.5 pl-9 pr-20 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition"
                                 />
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -556,7 +541,7 @@ const isSuggestionsOpen = ref(false);
 const activeSuggestionIndex = ref(-1);
 
 const searchForm = ref({
-    city: currentCity.value || 'Ahmedabad',
+    city: '',
     keyword: '',
     budget: '',
 });
@@ -565,7 +550,7 @@ const onKeywordInput = () => {
     activeSuggestionIndex.value = -1;
     if (searchForm.value.keyword.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(searchForm.value.keyword, searchForm.value.city);
+        fetchSuggestions(searchForm.value.keyword, '');
     } else {
         isSuggestionsOpen.value = false;
         clearSuggestions();
@@ -575,7 +560,7 @@ const onKeywordInput = () => {
 const onKeywordFocus = () => {
     if (searchForm.value.keyword.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(searchForm.value.keyword, searchForm.value.city);
+        fetchSuggestions(searchForm.value.keyword, '');
     }
 };
 
@@ -631,25 +616,11 @@ const handleSelectSuggestion = (item) => {
         path: '/listings',
         query: {
             type: activeTab.value,
-            city: item.city || searchForm.value.city,
+            city: item.city || searchForm.value.city || undefined,
             keyword: item.keyword || item.title,
             bhk: selectedBhks.value.length > 0 ? selectedBhks.value.map(b => b.replace(/\D/g, '')).join(',') : undefined,
         },
     });
-};
-
-watch(currentCity, (newCity) => {
-    if (newCity) searchForm.value.city = newCity;
-});
-
-const handleCityChange = (e) => {
-    const val = e.target.value;
-    if (val === '__DETECT__') {
-        useCurrentLocation();
-    } else {
-        setCity(val);
-        searchForm.value.city = val;
-    }
 };
 
 const openVoiceSearchHero = () => {
@@ -735,15 +706,15 @@ const useCurrentLocation = () => {
 };
 
 const handleSearch = () => {
-    const raw = searchForm.value.keyword || '';
+    const raw = (searchForm.value.keyword || '').trim();
     const parsed = parseVoiceQuery(raw, {
         defaultType: activeTab.value,
-        defaultCity: searchForm.value.city,
+        defaultCity: '',
     });
 
-    let targetCity = searchForm.value.city;
+    let targetCity = parsed.hasCity ? parsed.city : (searchForm.value.city || undefined);
     let targetBhks = [...selectedBhks.value];
-    let targetKeyword = searchForm.value.keyword;
+    let targetKeyword = raw;
     let targetType = activeTab.value;
 
     if (parsed.hasCity && parsed.city) {
@@ -771,10 +742,10 @@ const handleSearch = () => {
         path: '/listings',
         query: {
             type: targetType,
-            city: targetCity,
+            city: targetCity || undefined,
             keyword: targetKeyword || undefined,
             budget: searchForm.value.budget || undefined,
-            bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
+            bhk: targetBhks.length > 0 ? targetBhks.map(b => b.replace(/\D/g, '')).filter(Boolean).join(',') : undefined,
         },
     });
 };

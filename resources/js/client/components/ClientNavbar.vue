@@ -64,33 +64,6 @@
                                 </span>
                             </div>
                         </router-link>
-
-                        <!-- City / Area Selector Dropdown -->
-                        <div class="relative hidden sm:block">
-                            <div
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                                :class="isScrolled ? 'text-white/95 hover:bg-white/10' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200'"
-                            >
-                                <span v-if="isScrolled" class="capitalize font-normal text-white/80">{{ stickySearchType }} in</span>
-                                <select
-                                    :value="selectedCity"
-                                    @change="handleCitySelectChange"
-                                    class="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-4 appearance-none"
-                                    :class="isScrolled ? 'text-white' : 'text-slate-800'"
-                                >
-                                    <option class="text-blue-600 font-bold bg-blue-50" value="__DETECT__">📍 Detect My Location</option>
-                                    <option class="text-slate-900 bg-white" value="Delhi NCR">Delhi NCR</option>
-                                    <option class="text-slate-900 bg-white" value="Ahmedabad">Ahmedabad</option>
-                                    <option class="text-slate-900 bg-white" value="Mumbai">Mumbai</option>
-                                    <option class="text-slate-900 bg-white" value="Bangalore">Bangalore</option>
-                                    <option class="text-slate-900 bg-white" value="Pune">Pune</option>
-                                    <option class="text-slate-900 bg-white" value="Hyderabad">Hyderabad</option>
-                                    <option class="text-slate-900 bg-white" value="Chennai">Chennai</option>
-                                    <option class="text-slate-900 bg-white" value="Kolkata">Kolkata</option>
-                                </select>
-                                <svg class="w-3.5 h-3.5 -ml-3 pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- CENTER: STICKY SEARCH BAR OR NAV LINKS (Smooth Crossfade with Fixed Layout) -->
@@ -413,7 +386,7 @@ const onStickyKeywordInput = () => {
     activeSuggestionIndex.value = -1;
     if (stickyKeyword.value.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(stickyKeyword.value, selectedCity.value);
+        fetchSuggestions(stickyKeyword.value, '');
     } else {
         isSuggestionsOpen.value = false;
         clearSuggestions();
@@ -423,7 +396,7 @@ const onStickyKeywordInput = () => {
 const onStickyKeywordFocus = () => {
     if (stickyKeyword.value.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(stickyKeyword.value, selectedCity.value);
+        fetchSuggestions(stickyKeyword.value, '');
     }
 };
 

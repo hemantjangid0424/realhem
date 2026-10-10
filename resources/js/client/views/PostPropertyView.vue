@@ -245,7 +245,7 @@
                         <div v-if="currentStep > 1" class="flex items-center justify-between pb-2 border-b border-slate-100">
                             <button
                                 type="button"
-                                @click="goToStep(currentStep - 1)"
+                                @click="handleTopBack"
                                 class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer transition"
                             >
                                 <span>&larr;</span>
@@ -348,43 +348,150 @@
                         <!-- ============================================== -->
                         <div v-else-if="currentStep === 2" class="space-y-6 animate-fadeIn">
                             <div>
-                                <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Location Details</h2>
-                                <p class="text-xs text-slate-500 mt-1">Where is your property located?</p>
+                                <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Where is your property located?</h2>
+                                <p class="text-xs text-slate-500 mt-1">An accurate location helps you connect with the right buyers</p>
                             </div>
 
-                            <!-- City & Locality -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">City <span class="text-rose-500">*</span></label>
-                                    <select
-                                        v-model="form.city"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                            <!-- STAGE 1: CITY SELECTION (Matches 99acres Screenshot 1) -->
+                            <div v-if="!isCityConfirmed" class="space-y-6">
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-[11px] text-slate-500 font-semibold">City</label>
+                                        <button
+                                            type="button"
+                                            @click="pickCurrentLocation"
+                                            :disabled="isDetectingLocation"
+                                            class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer disabled:opacity-50 transition"
+                                        >
+                                            <span v-if="isDetectingLocation" class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                                            <span v-else class="text-sm">📍</span>
+                                            <span>{{ isDetectingLocation ? 'Detecting...' : 'Pick my location' }}</span>
+                                        </button>
+                                    </div>
+                                    <div class="relative mt-1">
+                                        <input
+                                            v-model="form.city"
+                                            @input="onCityInput"
+                                            @focus="onCityInput"
+                                            @keydown.enter.prevent="continueLocationStage1"
+                                            type="text"
+                                            placeholder="Enter your city (e.g. Ahmedabad, Delhi NCR, Mumbai)"
+                                            autocomplete="off"
+                                            class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent placeholder-slate-400"
+                                        />
+                                        <div v-if="isCityLoading" class="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Google Places City Suggestions Dropdown -->
+                                    <div
+                                        v-if="showCitySuggestions && citySuggestions.length > 0"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
                                     >
-                                        <option value="Ahmedabad">Ahmedabad</option>
-                                        <option value="Delhi NCR">Delhi NCR</option>
-                                        <option value="Mumbai">Mumbai</option>
-                                        <option value="Bangalore">Bangalore</option>
-                                        <option value="Pune">Pune</option>
-                                        <option value="Hyderabad">Hyderabad</option>
-                                        <option value="Chennai">Chennai</option>
-                                        <option value="Kolkata">Kolkata</option>
-                                    </select>
+                                        <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
+                                            <span>Select City</span>
+                                            <button type="button" @click="showCitySuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
+                                        </div>
+                                        <button
+                                            v-for="(item, idx) in citySuggestions"
+                                            :key="idx"
+                                            type="button"
+                                            @click="selectCity(item)"
+                                            class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                        >
+                                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                                <span class="text-sm shrink-0">🏙️</span>
+                                                <div class="truncate">
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.city }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.state || item.display }}</p>
+                                                </div>
+                                            </div>
+                                            <span v-if="item.state" class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">{{ item.state }}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="relative">
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Locality / Area <span class="text-rose-500">*</span></label>
-                                    <div class="relative">
+
+                                <div>
+                                    <button
+                                        type="button"
+                                        @click="continueLocationStage1"
+                                        class="py-3 px-8 rounded-xl bg-[#005ca8] hover:bg-[#004e8f] text-white font-bold text-sm shadow-md shadow-blue-500/20 transition cursor-pointer"
+                                    >
+                                        Continue
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- STAGE 2: EXPANDED 5 LOCATION FIELDS (Matches 99acres Screenshot 2) -->
+                            <div v-else class="space-y-4">
+                                <!-- 1. City (with background state detection) -->
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-[11px] text-slate-500 font-semibold">City <span class="text-rose-500">*</span></label>
+                                        <span v-if="form.state" class="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                                            State: {{ form.state }}
+                                        </span>
+                                    </div>
+                                    <div class="relative mt-1">
+                                        <input
+                                            v-model="form.city"
+                                            @input="onCityInput"
+                                            @focus="onCityInput"
+                                            type="text"
+                                            placeholder="Enter city"
+                                            autocomplete="off"
+                                            class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent"
+                                        />
+                                        <div v-if="isCityLoading" class="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- City Suggestions Dropdown in Stage 2 -->
+                                    <div
+                                        v-if="showCitySuggestions && citySuggestions.length > 0"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                    >
+                                        <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
+                                            <span>Select City</span>
+                                            <button type="button" @click="showCitySuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
+                                        </div>
+                                        <button
+                                            v-for="(item, idx) in citySuggestions"
+                                            :key="idx"
+                                            type="button"
+                                            @click="selectCity(item)"
+                                            class="w-full text-left px-3.5 py-2 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                        >
+                                            <div class="flex items-center gap-2 overflow-hidden">
+                                                <span class="text-sm shrink-0">🏙️</span>
+                                                <div class="truncate">
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.city }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.state || item.display }}</p>
+                                                </div>
+                                            </div>
+                                            <span v-if="item.state" class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">{{ item.state }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Locality (Google Places search) -->
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <label class="block text-[11px] text-slate-500 font-semibold">Locality <span class="text-rose-500">*</span></label>
+                                    <div class="relative mt-1">
                                         <input
                                             v-model="form.locality"
                                             @input="onLocalityInput"
                                             @focus="onLocalityInput"
                                             type="text"
-                                            placeholder="e.g. SG Highway, Vastral, Bopal, Whitefield"
+                                            placeholder="Enter locality (e.g. Chandkheda, Vastral, Whitefield)"
                                             required
                                             autocomplete="off"
-                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                                            class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent"
                                         />
-                                        <div v-if="isLocalityLoading" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                            <div class="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        <div v-if="isLocalityLoading" class="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                                         </div>
                                     </div>
 
@@ -402,70 +509,99 @@
                                             :key="idx"
                                             type="button"
                                             @click="selectLocalitySuggestion(item)"
-                                            class="w-full text-left px-3 py-2 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                            class="w-full text-left px-3 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2 overflow-hidden">
-                                                <span class="text-sm flex-shrink-0">📍</span>
+                                                <span class="text-sm shrink-0">📍</span>
                                                 <div class="truncate">
                                                     <p class="text-xs font-bold text-slate-800 truncate">{{ item.locality || item.name }}</p>
                                                     <p class="text-[10px] text-slate-400 truncate">{{ item.display || item.city }}</p>
                                                 </div>
                                             </div>
-                                            <span v-if="item.pincode" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-medium flex-shrink-0">{{ item.pincode }}</span>
+                                            <span v-if="item.pincode" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-medium shrink-0">{{ item.pincode }}</span>
                                         </button>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Project / Society Name & Landmark -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Society / Project Name</label>
+                                <!-- 3. Sub Locality (Optional) -->
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <label class="block text-[11px] text-slate-500 font-semibold">Sub Locality (Optional)</label>
                                     <input
-                                        v-model="form.project_name"
+                                        v-model="form.sub_locality"
                                         type="text"
-                                        placeholder="e.g. The Metropark, Trinay Anagh, Godrej Garden City"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                                        placeholder="e.g. Near Metro Station, Sector 2"
+                                        autocomplete="off"
+                                        class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent mt-1"
                                     />
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1">Landmark / Sub-locality</label>
+
+                                <!-- 4. Apartment / Society (Google Places project search) -->
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <label class="block text-[11px] text-slate-500 font-semibold">Apartment / Society</label>
+                                    <div class="relative mt-1">
+                                        <input
+                                            v-model="form.project_name"
+                                            @input="onProjectInput"
+                                            @focus="onProjectInput"
+                                            type="text"
+                                            placeholder="e.g. Samanvay Residency, Godrej Garden City"
+                                            autocomplete="off"
+                                            class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent"
+                                        />
+                                        <div v-if="isProjectLoading" class="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Project Suggestions Dropdown -->
+                                    <div
+                                        v-if="showProjectSuggestions && projectSuggestions.length > 0"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                    >
+                                        <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
+                                            <span>Suggested Societies / Projects</span>
+                                            <button type="button" @click="showProjectSuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
+                                        </div>
+                                        <button
+                                            v-for="(item, idx) in projectSuggestions"
+                                            :key="idx"
+                                            type="button"
+                                            @click="selectProjectSuggestion(item)"
+                                            class="w-full text-left px-3 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                        >
+                                            <div class="flex items-center gap-2 overflow-hidden">
+                                                <span class="text-sm shrink-0">🏢</span>
+                                                <div class="truncate">
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.project_name || item.name }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.locality ? `${item.locality}, ${item.city}` : (item.display || item.city) }}</p>
+                                                </div>
+                                            </div>
+                                            <span v-if="item.pincode" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-medium shrink-0">{{ item.pincode }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 5. House No. (Optional) -->
+                                <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
+                                    <label class="block text-[11px] text-slate-500 font-semibold">House No. (Optional)</label>
                                     <input
-                                        v-model="form.landmark"
+                                        v-model="form.address"
                                         type="text"
-                                        placeholder="e.g. Near Metro Station, 132 Ft Ring Road"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                                        placeholder="e.g. 203, Tower B"
+                                        autocomplete="off"
+                                        class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent mt-1"
                                     />
                                 </div>
-                            </div>
 
-                            <!-- Address -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">House / Flat No. &amp; Street Address</label>
-                                <input
-                                    v-model="form.address"
-                                    type="text"
-                                    placeholder="e.g. Tower B, Flat 402, Ring Road"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
-                                />
-                            </div>
-
-                            <div class="pt-4 flex justify-between items-center">
-                                <button
-                                    type="button"
-                                    @click="goToStep(1)"
-                                    class="text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
-                                >
-                                    &larr; Back
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="goToStep(3)"
-                                    :disabled="!form.locality || !form.city"
-                                    class="py-3 px-6 rounded-xl bg-[#005ca8] hover:bg-[#004e8f] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    <span>Next: Property Profile &rarr;</span>
-                                </button>
+                                <div class="pt-2">
+                                    <button
+                                        type="button"
+                                        @click="continueLocationStage2"
+                                        class="py-3 px-8 rounded-xl bg-[#005ca8] hover:bg-[#004e8f] text-white font-bold text-sm shadow-md shadow-blue-500/20 transition cursor-pointer"
+                                    >
+                                        Continue
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1453,9 +1589,35 @@
                 </div>
 
                 <!-- ============================================== -->
-                <!-- RIGHT COLUMN: NEED HELP CARD                   -->
+                <!-- RIGHT COLUMN: ACCURATE LOCATION & HELP CARD     -->
                 <!-- ============================================== -->
                 <div class="lg:col-span-3 space-y-4">
+                    <!-- Why we need an accurate location card (Shown on Step 2 matching 99acres) -->
+                    <div v-if="currentStep === 2" class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs text-center space-y-4 animate-fadeIn">
+                        <div class="mx-auto w-28 h-28 rounded-full bg-slate-50/90 flex items-center justify-center relative">
+                            <svg class="w-20 h-20 text-blue-500" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Folded Map Illustration -->
+                                <polygon points="20,38 45,26 45,96 20,108" fill="#fde68a" stroke="#f59e0b" stroke-width="1.5"/>
+                                <polygon points="45,26 75,38 75,108 45,96" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                                <polygon points="75,38 100,26 100,96 75,108" fill="#fde68a" stroke="#f59e0b" stroke-width="1.5"/>
+                                <line x1="30" y1="52" x2="38" y2="72" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="56" y1="46" x2="68" y2="82" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+                                <!-- Pin with House Icon -->
+                                <g transform="translate(60, 8)">
+                                    <circle cx="20" cy="20" r="18" fill="#005ca8" />
+                                    <path d="M20 12L12 19H15V26H25V19H28L20 12Z" fill="white"/>
+                                    <path d="M18 26V21H22V26H18Z" fill="#005ca8"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-900">Why we need an accurate location?</h4>
+                            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                Location is the most important for Buyer's. By capturing a detailed location we ensure we get you genuine enquiries.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Need Help Box (Exact 99acres layout from screenshot) -->
                     <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-2">
                         <div class="flex items-center gap-2 text-slate-800 font-bold text-xs">
@@ -1467,14 +1629,14 @@
                         </p>
                     </div>
 
-                    <!-- Compact Live Summary Mini-Card -->
-                    <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2 text-xs">
+                    <!-- Compact Live Summary Mini-Card (Shown on other steps) -->
+                    <div v-if="currentStep !== 2" class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2 text-xs">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Listing Summary</span>
                         <div class="font-black text-slate-800 line-clamp-1">
                             {{ isResidential ? `${form.bedrooms} BHK ${form.property_type}` : `${form.carpet_area || 0} ${form.carpet_area_unit} ${form.property_type}` }}
                         </div>
                         <div class="text-[11px] text-slate-500">
-                            📍 {{ form.locality || 'Locality' }}, {{ form.city }}
+                            📍 {{ form.locality || 'Locality' }}, {{ form.city || 'City' }}
                         </div>
                         <div class="pt-2 border-t border-slate-100 flex items-center justify-between font-bold">
                             <span class="text-[#005ca8]">{{ formatPriceWords(form.expected_price) }}</span>
@@ -1610,7 +1772,7 @@ const steps = computed(() => [
         title: 'Location Details',
         subtitle: form.value.project_name
             ? `${form.value.project_name}, ${form.value.city}`
-            : (form.value.locality ? `${form.value.locality}, ${form.value.city}` : 'The Avaas by Nagarjuna, Ban...')
+            : (form.value.locality ? `${form.value.locality}, ${form.value.city}` : (form.value.city ? form.value.city : ''))
     },
     {
         id: 3,
@@ -1686,12 +1848,13 @@ const form = ref({
     user_type: 'Owner',
     property_for: 'Sell',
     property_type: 'Residential Apartment',
-    city: 'Ahmedabad',
-    locality: 'Vastral',
-    sub_locality: 'Near Vastral Ring Road',
-    project_name: 'The Metropark',
-    address: 'Vastral Cross Road, Ahmedabad',
-    landmark: 'Near Metro Station',
+    city: '',
+    state: '',
+    locality: '',
+    sub_locality: '',
+    project_name: '',
+    address: '',
+    landmark: '',
     bedrooms: 2,
     bathrooms: 2,
     balconies: 2,
@@ -1734,7 +1897,159 @@ const form = ref({
     longitude: null,
 });
 
-// Locality autocomplete suggestions
+// Top back button handling: if in Stage 2 of Step 2, go back to Stage 1 first
+const handleTopBack = () => {
+    if (currentStep.value === 2 && isCityConfirmed.value) {
+        isCityConfirmed.value = false;
+        return;
+    }
+    goToStep(currentStep.value - 1);
+};
+
+// Step 2 Progressive Disclosure State
+const isCityConfirmed = ref(false);
+const isDetectingLocation = ref(false);
+
+// City Search Autocomplete (Google Places API New + DB Cache)
+const citySuggestions = ref([]);
+const isCityLoading = ref(false);
+const showCitySuggestions = ref(false);
+let cityDebounce = null;
+
+const onCityInput = () => {
+    if (cityDebounce) clearTimeout(cityDebounce);
+    const q = (form.value.city || '').trim();
+    if (q.length < 1) {
+        citySuggestions.value = [];
+        showCitySuggestions.value = false;
+        return;
+    }
+    cityDebounce = setTimeout(async () => {
+        isCityLoading.value = true;
+        try {
+            const res = await fetch(`/api/locations/search-cities?q=${encodeURIComponent(q)}`);
+            if (res.ok) {
+                const data = await res.json();
+                citySuggestions.value = Array.isArray(data) ? data : [];
+                showCitySuggestions.value = citySuggestions.value.length > 0;
+            }
+        } catch {
+            citySuggestions.value = [];
+        } finally {
+            isCityLoading.value = false;
+        }
+    }, 250);
+};
+
+const resolveStateForCity = async (cityName) => {
+    if (!cityName) return;
+    try {
+        const res = await fetch(`/api/locations/search-cities?q=${encodeURIComponent(cityName)}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0 && data[0].state) {
+                form.value.state = data[0].state;
+            }
+        }
+    } catch {
+        // silent fallback
+    }
+};
+
+const selectCity = (item) => {
+    form.value.city = item.city || item.name;
+    form.value.state = item.state || '';
+    if (item.latitude && item.longitude) {
+        form.value.latitude = item.latitude;
+        form.value.longitude = item.longitude;
+    }
+    showCitySuggestions.value = false;
+    citySuggestions.value = [];
+    isCityConfirmed.value = true;
+    errorMessage.value = '';
+    if (!form.value.state) {
+        resolveStateForCity(form.value.city);
+    }
+    autoGenerateTitle();
+    autoGenerateDescription();
+};
+
+const pickCurrentLocation = () => {
+    if (!navigator.geolocation) {
+        errorMessage.value = 'Geolocation is not supported by your browser.';
+        return;
+    }
+    isDetectingLocation.value = true;
+    errorMessage.value = '';
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            form.value.latitude = latitude;
+            form.value.longitude = longitude;
+
+            try {
+                const res = await fetch(`/api/locations/detect?lat=${latitude}&lng=${longitude}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.city) {
+                        form.value.city = data.city;
+                    }
+                    if (data.state) {
+                        form.value.state = data.state;
+                    } else if (data.city) {
+                        await resolveStateForCity(data.city);
+                    }
+                    if (data.locality && !form.value.locality) {
+                        form.value.locality = data.locality;
+                    }
+                    isCityConfirmed.value = true;
+                    autoGenerateTitle();
+                    autoGenerateDescription();
+                }
+            } catch (err) {
+                console.error(err);
+                errorMessage.value = 'Could not detect location from GPS. Please type your city.';
+            } finally {
+                isDetectingLocation.value = false;
+            }
+        },
+        (err) => {
+            isDetectingLocation.value = false;
+            console.warn('Geolocation error:', err);
+            errorMessage.value = 'Location permission denied. Please search and select your city.';
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+    );
+};
+
+const continueLocationStage1 = async () => {
+    if (!form.value.city || !form.value.city.trim()) {
+        errorMessage.value = 'Please enter or select your city.';
+        return;
+    }
+    errorMessage.value = '';
+    if (!form.value.state) {
+        await resolveStateForCity(form.value.city);
+    }
+    isCityConfirmed.value = true;
+};
+
+const continueLocationStage2 = () => {
+    if (!form.value.city || !form.value.city.trim()) {
+        errorMessage.value = 'Please provide a valid city.';
+        isCityConfirmed.value = false;
+        return;
+    }
+    if (!form.value.locality || !form.value.locality.trim()) {
+        errorMessage.value = 'Please provide the locality.';
+        return;
+    }
+    errorMessage.value = '';
+    goToStep(3);
+};
+
+// Locality autocomplete suggestions (Google Places API New + DB Cache)
 const localitySuggestions = ref([]);
 const isLocalityLoading = ref(false);
 const showLocalitySuggestions = ref(false);
@@ -1743,7 +2058,7 @@ let localityDebounce = null;
 const onLocalityInput = () => {
     if (localityDebounce) clearTimeout(localityDebounce);
     const q = (form.value.locality || '').trim();
-    if (q.length < 2) {
+    if (q.length < 1) {
         localitySuggestions.value = [];
         showLocalitySuggestions.value = false;
         return;
@@ -1757,7 +2072,7 @@ const onLocalityInput = () => {
                 localitySuggestions.value = Array.isArray(data) ? data : [];
                 showLocalitySuggestions.value = localitySuggestions.value.length > 0;
             }
-        } catch (e) {
+        } catch {
             localitySuggestions.value = [];
         } finally {
             isLocalityLoading.value = false;
@@ -1767,15 +2082,14 @@ const onLocalityInput = () => {
 
 const selectLocalitySuggestion = (item) => {
     form.value.locality = item.locality || item.name;
-    if (item.sub_locality && !form.value.landmark) {
-        form.value.landmark = item.sub_locality;
-    }
     if (item.city) {
-        const knownCities = ['Ahmedabad', 'Delhi NCR', 'Mumbai', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Kolkata'];
-        const matched = knownCities.find(c => c.toLowerCase() === item.city.toLowerCase() || item.city.toLowerCase().includes(c.toLowerCase()));
-        if (matched) {
-            form.value.city = matched;
-        }
+        form.value.city = item.city;
+    }
+    if (item.sub_locality && !form.value.sub_locality) {
+        form.value.sub_locality = item.sub_locality;
+    }
+    if (item.state) {
+        form.value.state = item.state;
     }
     if (item.pincode) {
         form.value.pincode = item.pincode;
@@ -1785,6 +2099,67 @@ const selectLocalitySuggestion = (item) => {
         form.value.longitude = item.longitude;
     }
     showLocalitySuggestions.value = false;
+    autoGenerateTitle();
+    autoGenerateDescription();
+};
+
+// Project / Society autocomplete suggestions (Google Places API New + DB Cache)
+const projectSuggestions = ref([]);
+const isProjectLoading = ref(false);
+const showProjectSuggestions = ref(false);
+let projectDebounce = null;
+
+const onProjectInput = () => {
+    if (projectDebounce) clearTimeout(projectDebounce);
+    const q = (form.value.project_name || '').trim();
+    if (q.length < 2) {
+        projectSuggestions.value = [];
+        showProjectSuggestions.value = false;
+        return;
+    }
+    projectDebounce = setTimeout(async () => {
+        isProjectLoading.value = true;
+        try {
+            const city = encodeURIComponent(form.value.city || '');
+            const loc = encodeURIComponent(form.value.locality || '');
+            const res = await fetch(`/api/locations/search-projects?q=${encodeURIComponent(q)}&city=${city}&locality=${loc}`);
+            if (res.ok) {
+                const data = await res.json();
+                projectSuggestions.value = Array.isArray(data) ? data : [];
+                showProjectSuggestions.value = projectSuggestions.value.length > 0;
+            }
+        } catch {
+            projectSuggestions.value = [];
+        } finally {
+            isProjectLoading.value = false;
+        }
+    }, 250);
+};
+
+const selectProjectSuggestion = (item) => {
+    form.value.project_name = item.project_name || item.name;
+    if (item.city) {
+        form.value.city = item.city;
+    }
+    if (item.locality) {
+        form.value.locality = item.locality;
+    }
+    if (item.sub_locality && !form.value.sub_locality) {
+        form.value.sub_locality = item.sub_locality;
+    }
+    if (item.state) {
+        form.value.state = item.state;
+    }
+    if (item.pincode) {
+        form.value.pincode = item.pincode;
+    }
+    if (item.latitude && item.longitude) {
+        form.value.latitude = item.latitude;
+        form.value.longitude = item.longitude;
+    }
+    showProjectSuggestions.value = false;
+    autoGenerateTitle();
+    autoGenerateDescription();
 };
 
 const handlePropertyTypeChange = (pt) => {
@@ -2069,6 +2444,7 @@ const submitProperty = async () => {
             property_for: form.value.property_for,
             property_type: form.value.property_type,
             city: form.value.city,
+            state: form.value.state || undefined,
             locality: form.value.locality,
             sub_locality: form.value.sub_locality || undefined,
             project_name: form.value.project_name || undefined,
@@ -2132,9 +2508,16 @@ const submitProperty = async () => {
 const resetFormForAnother = () => {
     isSubmitted.value = false;
     currentStep.value = 1;
+    isCityConfirmed.value = false;
     form.value.title = '';
     form.value.description = '';
+    form.value.city = '';
+    form.value.state = '';
     form.value.locality = '';
+    form.value.sub_locality = '';
+    form.value.project_name = '';
+    form.value.address = '';
+    form.value.landmark = '';
     form.value.expected_price = 7500000;
 };
 

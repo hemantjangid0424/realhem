@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Locality;
 use App\Models\Property;
-use App\Services\GeocodingService;
+use App\Services\GooglePlacesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +24,7 @@ class PropertyController extends Controller
      */
     private const INDEX_COLUMNS = [
         'id', 'user_id', 'user_type', 'property_for', 'property_type',
-        'title', 'slug', 'description', 'project_name', 'city', 'locality',
+        'title', 'slug', 'description', 'project_name', 'city', 'state', 'locality',
         'sub_locality', 'address', 'landmark', 'pincode', 'latitude', 'longitude',
         'bedrooms', 'bathrooms', 'balconies',
         'carpet_area', 'super_builtup_area', 'furnishing_status', 'floor_no',
@@ -162,6 +162,7 @@ class PropertyController extends Controller
             'property_for' => ['required', Rule::enum(PropertyFor::class)],
             'property_type' => ['required', 'string', 'max:100'],
             'city' => ['required', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
             'locality' => ['required', 'string', 'max:150'],
             'sub_locality' => ['nullable', 'string', 'max:150'],
             'project_name' => ['nullable', 'string', 'max:150'],
@@ -228,7 +229,7 @@ class PropertyController extends Controller
         }
 
         // Resolve coordinates and pincode based on locality, project name, city, address
-        $resolvedLocation = GeocodingService::resolve(
+        $resolvedLocation = GooglePlacesService::resolve(
             city: $validated['city'],
             locality: $validated['locality'],
             projectName: $validated['project_name'] ?? null,
@@ -250,6 +251,7 @@ class PropertyController extends Controller
             'description' => $validated['description'] ?? null,
             'project_name' => $validated['project_name'] ?? null,
             'city' => $validated['city'],
+            'state' => $validated['state'] ?? ($resolvedLocation['state'] ?? null),
             'locality' => $validated['locality'],
             'sub_locality' => $validated['sub_locality'] ?? null,
             'address' => $validated['address'] ?? null,
@@ -312,6 +314,7 @@ class PropertyController extends Controller
             'property_for' => ['required', Rule::enum(PropertyFor::class)],
             'property_type' => ['required', 'string', 'max:100'],
             'city' => ['required', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
             'locality' => ['required', 'string', 'max:150'],
             'sub_locality' => ['nullable', 'string', 'max:150'],
             'project_name' => ['nullable', 'string', 'max:150'],
@@ -345,7 +348,7 @@ class PropertyController extends Controller
 
         $localityChanged = $validated['locality'] !== $property->locality || $validated['city'] !== $property->city;
 
-        $resolvedLocation = GeocodingService::resolve(
+        $resolvedLocation = GooglePlacesService::resolve(
             city: $validated['city'],
             locality: $validated['locality'],
             projectName: $validated['project_name'] ?? ($localityChanged ? null : $property->project_name),
@@ -359,6 +362,7 @@ class PropertyController extends Controller
 
         $property->update(array_merge($validated, [
             'price_per_sqft' => $pricePerSqft,
+            'state' => $validated['state'] ?? ($resolvedLocation['state'] ?? $property->state),
             'pincode' => $resolvedLocation['pincode'],
             'latitude' => $resolvedLocation['latitude'],
             'longitude' => $resolvedLocation['longitude'],
@@ -445,31 +449,59 @@ class PropertyController extends Controller
             });
         $suggestions = $suggestions->concat($matchingCities);
 
-        // 2. Matching Localities / Areas
-        $locQuery = Locality::query()->with('city:id,name');
-        if (! empty($city)) {
-            $locQuery->whereHas('city', fn ($cq) => $cq->where('name', $city));
-        }
-        $matchingLocalities = $locQuery
-            ->where('name', 'LIKE', "%{$q}%")
-            ->take(4)
-            ->get()
-            ->map(function ($loc) {
-                $cityName = $loc->city?->name ?? '';
+        // 2. Matching Localities / Areas (powered by DB Cache + Google Places API)
+        $matchingLocalities = collect(GooglePlacesService::searchPlaces(
+            query: $q,
+            city: ! empty($city) ? $city : null,
+            limit: 4
+        ))->map(function ($loc) {
+            $title = $loc['title'] ?? ($loc['name'] ?: $loc['locality']);
 
-                return [
-                    'type' => 'locality',
-                    'category' => 'Locality / Area',
-                    'icon' => '🏘️',
-                    'title' => $loc->name,
-                    'subtitle' => $cityName ? "Locality in {$cityName}" : 'Locality',
-                    'city' => $cityName,
-                    'keyword' => $loc->name,
-                ];
-            });
+            return [
+                'type' => 'locality',
+                'category' => 'Locality / Area',
+                'icon' => '🏘️',
+                'title' => $title,
+                'subtitle' => $loc['display'] ?: ($loc['city'] ? "Locality in {$loc['city']}" : 'Locality'),
+                'city' => $loc['city'],
+                'keyword' => $title,
+                'locality' => $loc['locality'],
+                'sub_locality' => $loc['sub_locality'],
+                'pincode' => $loc['pincode'],
+                'latitude' => $loc['latitude'],
+                'longitude' => $loc['longitude'],
+                'cached' => $loc['cached'],
+                'provider' => $loc['provider'],
+            ];
+        });
         $suggestions = $suggestions->concat($matchingLocalities);
 
-        // 3. Matching Projects / Societies / Apartments
+        // 3. Matching Projects / Societies / Apartments / Buildings (Google Places API + DB Cache + Listings)
+        $googleProjects = collect(GooglePlacesService::searchProjects(
+            query: $q,
+            city: ! empty($city) ? $city : null,
+            limit: 5
+        ))->map(function ($proj) {
+            $name = $proj['name'] ?: $proj['title'];
+
+            return [
+                'type' => 'project',
+                'category' => 'Apartment / Project',
+                'icon' => '🏢',
+                'title' => $name,
+                'subtitle' => $proj['display'] ?: implode(', ', array_filter([$proj['locality'] ?? null, $proj['city'] ?? null])),
+                'city' => $proj['city'] ?? null,
+                'keyword' => $name,
+                'locality' => $proj['locality'] ?? null,
+                'sub_locality' => $proj['sub_locality'] ?? null,
+                'pincode' => $proj['pincode'] ?? null,
+                'latitude' => $proj['latitude'] ?? null,
+                'longitude' => $proj['longitude'] ?? null,
+                'cached' => $proj['cached'] ?? false,
+                'provider' => $proj['provider'] ?? 'google_places_new',
+            ];
+        });
+
         $projQuery = Property::query()
             ->whereNotNull('project_name')
             ->where('project_name', '!=', '')
@@ -477,8 +509,8 @@ class PropertyController extends Controller
         if (! empty($city)) {
             $projQuery->where('city', $city);
         }
-        $matchingProjects = $projQuery
-            ->select(['project_name', 'locality', 'city'])
+        $dbProjects = $projQuery
+            ->select(['project_name', 'locality', 'sub_locality', 'city', 'pincode', 'latitude', 'longitude'])
             ->distinct()
             ->take(4)
             ->get()
@@ -491,8 +523,20 @@ class PropertyController extends Controller
                     'subtitle' => implode(', ', array_filter([$prop->locality, $prop->city])),
                     'city' => $prop->city,
                     'keyword' => $prop->project_name,
+                    'locality' => $prop->locality,
+                    'sub_locality' => $prop->sub_locality,
+                    'pincode' => $prop->pincode,
+                    'latitude' => (float) $prop->latitude,
+                    'longitude' => (float) $prop->longitude,
+                    'cached' => true,
+                    'provider' => 'database',
                 ];
             });
+
+        $matchingProjects = $googleProjects->concat($dbProjects)->unique(function ($item) {
+            return strtolower(trim(($item['title'] ?? '').' '.($item['city'] ?? '')));
+        })->values()->take(5);
+
         $suggestions = $suggestions->concat($matchingProjects);
 
         // 4. Matching Property Titles / Direct Listings

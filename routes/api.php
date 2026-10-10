@@ -31,8 +31,11 @@ Route::prefix('locations')->group(function () {
     Route::get('/cities', [LocationController::class, 'cities']);
     Route::get('/localities', [LocationController::class, 'localities']);
     Route::get('/search', [LocationController::class, 'search']);
+    Route::get('/search-cities', [LocationController::class, 'searchCities']);
+    Route::get('/search-projects', [LocationController::class, 'searchProjects']);
     Route::match(['get', 'post'], '/detect', [LocationController::class, 'detect']);
     Route::get('/nearby', [LocationController::class, 'nearby']);
+    Route::get('/resolve', [LocationController::class, 'resolve']);
 });
 
 // Property Marketplace APIs

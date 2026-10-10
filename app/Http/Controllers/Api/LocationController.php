@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Locality;
 use App\Models\State;
-use App\Services\GeocodingService;
+use App\Services\GooglePlacesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -61,11 +61,11 @@ class LocationController extends Controller
     }
 
     /**
-     * Resolve latitude, longitude, and pincode based on locality, city, and address.
+     * Resolve latitude, longitude, and pincode based on locality, city, and address with Google Places caching.
      */
     public function resolve(Request $request): JsonResponse
     {
-        $resolved = GeocodingService::resolve(
+        $resolved = GooglePlacesService::resolve(
             city: $request->query('city') ?? $request->input('city'),
             locality: $request->query('locality') ?? $request->input('locality'),
             projectName: $request->query('project_name') ?? $request->input('project_name'),
@@ -84,7 +84,7 @@ class LocationController extends Controller
     }
 
     /**
-     * Autocomplete search for localities, landmarks, and cities.
+     * Autocomplete search for localities, landmarks, and cities via Google Places API & DB cache.
      */
     public function search(Request $request): JsonResponse
     {
@@ -95,40 +95,31 @@ class LocationController extends Controller
             return response()->json([]);
         }
 
-        // 1. Search in database localities
-        $locQuery = Locality::with('city.state')
-            ->where(function ($query) use ($q) {
-                $query->where('name', 'LIKE', "%{$q}%")
-                    ->orWhere('pincode', 'LIKE', "%{$q}%");
-            });
+        // 1. Search Google Places API + DB Cached Places
+        $places = GooglePlacesService::searchPlaces(
+            query: $q,
+            city: $city ?: null,
+            limit: 8
+        );
 
-        if (! empty($city)) {
-            $locQuery->whereHas('city', fn ($c) => $c->where('name', 'LIKE', "%{$city}%"));
-        }
-
-        $localities = $locQuery->take(8)->get()->map(function ($loc) {
-            $cityName = $loc->city?->name;
-            $coords = GeocodingService::resolve(
-                city: $cityName,
-                locality: $loc->name,
-                projectName: $loc->name,
-                address: $loc->name
-            );
+        $results = collect($places)->map(function ($place) {
+            $name = $place['name'] ?: ($place['locality'] ?: 'Place');
 
             return [
-                'id' => $loc->id,
-                'name' => $loc->name,
+                'id' => $place['place_id'],
+                'name' => $name,
+                'title' => $place['title'] ?? $name,
                 'type' => 'locality',
-                'city' => $cityName,
-                'locality' => $loc->name,
-                'sub_locality' => null,
-                'state' => $loc->city?->state?->name,
-                'display' => $cityName ? "{$loc->name}, {$cityName}" : $loc->name,
-                'pincode' => $loc->pincode ?: $coords['pincode'],
-                'latitude' => $coords['latitude'],
-                'longitude' => $coords['longitude'],
-                'avg_price_per_sqft' => $loc->avg_price_per_sqft,
-                'yoy_growth_percent' => $loc->yoy_growth_percent,
+                'city' => $place['city'],
+                'locality' => $place['locality'],
+                'sub_locality' => $place['sub_locality'],
+                'state' => $place['state'],
+                'display' => $place['display'],
+                'pincode' => $place['pincode'],
+                'latitude' => $place['latitude'],
+                'longitude' => $place['longitude'],
+                'cached' => $place['cached'],
+                'provider' => $place['provider'],
             ];
         });
 
@@ -139,7 +130,7 @@ class LocationController extends Controller
             ->get()
             ->map(function ($c) {
                 return [
-                    'id' => $c->id,
+                    'id' => (string) $c->id,
                     'name' => $c->name,
                     'type' => 'city',
                     'city' => $c->name,
@@ -150,14 +141,67 @@ class LocationController extends Controller
                     'pincode' => null,
                     'latitude' => null,
                     'longitude' => null,
+                    'cached' => true,
+                    'provider' => 'database',
                 ];
             });
 
-        $combined = $localities->concat($cities)->unique(function ($item) {
+        $combined = $results->concat($cities)->unique(function ($item) {
             return strtolower(trim(($item['name'] ?? '').' '.($item['city'] ?? '')));
         })->values()->take(10);
 
         return response()->json($combined);
+    }
+
+    /**
+     * Search cities and states using Google Places API (New) & database cache.
+     */
+    public function searchCities(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (strlen($q) < 1) {
+            // Default top metro cities
+            $cities = City::with('state')
+                ->where('is_metro', true)
+                ->orderBy('name')
+                ->take(8)
+                ->get()
+                ->map(fn ($c) => [
+                    'place_id' => 'city_'.$c->id,
+                    'name' => $c->name,
+                    'city' => $c->name,
+                    'state' => $c->state?->name ?? GooglePlacesService::getStateForCity($c->name),
+                    'display' => "{$c->name}, ".($c->state?->name ?? GooglePlacesService::getStateForCity($c->name)),
+                    'latitude' => (float) $c->latitude,
+                    'longitude' => (float) $c->longitude,
+                    'cached' => true,
+                    'provider' => 'database',
+                ]);
+
+            return response()->json($cities);
+        }
+
+        $cities = GooglePlacesService::searchCities($q, 8);
+
+        return response()->json($cities);
+    }
+
+    /**
+     * Search apartment, society, and project names via Google Places API (New) & listings.
+     */
+    public function searchProjects(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        $city = trim((string) $request->query('city', ''));
+        $locality = trim((string) $request->query('locality', ''));
+
+        if (strlen($q) < 1) {
+            return response()->json([]);
+        }
+
+        $projects = GooglePlacesService::searchProjects($q, $city ?: null, $locality ?: null, 8);
+
+        return response()->json($projects);
     }
 
     /**
