@@ -129,7 +129,7 @@
                     {{ displayedListings.length }} verified {{ displayedListings.length === 1 ? 'property' : 'properties' }} found
                 </span>
                 <span class="text-[11px] text-slate-500">
-                    {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : 'Sale'}` : ''}` }}
+                    {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : ''}` }}
                 </span>
             </div>
         </div>
@@ -143,7 +143,7 @@
                             {{ displayedListings.length }} results | Properties in 3 Km Near Me
                         </span>
                         <span v-else>
-                            {{ displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : 'Sale'}` : '' }}
+                            {{ displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : '' }}
                         </span>
                     </h1>
                     <p class="text-xs text-slate-500 mt-0.5">
@@ -355,8 +355,8 @@
                         </div>
                     </div>
 
-                    <!-- No. of Bedrooms (BHK) -->
-                    <div>
+                    <!-- No. of Bedrooms (BHK) - Residential Only -->
+                    <div v-if="activeType !== 'commercial' && activeType !== 'plots' && activeType !== 'plots_land'">
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-xs font-bold text-slate-700">No. of Bedrooms</label>
                             <button
@@ -699,13 +699,30 @@ const quickTags = [
     { id: 'with_photos', label: 'With Photos' },
 ];
 
-const propertyTypeOptions = [
-    'Residential Apartment',
-    'Independent House/Villa',
-    'Builder Floor',
-    'Residential Land',
-    '1 RK/ Studio Apartment',
-];
+const propertyTypeOptions = computed(() => {
+    if (activeType.value === 'commercial') {
+        return [
+            'Commercial Shop',
+            'Commercial Office',
+            'Commercial Showroom',
+            'Commercial Land',
+        ];
+    }
+    if (activeType.value === 'plots' || activeType.value === 'plots_land') {
+        return [
+            'Residential Plot',
+            'Commercial Land',
+            'Agricultural Land',
+        ];
+    }
+    return [
+        'Residential Apartment',
+        'Independent House/Villa',
+        'Builder Floor',
+        'Residential Land',
+        '1 RK/ Studio Apartment',
+    ];
+});
 
 const hasActiveFilters = computed(() => {
     return (
@@ -1134,11 +1151,26 @@ const fetchApiProperties = async () => {
         if (activeType.value && activeType.value !== 'all') {
             params.set('type', activeType.value);
         }
+        if (searchKeyword.value && !isNearMe.value) {
+            params.set('search', searchKeyword.value);
+        }
         if (selectedBhks.value.length > 0) {
             const nums = selectedBhks.value.map(b => parseInt(b, 10)).filter(n => !isNaN(n));
             if (nums.length > 0) {
                 params.set('bhk', nums.join(','));
             }
+        }
+        if (selectedPropTypes.value.length > 0) {
+            params.set('property_type', selectedPropTypes.value.join(','));
+        }
+        if (budgetMin.value) {
+            params.set('budget_min', String(Number(budgetMin.value) * 100000));
+        }
+        if (budgetMax.value) {
+            params.set('budget_max', String(Number(budgetMax.value) * 100000));
+        }
+        if (verifiedOnly.value) {
+            params.set('verified_only', '1');
         }
         if (params.toString()) {
             url += '?' + params.toString();
@@ -1166,6 +1198,7 @@ const fetchApiProperties = async () => {
                         area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
                         status: p.construction_status || 'Ready to Move',
                         builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
+                        project_name: p.project_name || '',
                         postedBy: p.user ? p.user.name : 'Owner',
                         sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
                         isNewBooking: false,
@@ -1179,14 +1212,18 @@ const fetchApiProperties = async () => {
                     };
                 });
             } else {
-                apiProperties.value = [...defaultFallbackListings];
+                if (hasActiveFilters.value || (activeType.value && activeType.value !== 'all') || (activeCity.value && activeCity.value !== 'All')) {
+                    apiProperties.value = [];
+                } else {
+                    apiProperties.value = [...defaultFallbackListings];
+                }
             }
         } else {
-            apiProperties.value = [...defaultFallbackListings];
+            apiProperties.value = [];
         }
     } catch (err) {
         console.warn('Could not fetch API properties, using fallback:', err);
-        apiProperties.value = [...defaultFallbackListings];
+        apiProperties.value = [];
     } finally {
         isLoadingProperties.value = false;
     }
@@ -1198,14 +1235,24 @@ onMounted(() => {
 });
 
 watch(
-    () => [activeCity.value, activeType.value],
+    () => [
+        activeCity.value,
+        activeType.value,
+        searchKeyword.value,
+        selectedPropTypes.value,
+        selectedBhks.value,
+        budgetMin.value,
+        budgetMax.value,
+        verifiedOnly.value,
+    ],
     () => {
         fetchApiProperties();
-    }
+    },
+    { deep: true }
 );
 
 const displayedListings = computed(() => {
-    const list = apiProperties.value.length > 0 ? apiProperties.value : defaultFallbackListings;
+    const list = apiProperties.value.length > 0 ? apiProperties.value : (hasActiveFilters.value || (activeType.value && activeType.value !== 'all') ? [] : defaultFallbackListings);
 
     return list.filter((item) => {
         // ── Near-me locality filter ──────────────────────────────────────────
@@ -1222,7 +1269,9 @@ const displayedListings = computed(() => {
                 (item.locality && item.locality.toLowerCase().includes(q)) ||
                 (item.city && item.city.toLowerCase().includes(q)) ||
                 (item.bhk && item.bhk.toLowerCase().includes(q)) ||
-                (item.type && item.type.toLowerCase().includes(q));
+                (item.type && item.type.toLowerCase().includes(q)) ||
+                (item.builder && item.builder.toLowerCase().includes(q)) ||
+                (item.project_name && item.project_name.toLowerCase().includes(q));
             if (!match) return false;
         }
 
@@ -1231,6 +1280,19 @@ const displayedListings = computed(() => {
             if (!item.city.toLowerCase().includes(activeCity.value.toLowerCase())) {
                 return false;
             }
+        }
+
+        // ── Category / Transaction Type Filter ──────────────────────────────
+        if (activeType.value === 'commercial') {
+            const isComm = (item.type && item.type.toLowerCase().includes('commercial')) || isCommercialType(item.type);
+            if (!isComm) return false;
+        } else if (activeType.value === 'plots' || activeType.value === 'plots_land') {
+            const isPlt = (item.type && (item.type.toLowerCase().includes('plot') || item.type.toLowerCase().includes('land'))) || isPlotType(item.type);
+            if (!isPlt) return false;
+        } else if (activeType.value === 'rent') {
+            if (item.property_for && item.property_for.toLowerCase() !== 'rent') return false;
+        } else if (activeType.value === 'buy') {
+            if (item.property_for && item.property_for.toLowerCase() !== 'sell') return false;
         }
 
         // ── Property type filter ─────────────────────────────────────────────

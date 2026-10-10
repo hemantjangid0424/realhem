@@ -36,6 +36,7 @@ enum PropertyFor: string
             self::Sell => 'Sale',
             self::Rent => 'Rent',
             self::Pg => 'PG / Co-Living',
+            self::Commercial => 'Commercial',
         };
     }
 

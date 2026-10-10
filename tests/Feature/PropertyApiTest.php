@@ -225,3 +225,37 @@ test('property owner can delete their property listing', function () {
     $response->assertStatus(200);
     $this->assertDatabaseMissing('properties', ['id' => $property->id]);
 });
+
+test('commercial properties are returned when filtering by type=commercial and keyword', function () {
+    $user = User::factory()->create();
+
+    $commercial = Property::factory()->create([
+        'user_id' => $user->id,
+        'property_for' => 'Sell',
+        'property_type' => 'Commercial Shop',
+        'project_name' => 'Palash Homes',
+        'title' => '1200 sq.ft. Semi-Furnished Commercial Shop for Sale in Palash Homes, Makarba, Ahmedabad',
+        'locality' => 'Makarba',
+        'city' => 'Ahmedabad',
+        'expected_price' => 7740000,
+        'status' => 'active',
+    ]);
+
+    $residential = Property::factory()->create([
+        'user_id' => $user->id,
+        'property_for' => 'Sell',
+        'property_type' => 'Residential Apartment',
+        'project_name' => 'Palash Homes Residential',
+        'title' => '2 BHK Residential Apartment in Palash Homes',
+        'locality' => 'Makarba',
+        'city' => 'Ahmedabad',
+        'expected_price' => 5500000,
+        'status' => 'active',
+    ]);
+
+    $response = $this->getJson('/api/properties?type=commercial&city=Ahmedabad&keyword=Palash+Homes');
+
+    $response->assertStatus(200)
+        ->assertJsonFragment(['id' => $commercial->id, 'property_type' => 'Commercial Shop'])
+        ->assertJsonMissing(['id' => $residential->id, 'property_type' => 'Residential Apartment']);
+});

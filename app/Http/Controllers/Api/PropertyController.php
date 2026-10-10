@@ -47,10 +47,55 @@ class PropertyController extends Controller
             $query->where('city', $request->query('city'));
         }
 
-        // Property For (Sell, Rent, PG) - normalized via PropertyFor enum
-        $propertyFor = PropertyFor::tryFromQuery($request->query('property_for') ?? $request->query('type'));
-        if ($propertyFor) {
-            $query->where('property_for', $propertyFor->value);
+        // Category / Intent / Property For filter
+        $typeParam = strtolower(trim((string) ($request->query('type') ?? '')));
+        $propertyForParam = $request->query('property_for');
+
+        if ($typeParam === 'commercial') {
+            $query->where(function ($q) {
+                $q->where('property_type', 'LIKE', 'Commercial%')
+                    ->orWhere('property_type', 'LIKE', '%Office%')
+                    ->orWhere('property_type', 'LIKE', '%Shop%')
+                    ->orWhere('property_type', 'LIKE', '%Showroom%');
+            });
+            if ($propertyForParam) {
+                $pFor = PropertyFor::tryFromQuery($propertyForParam);
+                if ($pFor && $pFor !== PropertyFor::Commercial) {
+                    $query->where('property_for', $pFor->value);
+                }
+            }
+        } elseif (in_array($typeParam, ['plots', 'plot', 'plots_land', 'land'], true)) {
+            $query->where(function ($q) {
+                $q->where('property_type', 'LIKE', '%Plot%')
+                    ->orWhere('property_type', 'LIKE', '%Land%');
+            });
+            if ($propertyForParam) {
+                $pFor = PropertyFor::tryFromQuery($propertyForParam);
+                if ($pFor && $pFor !== PropertyFor::Commercial) {
+                    $query->where('property_for', $pFor->value);
+                }
+            }
+        } elseif (! empty($typeParam) && $typeParam !== 'all') {
+            $propertyFor = PropertyFor::tryFromQuery($typeParam);
+            if ($propertyFor && $propertyFor !== PropertyFor::Commercial) {
+                $query->where('property_for', $propertyFor->value);
+            }
+        } elseif (! empty($propertyForParam)) {
+            $propertyFor = PropertyFor::tryFromQuery($propertyForParam);
+            if ($propertyFor && $propertyFor !== PropertyFor::Commercial) {
+                $query->where('property_for', $propertyFor->value);
+            }
+        }
+
+        // Specific property_type filter (single or comma-separated)
+        if ($request->filled('property_type')) {
+            $types = is_array($request->query('property_type'))
+                ? $request->query('property_type')
+                : explode(',', (string) $request->query('property_type'));
+            $types = array_filter(array_map('trim', $types));
+            if (! empty($types)) {
+                $query->whereIn('property_type', $types);
+            }
         }
 
         // Bedrooms filter (e.g. 1,2,3 or comma-separated)
@@ -72,14 +117,18 @@ class PropertyController extends Controller
             $query->where('expected_price', '<=', (int) $request->query('budget_max'));
         }
 
-        // Search query (keyword in title, locality, project_name, or description)
-        if ($request->filled('search')) {
-            $search = '%'.$request->query('search').'%';
+        // Search query (keyword in title, locality, sub_locality, project_name, city, address, or property_type)
+        if ($request->filled('search') || $request->filled('keyword')) {
+            $rawSearch = $request->query('search') ?: $request->query('keyword');
+            $search = '%'.$rawSearch.'%';
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', $search)
                     ->orWhere('locality', 'like', $search)
+                    ->orWhere('sub_locality', 'like', $search)
                     ->orWhere('project_name', 'like', $search)
-                    ->orWhere('city', 'like', $search);
+                    ->orWhere('city', 'like', $search)
+                    ->orWhere('address', 'like', $search)
+                    ->orWhere('property_type', 'like', $search);
             });
         }
 
