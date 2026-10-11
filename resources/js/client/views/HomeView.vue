@@ -1,24 +1,5 @@
 <template>
     <div class="space-y-12 pb-20 bg-slate-50 text-slate-800">
-        <!-- Top Promotional Announcement Ribbon (Controlled by Admin Settings) -->
-        <div
-            v-if="bannerEnabled"
-            class="text-white py-2.5 px-4 text-xs transition-colors duration-200"
-            :style="{ backgroundColor: brandPrimaryColor }"
-        >
-            <div class="max-w-7xl mx-auto flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                        {{ bannerBadge }}
-                    </span>
-                    <span class="font-medium text-white">{{ bannerText }}</span>
-                </div>
-                <router-link :to="bannerLink" class="hidden sm:inline-flex items-center gap-1 font-bold text-amber-300 hover:text-white transition">
-                    Explore Deals &rarr;
-                </router-link>
-            </div>
-        </div>
-
         <!-- 99acres Signature Hero & Search Box -->
         <section
             class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300"

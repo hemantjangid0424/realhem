@@ -1,4 +1,23 @@
 <template>
+    <!-- Top Announcement Ribbon (Controlled by Admin Settings for Festivals & Campaigns) -->
+    <div
+        v-if="bannerEnabled"
+        class="text-white py-2 px-4 text-xs transition-colors duration-200"
+        :style="{ backgroundColor: brandPrimaryColor }"
+    >
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2 truncate">
+                <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider shrink-0">
+                    {{ bannerBadge }}
+                </span>
+                <span class="font-medium text-white truncate">{{ bannerText }}</span>
+            </div>
+            <router-link :to="bannerLink || '/listings'" class="hidden sm:inline-flex items-center gap-1 font-bold text-amber-300 hover:text-white transition ml-3 shrink-0">
+                Explore Deals &rarr;
+            </router-link>
+        </div>
+    </div>
+
     <!-- Top Micro-bar (Non-sticky, scrolls away naturally with zero layout shift) -->
     <div class="bg-slate-900 text-slate-300 text-[11px] py-1.5 px-4 sm:px-8 border-b border-slate-800">
             <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -368,6 +387,10 @@ const {
     companyLogoUrl,
     brandPrimaryColor,
     brandAccentColor,
+    bannerEnabled,
+    bannerBadge,
+    bannerText,
+    bannerLink,
 } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
 

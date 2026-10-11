@@ -121,6 +121,21 @@ export function useCompanyBranding() {
     const heroGradient = computed(() => {
         const p = brandPrimaryColor.value;
         const s = brandSecondaryColor.value;
+        if (heroStyle.value === 'diwali_gold') {
+            return 'linear-gradient(135deg, #78350f 0%, #d97706 50%, #ea580c 100%)';
+        }
+        if (heroStyle.value === 'navratri_glow') {
+            return 'linear-gradient(135deg, #4a044e 0%, #6b21a8 50%, #db2777 100%)';
+        }
+        if (heroStyle.value === 'christmas_fest') {
+            return 'linear-gradient(135deg, #14532d 0%, #7f1d1d 50%, #dc2626 100%)';
+        }
+        if (heroStyle.value === 'holi_splash') {
+            return 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 35%, #db2777 70%, #06b6d4 100%)';
+        }
+        if (heroStyle.value === 'tricolor_pride') {
+            return 'linear-gradient(135deg, #ea580c 0%, #1e3a8a 50%, #15803d 100%)';
+        }
         if (heroStyle.value === 'coral_sunset') {
             return 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #7c2d12 100%)';
         }
@@ -129,6 +144,15 @@ export function useCompanyBranding() {
         }
         if (heroStyle.value === 'royal_indigo') {
             return 'linear-gradient(135deg, #312e81 0%, #4338ca 50%, #1e1b4b 100%)';
+        }
+        if (heroStyle.value === 'deep_purple') {
+            return 'linear-gradient(135deg, #3b1464 0%, #7c3aed 50%, #1e1b4b 100%)';
+        }
+        if (heroStyle.value === 'ocean_teal') {
+            return 'linear-gradient(135deg, #115e59 0%, #0d9488 50%, #042f2e 100%)';
+        }
+        if (heroStyle.value === 'dark_onyx') {
+            return 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%)';
         }
         if (heroStyle.value === 'minimal_white') {
             return 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)';

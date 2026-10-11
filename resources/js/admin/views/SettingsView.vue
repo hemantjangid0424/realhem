@@ -62,26 +62,52 @@
                                 <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">1. One-Click Theme Presets</h2>
                                 <p class="text-xs text-slate-500 mt-0.5">Quickly apply expertly designed color palettes &amp; layouts</p>
                             </div>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">8 Presets</span>
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                                {{ filteredThemePresets.length }} of {{ themePresets.length }} Presets
+                            </span>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <!-- Category Filter Tabs -->
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                             <button
-                                v-for="preset in themePresets"
+                                v-for="cat in presetCategories"
+                                :key="cat"
+                                type="button"
+                                @click="activePresetCategory = cat"
+                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer"
+                                :class="activePresetCategory === cat ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                            >
+                                {{ cat }}
+                            </button>
+                        </div>
+
+                        <!-- Presets Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                            <button
+                                v-for="preset in filteredThemePresets"
                                 :key="preset.name"
                                 type="button"
                                 @click="applyPreset(preset)"
-                                class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 hover:shadow-md"
-                                :class="form.brand_primary_color === preset.primary ? 'border-blue-600 ring-2 ring-blue-500/20 bg-blue-50/20' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'"
+                                class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 hover:shadow-md relative group"
+                                :class="form.brand_primary_color === preset.primary && form.brand_secondary_color === preset.secondary ? 'border-blue-600 ring-2 ring-blue-500/20 bg-blue-50/25' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'"
                             >
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-4 h-4 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.primary }"></span>
-                                    <span class="w-3 h-3 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.secondary }"></span>
-                                    <span class="w-2.5 h-2.5 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.accent }"></span>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-4 h-4 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.primary }" :title="`Primary: ${preset.primary}`"></span>
+                                        <span class="w-3 h-3 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.secondary }" :title="`Secondary: ${preset.secondary}`"></span>
+                                        <span class="w-2.5 h-2.5 rounded-full border border-white shadow-2xs" :style="{ backgroundColor: preset.accent }" :title="`Accent: ${preset.accent}`"></span>
+                                    </div>
+                                    <span
+                                        v-if="form.brand_primary_color === preset.primary && form.brand_secondary_color === preset.secondary"
+                                        class="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-black"
+                                    >✓</span>
+                                    <span v-else class="text-[9px] font-semibold text-slate-400 truncate max-w-[80px]">
+                                        {{ preset.tag || preset.category }}
+                                    </span>
                                 </div>
                                 <div>
-                                    <span class="text-xs font-bold text-slate-800 block leading-tight">{{ preset.name }}</span>
-                                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ preset.font }}</span>
+                                    <span class="text-xs font-bold text-slate-800 block leading-tight group-hover:text-blue-600 transition">{{ preset.name }}</span>
+                                    <span class="text-[10px] text-slate-400 block mt-0.5">{{ preset.font }} · {{ preset.radius }}</span>
                                 </div>
                             </button>
                         </div>
@@ -171,6 +197,8 @@
                                     <option value="Inter">Inter (Ultra Clean Digital)</option>
                                     <option value="Poppins">Poppins (Friendly Rounded)</option>
                                     <option value="Outfit">Outfit (Luxury Real Estate)</option>
+                                    <option value="DM Sans">DM Sans (Clean &amp; Contemporary)</option>
+                                    <option value="Montserrat">Montserrat (Architectural Prestige)</option>
                                     <option value="Roboto">Roboto (Classic Neutral)</option>
                                 </select>
                             </div>
@@ -184,7 +212,11 @@
                                 >
                                     <option value="4px">Sharp Minimalist (4px)</option>
                                     <option value="8px">Subtle Rounded (8px)</option>
+                                    <option value="12px">Compact Rounded (12px)</option>
+                                    <option value="14px">Soft Modern (14px)</option>
                                     <option value="16px">Modern Smooth (16px - Default)</option>
+                                    <option value="18px">Luxury Curved (18px)</option>
+                                    <option value="20px">High Curvature (20px)</option>
                                     <option value="24px">Super Pill Curved (24px)</option>
                                 </select>
                             </div>
@@ -549,9 +581,143 @@ import AdminNavbar from '../components/AdminNavbar.vue';
 const isSaving = ref(false);
 const successMessage = ref('');
 
+const presetCategories = [
+    'All',
+    'Indian Festivals',
+    'Top Portals',
+    'Luxury Estates',
+    'Modern Tech',
+    'Clean & Coastal',
+    'Warm & Earthy',
+];
+
+const activePresetCategory = ref('All');
+
 const themePresets = [
+    // ── INDIAN FESTIVALS & CELEBRATIONS ───────────────────────
+    {
+        name: 'Diwali Shubh Labh',
+        category: 'Indian Festivals',
+        tag: 'Diwali 🪔',
+        primary: '#b45309',
+        secondary: '#78350f',
+        accent: '#ea580c',
+        hero_style: 'diwali_gold',
+        font: 'Montserrat',
+        radius: '18px',
+        banner_badge: 'DIWALI DHAMAKA',
+        banner_text: '🪔 Shubh Deepavali Property Utsav: 0% Processing Fee & Assured Gold Coin with Every Booking!',
+    },
+    {
+        name: 'Navratri Garba Utsav',
+        category: 'Indian Festivals',
+        tag: 'Navratri 🪘',
+        primary: '#be185d',
+        secondary: '#6b21a8',
+        accent: '#facc15',
+        hero_style: 'navratri_glow',
+        font: 'Outfit',
+        radius: '16px',
+        banner_badge: 'NAVRATRI UTSAV',
+        banner_text: '💃 Navratri Mahotsav 2026: 9 Days of Grand Deals & Special Festive Discounts on 5,000+ Homes!',
+    },
+    {
+        name: 'Christmas Joy & New Year',
+        category: 'Indian Festivals',
+        tag: 'Christmas 🎄',
+        primary: '#dc2626',
+        secondary: '#166534',
+        accent: '#eab308',
+        hero_style: 'christmas_fest',
+        font: 'Plus Jakarta Sans',
+        radius: '18px',
+        banner_badge: 'YEAR END FEST',
+        banner_text: '🎄 Merry Christmas & New Year Fest: Flat ₹2 Lakh Festive Voucher on Verified Properties!',
+    },
+    {
+        name: 'Holi Rangotsav',
+        category: 'Indian Festivals',
+        tag: 'Holi Colors 🎨',
+        primary: '#7c3aed',
+        secondary: '#db2777',
+        accent: '#06b6d4',
+        hero_style: 'holi_splash',
+        font: 'Poppins',
+        radius: '20px',
+        banner_badge: 'HOLI DHAMAAL',
+        banner_text: '🎨 Rang Barse Property Mela: Add Color to Your Life with Zero Brokerage on 10,000+ Verified Homes!',
+    },
+    {
+        name: 'Eid Mubarak Crescent',
+        category: 'Indian Festivals',
+        tag: 'Eid Mubarak 🌙',
+        primary: '#047857',
+        secondary: '#064e3b',
+        accent: '#f59e0b',
+        hero_style: 'emerald_luxury',
+        font: 'Outfit',
+        radius: '16px',
+        banner_badge: 'EID SPECIAL',
+        banner_text: '🌙 Eid Mubarak Festive Mela: Special Inaugural Pricing & Instant Spot Booking Discounts!',
+    },
+    {
+        name: 'Uttarayan Kite Fest',
+        category: 'Indian Festivals',
+        tag: 'Kite Fest 🪁',
+        primary: '#0284c7',
+        secondary: '#ea580c',
+        accent: '#facc15',
+        hero_style: 'coral_sunset',
+        font: 'Instrument Sans',
+        radius: '14px',
+        banner_badge: 'KAI PO CHE',
+        banner_text: '🪁 Uttarayan Kite Festival: Fly High with Lowest 7.5% Home Loan Rates & Zero Stamp Duty!',
+    },
+    {
+        name: 'Tricolor Freedom Fest',
+        category: 'Indian Festivals',
+        tag: 'Tricolor 🇮🇳',
+        primary: '#ea580c',
+        secondary: '#1e3a8a',
+        accent: '#15803d',
+        hero_style: 'tricolor_pride',
+        font: 'Instrument Sans',
+        radius: '14px',
+        banner_badge: 'AZADI FEST',
+        banner_text: '🇮🇳 Azadi Property Mahotsav: Celebrate Independence with Freedom from Brokerage!',
+    },
+    {
+        name: 'Ganesh Utsav Shubh Aarambh',
+        category: 'Indian Festivals',
+        tag: 'Ganesh Utsav 🌺',
+        primary: '#c2410c',
+        secondary: '#991b1b',
+        accent: '#eab308',
+        hero_style: 'diwali_gold',
+        font: 'Montserrat',
+        radius: '16px',
+        banner_badge: 'BAPPA MAHOTSUV',
+        banner_text: '🌺 Ganpati Bappa Morya: Shubh Griha Pravesh Deals with Easy 10:90 Developer Payment Plans!',
+    },
+    {
+        name: 'Rakhi Bandhan Harmony',
+        category: 'Indian Festivals',
+        tag: 'Raksha Bandhan 🎁',
+        primary: '#9333ea',
+        secondary: '#be185d',
+        accent: '#f59e0b',
+        hero_style: 'deep_purple',
+        font: 'Outfit',
+        radius: '16px',
+        banner_badge: 'RAKHI SPECIAL',
+        banner_text: "🎁 Raksha Bandhan Gift of Home: Register in Sister's Name & Avail 1% Lower Stamp Duty!",
+    },
+
+    // ── TOP PORTALS ───────────────────────────────────────────
     {
         name: '99acres Royal',
+        category: 'Top Portals',
+        tag: 'India #1 Portal',
         primary: '#005ca8',
         secondary: '#1e40af',
         accent: '#ff6b35',
@@ -561,6 +727,8 @@ const themePresets = [
     },
     {
         name: '99bigha Coral',
+        category: 'Top Portals',
+        tag: 'Warm Sunset',
         primary: '#ff6b35',
         secondary: '#ea580c',
         accent: '#059669',
@@ -569,7 +737,44 @@ const themePresets = [
         radius: '16px',
     },
     {
+        name: 'MagicBricks Crimson',
+        category: 'Top Portals',
+        tag: 'High Energy',
+        primary: '#d8232a',
+        secondary: '#991b1b',
+        accent: '#2563eb',
+        hero_style: 'midnight_blue',
+        font: 'Inter',
+        radius: '12px',
+    },
+    {
+        name: 'Housing Violet',
+        category: 'Top Portals',
+        tag: 'Purple & Cyan',
+        primary: '#5e239d',
+        secondary: '#3b1464',
+        accent: '#00d2d3',
+        hero_style: 'deep_purple',
+        font: 'Plus Jakarta Sans',
+        radius: '16px',
+    },
+    {
+        name: 'NoBroker Magenta',
+        category: 'Top Portals',
+        tag: 'Direct Deals',
+        primary: '#e11d48',
+        secondary: '#9f1239',
+        accent: '#0ea5e9',
+        hero_style: 'midnight_blue',
+        font: 'Inter',
+        radius: '14px',
+    },
+
+    // ── LUXURY ESTATES ────────────────────────────────────────
+    {
         name: 'Emerald Luxury',
+        category: 'Luxury Estates',
+        tag: 'Mansions & Golf',
         primary: '#059669',
         secondary: '#064e3b',
         accent: '#d97706',
@@ -578,16 +783,9 @@ const themePresets = [
         radius: '18px',
     },
     {
-        name: 'Royal Indigo',
-        primary: '#4f46e5',
-        secondary: '#312e81',
-        accent: '#10b981',
-        hero_style: 'royal_indigo',
-        font: 'Inter',
-        radius: '16px',
-    },
-    {
         name: 'Amber & Gold',
+        category: 'Luxury Estates',
+        tag: 'Prestige Gold',
         primary: '#d97706',
         secondary: '#78350f',
         accent: '#2563eb',
@@ -596,39 +794,176 @@ const themePresets = [
         radius: '12px',
     },
     {
-        name: 'Crimson Prime',
-        primary: '#dc2626',
-        secondary: '#991b1b',
+        name: 'Tuscan Olive',
+        category: 'Luxury Estates',
+        tag: 'Mediterranean',
+        primary: '#4d7c0f',
+        secondary: '#365314',
+        accent: '#d97706',
+        hero_style: 'emerald_luxury',
+        font: 'Outfit',
+        radius: '16px',
+    },
+    {
+        name: 'Rose Gold Prestige',
+        category: 'Luxury Estates',
+        tag: 'Penthouse Glam',
+        primary: '#be185d',
+        secondary: '#831843',
         accent: '#f59e0b',
+        hero_style: 'coral_sunset',
+        font: 'Outfit',
+        radius: '20px',
+    },
+    {
+        name: 'Ruby Elegance',
+        category: 'Luxury Estates',
+        tag: 'Boutique Heritage',
+        primary: '#b91c1c',
+        secondary: '#7f1d1d',
+        accent: '#fbbf24',
         hero_style: 'midnight_blue',
-        font: 'Instrument Sans',
+        font: 'Montserrat',
+        radius: '18px',
+    },
+
+    // ── MODERN TECH ───────────────────────────────────────────
+    {
+        name: 'Royal Indigo',
+        category: 'Modern Tech',
+        tag: 'FinTech Minimal',
+        primary: '#4f46e5',
+        secondary: '#312e81',
+        accent: '#10b981',
+        hero_style: 'royal_indigo',
+        font: 'Inter',
         radius: '16px',
     },
     {
         name: 'Dark Slate Tech',
+        category: 'Modern Tech',
+        tag: 'Modern Slate',
         primary: '#0f172a',
         secondary: '#1e293b',
         accent: '#3b82f6',
-        hero_style: 'midnight_blue',
+        hero_style: 'dark_onyx',
         font: 'Plus Jakarta Sans',
         radius: '12px',
     },
     {
+        name: 'Obsidian Onyx',
+        category: 'Modern Tech',
+        tag: 'Ultra Dark Neo',
+        primary: '#18181b',
+        secondary: '#27272a',
+        accent: '#10b981',
+        hero_style: 'dark_onyx',
+        font: 'Inter',
+        radius: '8px',
+    },
+    {
+        name: 'Cyber Neon',
+        category: 'Modern Tech',
+        tag: 'AI PropTech',
+        primary: '#0891b2',
+        secondary: '#164e63',
+        accent: '#a855f7',
+        hero_style: 'ocean_teal',
+        font: 'Plus Jakarta Sans',
+        radius: '14px',
+    },
+    {
         name: 'Violet Luxe',
+        category: 'Modern Tech',
+        tag: 'Neon Violet',
         primary: '#7c3aed',
         secondary: '#4c1d95',
         accent: '#ec4899',
-        hero_style: 'royal_indigo',
+        hero_style: 'deep_purple',
         font: 'Outfit',
         radius: '20px',
     },
+
+    // ── CLEAN & COASTAL ───────────────────────────────────────
+    {
+        name: 'Nordic Frost',
+        category: 'Clean & Coastal',
+        tag: 'Nordic Sky',
+        primary: '#0284c7',
+        secondary: '#0369a1',
+        accent: '#06b6d4',
+        hero_style: 'midnight_blue',
+        font: 'Outfit',
+        radius: '14px',
+    },
+    {
+        name: 'Teal Horizon',
+        category: 'Clean & Coastal',
+        tag: 'Coastal Breeze',
+        primary: '#0d9488',
+        secondary: '#115e59',
+        accent: '#f97316',
+        hero_style: 'ocean_teal',
+        font: 'Plus Jakarta Sans',
+        radius: '16px',
+    },
+    {
+        name: 'Sapphire Horizon',
+        category: 'Clean & Coastal',
+        tag: 'Deep Navy Sky',
+        primary: '#1d4ed8',
+        secondary: '#1e3a8a',
+        accent: '#38bdf8',
+        hero_style: 'midnight_blue',
+        font: 'Instrument Sans',
+        radius: '16px',
+    },
+
+    // ── WARM & EARTHY ─────────────────────────────────────────
+    {
+        name: 'Forest Evergreen',
+        category: 'Warm & Earthy',
+        tag: 'Eco Nature',
+        primary: '#15803d',
+        secondary: '#14532d',
+        accent: '#f59e0b',
+        hero_style: 'emerald_luxury',
+        font: 'DM Sans',
+        radius: '16px',
+    },
+    {
+        name: 'Sunset Terracotta',
+        category: 'Warm & Earthy',
+        tag: 'Warm Clay & Brick',
+        primary: '#c2410c',
+        secondary: '#9a3412',
+        accent: '#eab308',
+        hero_style: 'coral_sunset',
+        font: 'Poppins',
+        radius: '14px',
+    },
 ];
+
+const filteredThemePresets = computed(() => {
+    if (activePresetCategory.value === 'All') {
+        return themePresets;
+    }
+    return themePresets.filter(p => p.category === activePresetCategory.value);
+});
 
 const heroStyles = [
     { id: 'midnight_blue', name: 'Brand Gradient', gradient: 'linear-gradient(135deg, #0f172a, #005ca8)' },
+    { id: 'diwali_gold', name: 'Diwali Diya Glow 🪔', gradient: 'linear-gradient(135deg, #78350f, #d97706, #ea580c)' },
+    { id: 'navratri_glow', name: 'Navratri Dandiya 🪘', gradient: 'linear-gradient(135deg, #4a044e, #6b21a8, #db2777)' },
+    { id: 'christmas_fest', name: 'Christmas Pine & Holly 🎄', gradient: 'linear-gradient(135deg, #14532d, #7f1d1d, #dc2626)' },
+    { id: 'holi_splash', name: 'Holi Rang Splash 🎨', gradient: 'linear-gradient(135deg, #4c1d95, #7c3aed, #db2777, #06b6d4)' },
+    { id: 'tricolor_pride', name: 'Tricolor Freedom 🇮🇳', gradient: 'linear-gradient(135deg, #ea580c, #1e3a8a, #15803d)' },
     { id: 'coral_sunset', name: 'Coral Sunset', gradient: 'linear-gradient(135deg, #ea580c, #f97316)' },
     { id: 'emerald_luxury', name: 'Emerald Luxury', gradient: 'linear-gradient(135deg, #064e3b, #059669)' },
     { id: 'royal_indigo', name: 'Royal Indigo', gradient: 'linear-gradient(135deg, #312e81, #4338ca)' },
+    { id: 'deep_purple', name: 'Deep Purple Luxe', gradient: 'linear-gradient(135deg, #3b1464, #7c3aed)' },
+    { id: 'ocean_teal', name: 'Ocean Teal', gradient: 'linear-gradient(135deg, #115e59, #0d9488)' },
+    { id: 'dark_onyx', name: 'Dark Obsidian', gradient: 'linear-gradient(135deg, #18181b, #27272a)' },
     { id: 'minimal_white', name: 'Minimal White', gradient: 'linear-gradient(180deg, #f8fafc, #ffffff)' },
 ];
 
@@ -659,6 +994,21 @@ const form = ref({
 const previewHeroGradient = computed(() => {
     const p = form.value.brand_primary_color || '#005ca8';
     const s = form.value.brand_secondary_color || '#1e40af';
+    if (form.value.hero_style === 'diwali_gold') {
+        return 'linear-gradient(135deg, #78350f 0%, #d97706 50%, #ea580c 100%)';
+    }
+    if (form.value.hero_style === 'navratri_glow') {
+        return 'linear-gradient(135deg, #4a044e 0%, #6b21a8 50%, #db2777 100%)';
+    }
+    if (form.value.hero_style === 'christmas_fest') {
+        return 'linear-gradient(135deg, #14532d 0%, #7f1d1d 50%, #dc2626 100%)';
+    }
+    if (form.value.hero_style === 'holi_splash') {
+        return 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 35%, #db2777 70%, #06b6d4 100%)';
+    }
+    if (form.value.hero_style === 'tricolor_pride') {
+        return 'linear-gradient(135deg, #ea580c 0%, #1e3a8a 50%, #15803d 100%)';
+    }
     if (form.value.hero_style === 'coral_sunset') {
         return 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #7c2d12 100%)';
     }
@@ -667,6 +1017,15 @@ const previewHeroGradient = computed(() => {
     }
     if (form.value.hero_style === 'royal_indigo') {
         return 'linear-gradient(135deg, #312e81 0%, #4338ca 50%, #1e1b4b 100%)';
+    }
+    if (form.value.hero_style === 'deep_purple') {
+        return 'linear-gradient(135deg, #3b1464 0%, #7c3aed 50%, #1e1b4b 100%)';
+    }
+    if (form.value.hero_style === 'ocean_teal') {
+        return 'linear-gradient(135deg, #115e59 0%, #0d9488 50%, #042f2e 100%)';
+    }
+    if (form.value.hero_style === 'dark_onyx') {
+        return 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%)';
     }
     if (form.value.hero_style === 'minimal_white') {
         return 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)';
@@ -681,6 +1040,12 @@ const applyPreset = (preset) => {
     form.value.hero_style = preset.hero_style;
     form.value.theme_font_family = preset.font;
     form.value.theme_border_radius = preset.radius;
+    if (preset.banner_text) {
+        form.value.banner_text = preset.banner_text;
+    }
+    if (preset.banner_badge) {
+        form.value.banner_badge = preset.banner_badge;
+    }
 };
 
 const fetchSettings = async () => {
