@@ -244,7 +244,10 @@
                     v-for="prop in handpickedListings"
                     :key="prop.id"
                     :to="{ name: 'client.property-detail', params: { slug: prop.slug } }"
-                    class="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-lg transition flex flex-col overflow-hidden group cursor-pointer"
+                    class="bg-white rounded-2xl border shadow-xs hover:shadow-lg transition flex flex-col overflow-hidden group cursor-pointer relative"
+                    :class="prop.is_featured
+                        ? 'border-amber-300 ring-1 ring-amber-400/25 bg-gradient-to-b from-amber-50/15 via-white to-white'
+                        : 'border-slate-200/80'"
                 >
                     <!-- Property Image / Header -->
                     <div class="h-44 bg-slate-800 relative flex items-center justify-center overflow-hidden">
@@ -257,17 +260,34 @@
                         <div v-else class="text-3xl">🏠</div>
 
                         <!-- Badge Overlay -->
-                        <span
-                            class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-white font-extrabold text-[10px] uppercase shadow-xs"
-                            :style="{ backgroundColor: brandPrimaryColor }"
-                        >
-                            {{ prop.badge }}
-                        </span>
-                        <span class="absolute top-3 right-3 bg-slate-950/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                        <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-20">
+                            <span
+                                v-if="prop.is_featured"
+                                class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span>FEATURED</span>
+                            </span>
+                            <span
+                                v-if="prop.is_verified"
+                                class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span>VERIFIED</span>
+                            </span>
+                            <span
+                                v-if="!prop.is_featured && !prop.is_verified"
+                                class="px-2.5 py-0.5 rounded-full text-white font-extrabold text-[10px] uppercase shadow-xs"
+                                :style="{ backgroundColor: brandPrimaryColor }"
+                            >
+                                {{ prop.badge }}
+                            </span>
+                        </div>
+                        <span class="absolute top-3 right-3 bg-slate-950/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-20">
                             📷 {{ prop.photosCount }}
                         </span>
 
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between">
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between z-10">
                             <span class="text-white font-extrabold text-sm">
                                 <template v-if="isResidentialType(prop.category) && prop.bedrooms > 0">
                                     {{ prop.bedrooms }} BHK
@@ -283,12 +303,22 @@
                     <!-- Property Details -->
                     <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                         <div>
-                            <h3 class="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition">
-                                {{ prop.title }}
-                            </h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
-                                <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                                <span class="truncate">{{ prop.locality }}, {{ prop.city }}</span>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h3 class="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition flex-1">
+                                    {{ prop.title }}
+                                </h3>
+                                <span v-if="prop.is_featured" class="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-2xs">
+                                    ★ Featured
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 flex items-center justify-between gap-1">
+                                <span class="flex items-center gap-1 truncate">
+                                    <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                    <span class="truncate">{{ prop.locality }}, {{ prop.city }}</span>
+                                </span>
+                                <span v-if="prop.is_verified" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
+                                    ✓ Verified
+                                </span>
                             </p>
                         </div>
 
@@ -828,7 +858,9 @@ const fetchHomeProperties = async () => {
                     city: p.city || '',
                     area: p.carpet_area ? String(p.carpet_area) : (p.super_builtup_area ? String(p.super_builtup_area) : '1,200'),
                     possession: p.construction_status || 'Ready to Move',
-                    badge: p.is_verified ? 'Verified' : 'Owner',
+                    is_verified: !!p.is_verified,
+                    is_featured: !!p.is_featured,
+                    badge: p.is_featured ? 'Featured' : (p.is_verified ? 'Verified' : 'Owner'),
                     photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
                     photos: p.photos || [],
                     sellerType: p.user_type || (p.user ? p.user.role : 'Owner'),
@@ -845,7 +877,11 @@ onMounted(() => {
 });
 
 const handpickedListings = computed(() => {
-    return apiProperties.value;
+    return [...apiProperties.value].sort((a, b) => {
+        if (a.is_featured && !b.is_featured) return -1;
+        if (!a.is_featured && b.is_featured) return 1;
+        return 0;
+    });
 });
 
 const propertyCategories = [

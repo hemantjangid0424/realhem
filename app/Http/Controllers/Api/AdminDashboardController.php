@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Property;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,8 +21,8 @@ class AdminDashboardController extends Controller
             'total_agents' => User::where('role', 'agent')->count(),
             'total_owners' => User::where('role', 'owner')->count(),
             'total_buyers' => User::where('role', 'user')->count(),
-            'total_properties' => 0,
-            'pending_verifications' => 0,
+            'total_properties' => Property::count(),
+            'pending_verifications' => Property::whereIn('status', ['pending', 'pending_approval'])->orWhere('is_verified', false)->count(),
             'total_inquiries' => 0,
             'cities_count' => 8,
         ];

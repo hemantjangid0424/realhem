@@ -142,9 +142,13 @@ class PropertyController extends Controller
             $query->where('is_verified', true);
         }
 
-        // Add photos separately after sorting to avoid sort buffer issues.
-        // We fetch the IDs first (lightweight), then load photos for those IDs.
-        $properties = $query->orderBy('id', 'desc')->paginate(15);
+        // Featured only
+        if ($request->boolean('featured_only')) {
+            $query->where('is_featured', true);
+        }
+
+        // Featured properties appear at the top, then newest
+        $properties = $query->orderBy('is_featured', 'desc')->orderBy('id', 'desc')->paginate(15);
 
         // Attach photos from a separate lightweight query
         $ids = $properties->pluck('id');

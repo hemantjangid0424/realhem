@@ -397,6 +397,27 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- Trust & Badges -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Trust & Highlights</label>
+                        <div class="space-y-2 text-xs text-slate-600">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="verifiedOnly" class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="inline-flex items-center gap-1 font-semibold text-blue-700">
+                                    <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    Verified Properties
+                                </span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="featuredOnly" class="rounded text-amber-500 focus:ring-amber-500">
+                                <span class="inline-flex items-center gap-1 font-semibold text-amber-700">
+                                    <span>★</span>
+                                    Featured Only
+                                </span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -425,7 +446,10 @@
                     v-for="item in displayedListings"
                     :key="item.id"
                     :to="{ name: 'client.property-detail', params: { slug: item.slug } }"
-                    class="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition p-5 flex flex-col md:flex-row gap-5 group cursor-pointer"
+                    class="bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg p-5 flex flex-col md:flex-row gap-5 group cursor-pointer relative"
+                    :class="item.is_featured
+                        ? 'border-amber-300 ring-1 ring-amber-400/30 shadow-xs bg-gradient-to-r from-amber-50/20 via-white to-white'
+                        : 'border-slate-200/80 shadow-xs'"
                 >
                     <!-- Property Thumbnail / Gallery Carousel View -->
                     <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
@@ -443,24 +467,32 @@
                         </div>
 
                         <!-- 99acres Badge Overlay -->
-                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1">
+                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30">
+                            <!-- Featured Badge -->
                             <span
-                                v-if="item.isRera"
-                                class="px-1.5 py-0.5 rounded text-white font-black text-[9px] uppercase tracking-wide"
-                                :style="{ backgroundColor: brandPrimaryColor }"
+                                v-if="item.is_featured"
+                                class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
                             >
-                                RERA
+                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span>FEATURED</span>
                             </span>
+
+                            <!-- Verified Badge -->
+                            <span
+                                v-if="item.is_verified || item.isRera"
+                                class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span>VERIFIED</span>
+                            </span>
+
                             <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
                                 ZERO BROKERAGE
-                            </span>
-                            <span class="px-1.5 py-0.5 rounded bg-emerald-600/90 text-white font-bold text-[9px] uppercase">
-                                3D
                             </span>
                         </div>
 
                         <!-- Top Right New Booking Ribbon -->
-                        <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs">
+                        <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
                             NEW BOOKING
                         </span>
 
@@ -477,9 +509,14 @@
                             <!-- Header Title and Pricing -->
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <h3 class="font-black text-lg text-slate-900 group-hover:opacity-85 cursor-pointer transition">
-                                        {{ item.title }}
-                                    </h3>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="font-black text-lg text-slate-900 group-hover:opacity-85 cursor-pointer transition">
+                                            {{ item.title }}
+                                        </h3>
+                                        <span v-if="item.is_featured" class="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                                            ★ Featured
+                                        </span>
+                                    </div>
                                     <p class="text-xs font-bold text-slate-600 mt-0.5">
                                         <template v-if="isResidentialType(item.type) && item.bedrooms > 0">
                                             {{ item.bedrooms }} BHK {{ item.type }}
@@ -530,7 +567,13 @@
                         <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                             <div>
                                 <span class="text-[10px] uppercase font-bold text-slate-400 block">Builder</span>
-                                <span class="text-xs font-bold text-slate-800">{{ item.builder }}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-bold text-slate-800">{{ item.builder }}</span>
+                                    <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
+                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        Verified
+                                    </span>
+                                </div>
                             </div>
 
                             <div class="flex items-center gap-2">
@@ -586,6 +629,7 @@ const selectedBhks = ref(route.query.bhk ? route.query.bhk.split(',') : []);
 const selectedTags = ref(['new_launch']);
 const selectedPropTypes = ref([]);
 const verifiedOnly = ref(false);
+const featuredOnly = ref(false);
 const readyToMove = ref(true);
 const underConstruction = ref(false);
 const budgetMin = ref('');
@@ -707,6 +751,7 @@ const hasActiveFilters = computed(() => {
         !!budgetMin.value ||
         !!budgetMax.value ||
         verifiedOnly.value ||
+        featuredOnly.value ||
         !readyToMove.value ||
         underConstruction.value
     );
@@ -937,6 +982,8 @@ const resetFilters = () => {
     selectedTags.value = [];
     readyToMove.value = true;
     underConstruction.value = false;
+    verifiedOnly.value = false;
+    featuredOnly.value = false;
     budgetMin.value = '';
     budgetMax.value = '';
     runSearch();
@@ -977,6 +1024,8 @@ const defaultFallbackListings = [
         postedBy: 'Builder',
         sellerPhone: '+91 98250 12345',
         isNewBooking: true,
+        is_featured: true,
+        is_verified: true,
         isRera: true,
         zeroBrokerage: true,
         photosCount: 8,
@@ -1006,6 +1055,8 @@ const defaultFallbackListings = [
         postedBy: 'Builder',
         sellerPhone: '+91 98251 54321',
         isNewBooking: true,
+        is_featured: false,
+        is_verified: true,
         isRera: true,
         zeroBrokerage: true,
         photosCount: 12,
@@ -1035,6 +1086,8 @@ const defaultFallbackListings = [
         postedBy: 'Owner',
         sellerPhone: '+91 98980 11223',
         isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
         isRera: true,
         zeroBrokerage: true,
         photosCount: 6,
@@ -1063,6 +1116,8 @@ const defaultFallbackListings = [
         postedBy: 'Verified Owner',
         sellerPhone: '+91 97270 33445',
         isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
         isRera: true,
         zeroBrokerage: true,
         photosCount: 9,
@@ -1091,6 +1146,8 @@ const defaultFallbackListings = [
         postedBy: 'Agent',
         sellerPhone: '+91 98240 55667',
         isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
         isRera: true,
         zeroBrokerage: true,
         photosCount: 5,
@@ -1149,6 +1206,9 @@ const fetchApiProperties = async () => {
         if (verifiedOnly.value) {
             params.set('verified_only', '1');
         }
+        if (featuredOnly.value) {
+            params.set('featured_only', '1');
+        }
         if (params.toString()) {
             url += '?' + params.toString();
         }
@@ -1179,6 +1239,8 @@ const fetchApiProperties = async () => {
                         postedBy: p.user ? p.user.name : 'Owner',
                         sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
                         isNewBooking: false,
+                        is_verified: !!p.is_verified,
+                        is_featured: !!p.is_featured,
                         isRera: !!p.is_verified,
                         zeroBrokerage: true,
                         photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
@@ -1221,6 +1283,7 @@ watch(
         budgetMin.value,
         budgetMax.value,
         verifiedOnly.value,
+        featuredOnly.value,
     ],
     () => {
         fetchApiProperties();
@@ -1231,7 +1294,7 @@ watch(
 const displayedListings = computed(() => {
     const list = apiProperties.value.length > 0 ? apiProperties.value : (hasActiveFilters.value || (activeType.value && activeType.value !== 'all') ? [] : defaultFallbackListings);
 
-    return list.filter((item) => {
+    const filtered = list.filter((item) => {
         // ── Near-me locality filter ──────────────────────────────────────────
         if (isNearMe.value && activeNearbyAreas.value.length > 0) {
             const matchesNearby = activeNearbyAreas.value.some((area) =>
@@ -1316,11 +1379,22 @@ const displayedListings = computed(() => {
         }
 
         // ── Verified-only filter ─────────────────────────────────────────────
-        if (verifiedOnly.value && !item.isRera) {
+        if (verifiedOnly.value && !item.is_verified && !item.isRera) {
+            return false;
+        }
+
+        // ── Featured-only filter ─────────────────────────────────────────────
+        if (featuredOnly.value && !item.is_featured) {
             return false;
         }
 
         return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+        if (a.is_featured && !b.is_featured) return -1;
+        if (!a.is_featured && b.is_featured) return 1;
+        return 0;
     });
 });
 

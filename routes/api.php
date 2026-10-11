@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
+use App\Http\Controllers\Api\AdminPropertyController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\SettingController;
@@ -70,5 +71,16 @@ Route::prefix('admin')->group(function () {
         Route::get('/users', [AdminDashboardController::class, 'users']);
         Route::get('/settings', [SettingController::class, 'adminIndex']);
         Route::post('/settings', [SettingController::class, 'update']);
+
+        // Property Management Module
+        Route::get('/properties', [AdminPropertyController::class, 'index']);
+        Route::get('/properties/{property}', [AdminPropertyController::class, 'show']);
+        Route::post('/properties/{property}/approve', [AdminPropertyController::class, 'approve']);
+        Route::post('/properties/{property}/reject', [AdminPropertyController::class, 'reject']);
+        Route::patch('/properties/{property}/status', [AdminPropertyController::class, 'updateStatus']);
+        Route::patch('/properties/{property}/toggle-verified', [AdminPropertyController::class, 'toggleVerified']);
+        Route::patch('/properties/{property}/toggle-featured', [AdminPropertyController::class, 'toggleFeatured']);
+        Route::put('/properties/{property}', [AdminPropertyController::class, 'update']);
+        Route::delete('/properties/{property}', [AdminPropertyController::class, 'destroy']);
     });
 });
