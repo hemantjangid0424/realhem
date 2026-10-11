@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Locality;
-use App\Models\State;
+use App\Services\GeocodingService;
 use App\Services\GooglePlacesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -154,6 +154,21 @@ class LocationController extends Controller
     }
 
     /**
+     * Unified location discovery searching cities, localities, societies, apartments, and landmarks.
+     * Used by Post Property and global search to auto-fill location fields.
+     */
+    public function searchAll(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        $city = trim((string) $request->query('city', ''));
+        $limit = (int) $request->query('limit', 10);
+
+        $results = GooglePlacesService::searchAll($q, $limit, $city ?: null);
+
+        return response()->json($results);
+    }
+
+    /**
      * Search cities and states using Google Places API (New) & database cache.
      */
     public function searchCities(Request $request): JsonResponse
@@ -209,8 +224,8 @@ class LocationController extends Controller
      */
     public function detect(Request $request): JsonResponse
     {
-        $lat = $request->input('lat') ?? $request->query('lat');
-        $lng = $request->input('lng') ?? $request->query('lng');
+        $lat = $request->float('lat') ?: null;
+        $lng = $request->float('lng') ?: null;
 
         $detectedCity = null;
         $detectedLocality = null;
@@ -234,18 +249,15 @@ class LocationController extends Controller
                     $detectedLocality = $addr['suburb'] ?? $addr['neighbourhood'] ?? $addr['village'] ?? $addr['road'] ?? null;
                     $detectedState = $addr['state'] ?? null;
 
-                    $detectedCity = $this->normalizeCityName($rawCity, $detectedState, $detectedLocality);
+                    $detectedCity = GeocodingService::normalizeCityName($rawCity, $detectedState, $detectedLocality);
                 }
             } catch (\Throwable $e) {
                 // Ignore network errors and fallback gracefully
             }
         }
 
-        if (! $detectedCity) {
-            $detectedCity = 'Delhi NCR';
-        }
-
-        $nearbyList = $this->getNearbyLocalities($detectedCity, $detectedLocality, $lat ? (float) $lat : null, $lng ? (float) $lng : null);
+        $detectedCity = $detectedCity ?: 'Delhi NCR';
+        $nearbyList = GeocodingService::getNearbyLocalities($detectedCity, $detectedLocality, $lat, $lng);
 
         return response()->json([
             'success' => true,
@@ -253,115 +265,65 @@ class LocationController extends Controller
             'locality' => $detectedLocality,
             'state' => $detectedState,
             'display' => $detectedLocality ? "{$detectedLocality}, {$detectedCity}" : $detectedCity,
-            'lat' => $lat ? (float) $lat : null,
-            'lng' => $lng ? (float) $lng : null,
+            'lat' => $lat,
+            'lng' => $lng,
             'nearby_localities' => $nearbyList,
         ]);
     }
 
     /**
-     * Get nearby localities within 3-5 km for a given city and locality.
+     * Get nearby localities within real radius (default 3.0 km) for a given city and locality/coordinates.
      */
     public function nearby(Request $request): JsonResponse
     {
-        $city = $request->query('city', 'Ahmedabad');
+        $city = (string) $request->query('city', 'Ahmedabad');
         $locality = $request->query('locality');
-        $lat = $request->query('lat');
-        $lng = $request->query('lng');
+        $lat = $request->float('lat') ?: null;
+        $lng = $request->float('lng') ?: null;
+        $radiusKm = (float) $request->query('radius', 3.0);
 
-        $nearbyList = $this->getNearbyLocalities(
+        $nearbyList = GeocodingService::getNearbyLocalities(
             $city,
             $locality,
-            $lat ? (float) $lat : null,
-            $lng ? (float) $lng : null
+            $lat,
+            $lng,
+            $radiusKm
         );
 
         return response()->json([
             'success' => true,
             'city' => $city,
             'locality' => $locality,
-            'radius_km' => 3,
+            'lat' => $lat,
+            'lng' => $lng,
+            'radius_km' => $radiusKm,
             'nearby_localities' => $nearbyList,
         ]);
     }
 
     /**
-     * Resolve nearby localities list based on city and locality.
+     * Helper delegate for retrieving nearby localities.
+     *
+     * @return array<int, string>
      */
-    public function getNearbyLocalities(string $city, ?string $locality = null, ?float $lat = null, ?float $lng = null): array
+    public function getNearbyLocalities(string $city, ?string $locality = null, ?float $lat = null, ?float $lng = null, float $radiusKm = 3.0): array
     {
-        // Try fetching localities from database
-        $dbLocalities = Locality::whereHas('city', function ($q) use ($city) {
-            $q->where('name', $city)
-                ->orWhere('name', 'LIKE', "%{$city}%");
-        })->pluck('name')->toArray();
-
-        if (count($dbLocalities) > 0) {
-            return $dbLocalities;
-        }
-
-        $clusters = [
-            'Ahmedabad' => [
-                'Jagatpur', 'Chandkheda', 'Zundal', 'Tragad', 'Vaishnodevi Circle',
-                'Gota', 'Charodi', 'New Ranip', 'New CG Road', 'Nigam Nagar',
-                'Chainpur', 'D Cabin', 'Janta Nagar', 'SG Highway', 'Ranip',
-                'Sabarmati', 'Chamunda Nagar', 'Godrej Garden City', 'Motera',
-                'Chandlodiya', 'Anand Nagar', 'Koteshwar', 'Khodiyar',
-            ],
-            'Delhi NCR' => [
-                'Sector 100', 'Sector 104', 'Sector 137', 'Sector 128 (Expressway)',
-                'Sector 93', 'Sector 75', 'Sector 78', 'Sector 76', 'Sector 150',
-                'Sector 62', 'Noida Extension', 'Golf Course Road',
-            ],
-            'Bangalore' => [
-                'Whitefield', 'Hoodi', 'Kadugodi', 'ITPL', 'Varthur',
-                'Marathahalli', 'Brookefield', 'KR Puram', 'Mahadevapura',
-            ],
-            'Mumbai' => [
-                'Bandra West', 'Bandra East', 'Khar West', 'Santacruz West',
-                'Juhu', 'Andheri West', 'BKC', 'Pali Hill',
-            ],
-            'Pune' => [
-                'Hinjawadi Phase 1', 'Hinjawadi Phase 2', 'Wakad', 'Baner',
-                'Balewadi', 'Tathawade', 'Punawale', 'Pimple Saudagar',
-            ],
-        ];
-
-        return $clusters[$city] ?? ['SG Highway', 'Bopal', 'Prahlad Nagar', 'Satellite'];
+        return GeocodingService::getNearbyLocalities($city, $locality, $lat, $lng, $radiusKm);
     }
 
     /**
-     * Normalize reverse-geocoded location data to our standard Indian real estate city markets.
+     * Helper delegate for calculating geographical distance in kilometers.
      */
-    protected function normalizeCityName(?string $rawCity, ?string $state, ?string $locality): string
+    public function calculateHaversineDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $combined = strtolower("{$rawCity} {$state} {$locality}");
+        return GeocodingService::distance($lat1, $lon1, $lat2, $lon2);
+    }
 
-        if (str_contains($combined, 'ahmedabad') || str_contains($combined, 'gandhinagar')) {
-            return 'Ahmedabad';
-        }
-        if (str_contains($combined, 'delhi') || str_contains($combined, 'noida') || str_contains($combined, 'gurugram') || str_contains($combined, 'gurgaon') || str_contains($combined, 'ghaziabad') || str_contains($combined, 'faridabad')) {
-            return 'Delhi NCR';
-        }
-        if (str_contains($combined, 'mumbai') || str_contains($combined, 'thane') || str_contains($combined, 'navi mumbai')) {
-            return 'Mumbai';
-        }
-        if (str_contains($combined, 'bangalore') || str_contains($combined, 'bengaluru')) {
-            return 'Bangalore';
-        }
-        if (str_contains($combined, 'pune') || str_contains($combined, 'pcmc') || str_contains($combined, 'pimpri')) {
-            return 'Pune';
-        }
-        if (str_contains($combined, 'hyderabad') || str_contains($combined, 'secunderabad')) {
-            return 'Hyderabad';
-        }
-        if (str_contains($combined, 'chennai') || str_contains($combined, 'madras')) {
-            return 'Chennai';
-        }
-        if (str_contains($combined, 'kolkata') || str_contains($combined, 'calcutta')) {
-            return 'Kolkata';
-        }
-
-        return $rawCity ?: 'Delhi NCR';
+    /**
+     * Helper delegate for normalizing city market names.
+     */
+    public function normalizeCityName(?string $rawCity, ?string $state = null, ?string $locality = null): string
+    {
+        return GeocodingService::normalizeCityName($rawCity, $state, $locality);
     }
 }

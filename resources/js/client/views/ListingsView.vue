@@ -665,32 +665,6 @@ const handleSelectSuggestion = (item) => {
 // Active Nearby Areas Chips in Applied Filters (Exact from user's 99acres screenshot)
 const activeNearbyAreas = ref([]);
 
-const defaultAhmedabadNearby = [
-    'Jagatpur',
-    'Chandkheda',
-    'Zundal',
-    'Tragad',
-    'Vaishnodevi Circle',
-    'Gota',
-    'Charodi',
-    'New Ranip',
-    'New CG Road',
-    'Nigam Nagar',
-    'Chainpur',
-    'D Cabin',
-    'Janta Nagar',
-    'SG Highway',
-    'Ranip',
-    'Sabarmati',
-    'Chamunda Nagar',
-    'Godrej Garden City',
-    'Motera',
-    'Chandlodiya',
-    'Anand Nagar',
-    'Koteshwar',
-    'Khodiyar',
-];
-
 const quickTags = [
     { id: 'owner', label: 'Owner' },
     { id: 'verified', label: 'Verified' },
@@ -753,12 +727,12 @@ const isBhkActive = (bhk) => {
 
 const initNearbyAreas = async () => {
     if (isNearMe.value) {
-        if (nearbyLocalities.value && nearbyLocalities.value.length > 0) {
-            activeNearbyAreas.value = [...nearbyLocalities.value];
-        } else {
-            const fetched = await fetchNearbyLocalities(activeCity.value);
-            activeNearbyAreas.value = fetched.length > 0 ? [...fetched] : [...defaultAhmedabadNearby];
-        }
+        const lat = route.query.lat ? parseFloat(route.query.lat) : null;
+        const lng = route.query.lng ? parseFloat(route.query.lng) : null;
+        const locality = route.query.locality || currentLocality.value || '';
+
+        const fetched = await fetchNearbyLocalities(activeCity.value, locality, lat, lng);
+        activeNearbyAreas.value = fetched && fetched.length > 0 ? [...fetched] : (locality ? [locality] : []);
     } else {
         activeNearbyAreas.value = [];
     }
@@ -835,7 +809,7 @@ const detectLocationListings = () => {
         searchKeyword.value = 'Near me';
         activeNearbyAreas.value = data.nearby_localities && data.nearby_localities.length > 0
             ? [...data.nearby_localities]
-            : [...defaultAhmedabadNearby];
+            : (data.locality ? [data.locality] : []);
 
         router.replace({
             query: {
@@ -843,6 +817,9 @@ const detectLocationListings = () => {
                 type: activeType.value,
                 city: data.city,
                 near_me: 'true',
+                lat: data.lat || undefined,
+                lng: data.lng || undefined,
+                locality: data.locality || undefined,
                 keyword: undefined,
             },
         });

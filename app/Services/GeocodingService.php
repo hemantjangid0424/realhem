@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\City;
+use App\Models\GooglePlace;
 use App\Models\Locality;
 
 class GeocodingService
@@ -48,6 +49,14 @@ class GeocodingService
         'maninagar' => ['lat' => 22.9978, 'lng' => 72.6033, 'pincode' => '380008'],
         'navrangpura' => ['lat' => 23.0373, 'lng' => 72.5614, 'pincode' => '380009'],
         'paldi' => ['lat' => 23.0134, 'lng' => 72.5627, 'pincode' => '380007'],
+        'nigam nagar' => ['lat' => 23.1150, 'lng' => 72.5800, 'pincode' => '382424'],
+        'chainpur' => ['lat' => 23.0950, 'lng' => 72.5450, 'pincode' => '382481'],
+        'd cabin' => ['lat' => 23.0880, 'lng' => 72.5880, 'pincode' => '380019'],
+        'janta nagar' => ['lat' => 23.1140, 'lng' => 72.5850, 'pincode' => '382424'],
+        'chamunda nagar' => ['lat' => 23.1090, 'lng' => 72.5810, 'pincode' => '382424'],
+        'chandlodiya' => ['lat' => 23.0760, 'lng' => 72.5450, 'pincode' => '382481'],
+        'khodiyar' => ['lat' => 23.1480, 'lng' => 72.5520, 'pincode' => '382421'],
+        'makarba' => ['lat' => 22.9980, 'lng' => 72.5020, 'pincode' => '380051'],
 
         // Noida & Greater Noida
         'sector 150' => ['lat' => 28.4385, 'lng' => 77.4983, 'pincode' => '201310'],
@@ -275,5 +284,170 @@ class GeocodingService
             'longitude' => $resolvedLng,
             'pincode' => $resolvedPincode,
         ];
+    }
+
+    /**
+     * Calculate Haversine geographical distance in kilometers between two lat/lng coordinates.
+     */
+    public static function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371.0; // Earth radius in kilometers
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return round($earthRadius * $c, 2);
+    }
+
+    /**
+     * Normalize reverse-geocoded or raw city names to standard major Indian real estate markets.
+     */
+    public static function normalizeCityName(?string $rawCity, ?string $state = null, ?string $locality = null): string
+    {
+        $combined = strtolower("{$rawCity} {$state} {$locality}");
+
+        if (str_contains($combined, 'ahmedabad') || str_contains($combined, 'gandhinagar')) {
+            return 'Ahmedabad';
+        }
+        if (str_contains($combined, 'delhi') || str_contains($combined, 'noida') || str_contains($combined, 'gurugram') || str_contains($combined, 'gurgaon') || str_contains($combined, 'ghaziabad') || str_contains($combined, 'faridabad')) {
+            return 'Delhi NCR';
+        }
+        if (str_contains($combined, 'mumbai') || str_contains($combined, 'thane') || str_contains($combined, 'navi mumbai')) {
+            return 'Mumbai';
+        }
+        if (str_contains($combined, 'bangalore') || str_contains($combined, 'bengaluru')) {
+            return 'Bangalore';
+        }
+        if (str_contains($combined, 'pune') || str_contains($combined, 'pcmc') || str_contains($combined, 'pimpri')) {
+            return 'Pune';
+        }
+        if (str_contains($combined, 'hyderabad') || str_contains($combined, 'secunderabad')) {
+            return 'Hyderabad';
+        }
+        if (str_contains($combined, 'chennai') || str_contains($combined, 'madras')) {
+            return 'Chennai';
+        }
+        if (str_contains($combined, 'kolkata') || str_contains($combined, 'calcutta')) {
+            return 'Kolkata';
+        }
+
+        return $rawCity ?: 'Delhi NCR';
+    }
+
+    /**
+     * Resolve nearby localities within actual geographical radius (km) based on GPS coordinates or locality.
+     * Calculates real spatial distance dynamically without hardcoded clusters.
+     *
+     * @return array<int, string>
+     */
+    public static function getNearbyLocalities(
+        string $city,
+        ?string $locality = null,
+        ?float $lat = null,
+        ?float $lng = null,
+        float $radiusKm = 3.0
+    ): array {
+        // 1. Determine anchor coordinates
+        $refLat = ($lat !== null && $lat != 0) ? $lat : null;
+        $refLng = ($lng !== null && $lng != 0) ? $lng : null;
+
+        if ($refLat === null && ! empty($locality)) {
+            $coords = self::resolve($city, $locality);
+            if (! empty($coords['latitude']) && ! empty($coords['longitude'])) {
+                $refLat = (float) $coords['latitude'];
+                $refLng = (float) $coords['longitude'];
+            }
+        }
+
+        // 2. If real coordinates are available, calculate geographical distance to candidate localities
+        if ($refLat !== null && $refLng !== null) {
+            $nearby = [];
+
+            // A. Query database localities for this city
+            $dbLocalities = Locality::whereHas('city', function ($q) use ($city) {
+                $q->where('name', $city)
+                    ->orWhere('name', 'LIKE', "%{$city}%");
+            })->get();
+
+            foreach ($dbLocalities as $loc) {
+                $locLat = $loc->latitude ? (float) $loc->latitude : null;
+                $locLng = $loc->longitude ? (float) $loc->longitude : null;
+
+                if ($locLat === null || $locLng === null) {
+                    $c = self::resolve($city, $loc->name);
+                    $locLat = $c['latitude'] ?? null;
+                    $locLng = $c['longitude'] ?? null;
+                    if ($locLat && $locLng) {
+                        $loc->updateQuietly(['latitude' => $locLat, 'longitude' => $locLng]);
+                    }
+                }
+
+                if ($locLat !== null && $locLng !== null) {
+                    $dist = self::distance($refLat, $refLng, $locLat, $locLng);
+                    if ($dist <= $radiusKm) {
+                        $nearby[$loc->name] = $dist;
+                    }
+                }
+            }
+
+            // B. Check cached Google Places for this city
+            $cachedPlaces = GooglePlace::whereNotNull('locality')
+                ->where(function ($q) use ($city) {
+                    $q->where('city', 'LIKE', "%{$city}%")
+                        ->orWhereNull('city');
+                })
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->get(['locality', 'sub_locality', 'latitude', 'longitude']);
+
+            foreach ($cachedPlaces as $cp) {
+                $targetLoc = $cp->locality;
+                if ($targetLoc && strtolower($targetLoc) === strtolower($city) && ! empty($cp->sub_locality)) {
+                    $targetLoc = $cp->sub_locality;
+                }
+                if ($targetLoc && ! isset($nearby[$targetLoc])) {
+                    $dist = self::distance($refLat, $refLng, (float) $cp->latitude, (float) $cp->longitude);
+                    if ($dist <= $radiusKm) {
+                        $nearby[$targetLoc] = $dist;
+                    }
+                }
+            }
+
+            // C. Always include user's detected locality if known
+            if (! empty($locality) && ! isset($nearby[$locality])) {
+                $nearby[$locality] = 0.0;
+            }
+
+            // If fewer than 2 localities found within strict radius, gently expand to 5 km
+            if (count($nearby) < 2) {
+                foreach ($dbLocalities as $loc) {
+                    if (isset($nearby[$loc->name])) {
+                        continue;
+                    }
+                    $locLat = $loc->latitude ? (float) $loc->latitude : null;
+                    $locLng = $loc->longitude ? (float) $loc->longitude : null;
+                    if ($locLat && $locLng) {
+                        $dist = self::distance($refLat, $refLng, $locLat, $locLng);
+                        if ($dist <= 5.0) {
+                            $nearby[$loc->name] = $dist;
+                        }
+                    }
+                }
+            }
+
+            asort($nearby);
+
+            return array_keys($nearby);
+        }
+
+        // 3. Fallback when coordinates cannot be determined:
+        // Return top localities for the city from the database without any hardcoded clusters
+        return Locality::whereHas('city', function ($q) use ($city) {
+            $q->where('name', $city)
+                ->orWhere('name', 'LIKE', "%{$city}%");
+        })->take(6)->pluck('name')->toArray();
     }
 }

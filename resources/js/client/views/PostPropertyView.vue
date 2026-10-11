@@ -353,10 +353,11 @@
                             </div>
 
                             <!-- STAGE 1: CITY SELECTION (Matches 99acres Screenshot 1) -->
+                            <!-- STAGE 1: CITY SELECTION (Matches 99acres Screenshot 1) -->
                             <div v-if="!isCityConfirmed" class="space-y-6">
                                 <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
                                     <div class="flex items-center justify-between">
-                                        <label class="block text-[11px] text-slate-500 font-semibold">City</label>
+                                        <label class="block text-[11px] text-slate-500 font-semibold">City / Location Search</label>
                                         <button
                                             type="button"
                                             @click="pickCurrentLocation"
@@ -375,7 +376,7 @@
                                             @focus="onCityInput"
                                             @keydown.enter.prevent="continueLocationStage1"
                                             type="text"
-                                            placeholder="Enter your city (e.g. Ahmedabad, Delhi NCR, Mumbai)"
+                                            placeholder="Search city, locality, project or society (e.g. Ahmedabad, Palash Homes, Bopal)"
                                             autocomplete="off"
                                             class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent placeholder-slate-400"
                                         />
@@ -384,30 +385,35 @@
                                         </div>
                                     </div>
 
-                                    <!-- Google Places City Suggestions Dropdown -->
+                                    <!-- Unified Location Suggestions Dropdown -->
                                     <div
                                         v-if="showCitySuggestions && citySuggestions.length > 0"
-                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-64 overflow-y-auto"
                                     >
                                         <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
-                                            <span>Select City</span>
+                                            <span>Select to autofill city, locality &amp; apartment</span>
                                             <button type="button" @click="showCitySuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
                                         </div>
                                         <button
                                             v-for="(item, idx) in citySuggestions"
                                             :key="idx"
                                             type="button"
-                                            @click="selectCity(item)"
+                                            @click="selectLocationSearchResult(item)"
                                             class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2.5 overflow-hidden">
-                                                <span class="text-sm shrink-0">🏙️</span>
+                                                <span class="text-base shrink-0">{{ item.icon || (item.category === 'apartment' ? '🏢' : (item.category === 'city' ? '🏙️' : '📍')) }}</span>
                                                 <div class="truncate">
-                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.city }}</p>
-                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.state || item.display }}</p>
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.title || item.city }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.subtitle || item.display || item.state }}</p>
                                                 </div>
                                             </div>
-                                            <span v-if="item.state" class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">{{ item.state }}</span>
+                                            <span
+                                                class="text-[10px] px-2 py-0.5 rounded font-medium shrink-0"
+                                                :class="item.category === 'apartment' ? 'bg-amber-50 text-amber-800 border border-amber-200/60' : (item.category === 'city' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700')"
+                                            >
+                                                {{ item.category_label || item.state || 'Location' }}
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
@@ -425,10 +431,13 @@
 
                             <!-- STAGE 2: EXPANDED 5 LOCATION FIELDS (Matches 99acres Screenshot 2) -->
                             <div v-else class="space-y-4">
-                                <!-- 1. City (with background state detection) -->
+                                <!-- 1. City (with background state detection & full search) -->
                                 <div class="relative border border-slate-300 rounded-xl p-3 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 transition shadow-2xs">
                                     <div class="flex items-center justify-between">
-                                        <label class="block text-[11px] text-slate-500 font-semibold">City <span class="text-rose-500">*</span></label>
+                                        <label class="block text-[11px] text-slate-500 font-semibold">
+                                            City <span class="text-rose-500">*</span>
+                                            <span class="text-[10px] text-slate-400 font-normal ml-1">(Type to search &amp; autofill all fields)</span>
+                                        </label>
                                         <span v-if="form.state" class="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
                                             State: {{ form.state }}
                                         </span>
@@ -439,7 +448,7 @@
                                             @input="onCityInput"
                                             @focus="onCityInput"
                                             type="text"
-                                            placeholder="Enter city"
+                                            placeholder="Enter city (or search project / locality to autofill)"
                                             autocomplete="off"
                                             class="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent"
                                         />
@@ -451,27 +460,32 @@
                                     <!-- City Suggestions Dropdown in Stage 2 -->
                                     <div
                                         v-if="showCitySuggestions && citySuggestions.length > 0"
-                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-60 overflow-y-auto"
+                                        class="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-64 overflow-y-auto"
                                     >
                                         <div class="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400 bg-slate-50/70">
-                                            <span>Select City</span>
+                                            <span>Select to autofill all fields</span>
                                             <button type="button" @click="showCitySuggestions = false" class="text-slate-400 hover:text-slate-600 font-bold px-1">&times;</button>
                                         </div>
                                         <button
                                             v-for="(item, idx) in citySuggestions"
                                             :key="idx"
                                             type="button"
-                                            @click="selectCity(item)"
-                                            class="w-full text-left px-3.5 py-2 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
+                                            @click="selectLocationSearchResult(item)"
+                                            class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2 overflow-hidden">
-                                                <span class="text-sm shrink-0">🏙️</span>
+                                                <span class="text-base shrink-0">{{ item.icon || (item.category === 'apartment' ? '🏢' : (item.category === 'city' ? '🏙️' : '📍')) }}</span>
                                                 <div class="truncate">
-                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.city }}</p>
-                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.state || item.display }}</p>
+                                                    <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.title || item.city }}</p>
+                                                    <p class="text-[10px] text-slate-400 truncate">{{ item.subtitle || item.display || item.state }}</p>
                                                 </div>
                                             </div>
-                                            <span v-if="item.state" class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium shrink-0">{{ item.state }}</span>
+                                            <span
+                                                class="text-[10px] px-2 py-0.5 rounded font-medium shrink-0"
+                                                :class="item.category === 'apartment' ? 'bg-amber-50 text-amber-800 border border-amber-200/60' : (item.category === 'city' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700')"
+                                            >
+                                                {{ item.category_label || item.state || 'Location' }}
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
@@ -1927,7 +1941,7 @@ const onCityInput = () => {
     cityDebounce = setTimeout(async () => {
         isCityLoading.value = true;
         try {
-            const res = await fetch(`/api/locations/search-cities?q=${encodeURIComponent(q)}`);
+            const res = await fetch(`/api/locations/search-all?q=${encodeURIComponent(q)}`);
             if (res.ok) {
                 const data = await res.json();
                 citySuggestions.value = Array.isArray(data) ? data : [];
@@ -1938,7 +1952,7 @@ const onCityInput = () => {
         } finally {
             isCityLoading.value = false;
         }
-    }, 250);
+    }, 200);
 };
 
 const resolveStateForCity = async (cityName) => {
@@ -1956,23 +1970,63 @@ const resolveStateForCity = async (cityName) => {
     }
 };
 
-const selectCity = (item) => {
-    form.value.city = item.city || item.name;
-    form.value.state = item.state || '';
+const selectLocationSearchResult = (item) => {
+    // 1. City & State
+    if (item.city) {
+        form.value.city = item.city;
+    } else if (item.category === 'city') {
+        form.value.city = item.name;
+    }
+
+    if (item.state) {
+        form.value.state = item.state;
+    } else if (form.value.city) {
+        resolveStateForCity(form.value.city);
+    }
+
+    // 2. Locality
+    if (item.locality) {
+        form.value.locality = item.locality;
+    } else if (item.category === 'locality') {
+        form.value.locality = item.name;
+    }
+
+    // 3. Sub Locality
+    if (item.sub_locality) {
+        form.value.sub_locality = item.sub_locality;
+    }
+
+    // 4. Apartment / Society / Project Name
+    if (item.project_name) {
+        form.value.project_name = item.project_name;
+    } else if (item.category === 'apartment') {
+        form.value.project_name = item.name;
+    }
+
+    // 5. House / Flat No.
+    if (item.house_no && !form.value.house_no) {
+        form.value.house_no = item.house_no;
+    }
+
+    // 6. Coordinates & Pincode
+    if (item.pincode) {
+        form.value.pincode = item.pincode;
+    }
     if (item.latitude && item.longitude) {
         form.value.latitude = item.latitude;
         form.value.longitude = item.longitude;
     }
+
     showCitySuggestions.value = false;
     citySuggestions.value = [];
     isCityConfirmed.value = true;
     errorMessage.value = '';
-    if (!form.value.state) {
-        resolveStateForCity(form.value.city);
-    }
+
     autoGenerateTitle();
     autoGenerateDescription();
 };
+
+const selectCity = selectLocationSearchResult;
 
 const pickCurrentLocation = () => {
     if (!navigator.geolocation) {

@@ -1034,6 +1034,10 @@ class GooglePlacesService
         $admin2 = null;
         $admin1 = null;
         $pincode = null;
+        $premise = null;
+        $subpremise = null;
+        $streetNumber = null;
+        $route = null;
 
         foreach ($components as $comp) {
             $types = $comp['types'] ?? [];
@@ -1051,6 +1055,14 @@ class GooglePlacesService
                 $admin2 = $name;
             } elseif (in_array('administrative_area_level_1', $types)) {
                 $admin1 = $name;
+            } elseif (in_array('premise', $types)) {
+                $premise = $name;
+            } elseif (in_array('subpremise', $types)) {
+                $subpremise = $name;
+            } elseif (in_array('street_number', $types)) {
+                $streetNumber = $name;
+            } elseif (in_array('route', $types)) {
+                $route = $name;
             }
         }
 
@@ -1061,15 +1073,15 @@ class GooglePlacesService
         // - administrative_area_level_1 as State (e.g. Gujarat)
         if ($subLocality1 && $localityType) {
             $locality = $subLocality1;
-            $subLocality = $subLocality2;
+            $subLocality = $subLocality2 ?: $route;
             $city = $localityType;
         } elseif ($subLocality1) {
             $locality = $subLocality1;
-            $subLocality = $subLocality2;
+            $subLocality = $subLocality2 ?: $route;
             $city = $admin2;
         } else {
             $locality = $localityType ?: $admin2;
-            $subLocality = $subLocality2;
+            $subLocality = $subLocality2 ?: $route;
             $city = $admin2 ?: $localityType;
         }
 
@@ -1079,6 +1091,542 @@ class GooglePlacesService
             'city' => $city,
             'state' => $admin1,
             'pincode' => $pincode,
+            'premise' => $premise,
+            'subpremise' => $subpremise,
+            'street_number' => $streetNumber,
+            'route' => $route,
         ];
+    }
+
+    /**
+     * Classify a place into 'apartment', 'locality', or 'city'.
+     *
+     * @return array{
+     *     category: string,
+     *     category_label: string,
+     *     icon: string,
+     *     project_name: ?string,
+     *     locality: ?string,
+     *     city: ?string
+     * }
+     */
+    public static function classifyPlace(
+        string $name,
+        ?string $locality = null,
+        ?string $city = null,
+        ?array $types = null,
+        ?string $projectName = null
+    ): array {
+        $category = 'locality';
+        $label = 'Locality';
+        $icon = '📍';
+        $resolvedProject = null;
+        $resolvedLocality = $locality;
+        $resolvedCity = $city;
+
+        $typesList = is_array($types) ? $types : [];
+
+        $apartmentTypes = [
+            'premise', 'subpremise', 'apartment_complex', 'apartment_building',
+            'condominium_complex', 'housing_complex', 'residential',
+            'building', 'real_estate_agency', 'establishment', 'point_of_interest',
+        ];
+
+        $hasApartmentType = false;
+        foreach ($apartmentTypes as $at) {
+            if (in_array($at, $typesList)) {
+                $hasApartmentType = true;
+                break;
+            }
+        }
+
+        $isCityType = in_array('locality', $typesList) && ! $hasApartmentType;
+        $isSublocalityType = in_array('sublocality', $typesList) || in_array('sublocality_level_1', $typesList) || in_array('neighborhood', $typesList);
+
+        $normName = strtolower(trim($name));
+        $normCity = strtolower(trim($city ?? ''));
+        $normLocality = strtolower(trim($locality ?? ''));
+
+        if ($projectName) {
+            $category = 'apartment';
+            $label = 'Apartment / Society';
+            $icon = '🏢';
+            $resolvedProject = $projectName;
+        } elseif ($hasApartmentType && ($normName !== $normCity && $normName !== $normLocality)) {
+            $category = 'apartment';
+            $label = 'Apartment / Society';
+            $icon = '🏢';
+            $resolvedProject = $name;
+        } elseif ($isCityType || ($normName !== '' && $normName === $normCity)) {
+            $category = 'city';
+            $label = 'City';
+            $icon = '🏙️';
+            $resolvedLocality = null;
+            $resolvedProject = null;
+        } elseif ($isSublocalityType || ($normName !== '' && $normName === $normLocality)) {
+            $category = 'locality';
+            $label = 'Locality';
+            $icon = '📍';
+            $resolvedLocality = $locality ?: $name;
+            $resolvedProject = null;
+        } elseif ($normName !== '' && $normName !== $normCity && $normName !== $normLocality) {
+            $category = 'apartment';
+            $label = 'Apartment / Society';
+            $icon = '🏢';
+            $resolvedProject = $name;
+        }
+
+        return [
+            'category' => $category,
+            'category_label' => $label,
+            'icon' => $icon,
+            'project_name' => $resolvedProject,
+            'locality' => $resolvedLocality,
+            'city' => $resolvedCity,
+        ];
+    }
+
+    /**
+     * Unified search for cities, localities, societies, apartments, and landmarks.
+     * Searches database properties/projects, cached google_places, localities, cities,
+     * and Google Places API (New).
+     * Categorizes each place into 'city', 'locality', or 'apartment' and returns rich
+     * metadata to autofill city, state, locality, sublocality, and project_name.
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     place_id: string,
+     *     name: string,
+     *     title: string,
+     *     subtitle: string,
+     *     display: string,
+     *     category: string,
+     *     category_label: string,
+     *     icon: string,
+     *     city: ?string,
+     *     state: ?string,
+     *     locality: ?string,
+     *     sub_locality: ?string,
+     *     project_name: ?string,
+     *     house_no: ?string,
+     *     pincode: ?string,
+     *     latitude: ?float,
+     *     longitude: ?float,
+     *     cached: bool,
+     *     provider: string
+     * }>
+     */
+    public static function searchAll(string $query, int $limit = 10, ?string $city = null): array
+    {
+        $rawQuery = trim($query);
+        $results = [];
+        $seenKeys = [];
+
+        if (strlen($rawQuery) < 1) {
+            // Default top metro cities
+            $cities = City::with('state')
+                ->where('is_metro', true)
+                ->orderBy('name')
+                ->take(8)
+                ->get();
+
+            foreach ($cities as $c) {
+                $stName = $c->state?->name ?? self::getStateForCity($c->name);
+                $results[] = [
+                    'id' => 'city_'.$c->id,
+                    'place_id' => 'city_'.$c->id,
+                    'name' => $c->name,
+                    'title' => $c->name,
+                    'subtitle' => "{$stName}, India",
+                    'display' => "{$c->name}, {$stName}",
+                    'category' => 'city',
+                    'category_label' => 'City',
+                    'icon' => '🏙️',
+                    'city' => $c->name,
+                    'state' => $stName,
+                    'locality' => null,
+                    'sub_locality' => null,
+                    'project_name' => null,
+                    'house_no' => null,
+                    'pincode' => null,
+                    'latitude' => $c->latitude ? (float) $c->latitude : null,
+                    'longitude' => $c->longitude ? (float) $c->longitude : null,
+                    'cached' => true,
+                    'provider' => 'database',
+                ];
+            }
+
+            return $results;
+        }
+
+        $cleanQuery = strtolower(preg_replace('/\s+/', ' ', preg_replace('/[^\w\s]/', '', $rawQuery)));
+
+        // 1. Search existing projects/societies in properties table
+        $dbProjects = Property::query()
+            ->whereNotNull('project_name')
+            ->where('project_name', '!=', '')
+            ->where(function ($q) use ($rawQuery) {
+                $q->where('project_name', 'LIKE', "%{$rawQuery}%")
+                    ->orWhere('locality', 'LIKE', "%{$rawQuery}%")
+                    ->orWhere('title', 'LIKE', "%{$rawQuery}%");
+            });
+
+        if (! empty($city)) {
+            $dbProjects->where(function ($q) use ($city) {
+                $q->where('city', 'LIKE', "%{$city}%")
+                    ->orWhereNull('city');
+            });
+        }
+
+        $projectHits = $dbProjects->take(4)->get(['project_name', 'locality', 'sub_locality', 'city', 'state', 'pincode', 'latitude', 'longitude']);
+
+        foreach ($projectHits as $p) {
+            $projName = $p->project_name;
+            $cityName = $p->city ?: ($city ?? 'Ahmedabad');
+            $locName = $p->locality;
+            $subLoc = $p->sub_locality;
+            $stateName = $p->state ?: self::getStateForCity($cityName);
+
+            $key = strtolower(trim($projName.' '.($locName ?? '').' '.$cityName));
+            if (! isset($seenKeys[$key])) {
+                $seenKeys[$key] = true;
+                $results[] = [
+                    'id' => 'project_'.md5($key),
+                    'place_id' => 'project_'.md5($key),
+                    'name' => $projName,
+                    'title' => $projName,
+                    'subtitle' => implode(', ', array_filter([$locName, $cityName, $stateName])),
+                    'display' => implode(', ', array_filter([$projName, $locName, $cityName])),
+                    'category' => 'apartment',
+                    'category_label' => 'Apartment / Society',
+                    'icon' => '🏢',
+                    'city' => $cityName,
+                    'state' => $stateName,
+                    'locality' => $locName,
+                    'sub_locality' => $subLoc,
+                    'project_name' => $projName,
+                    'house_no' => null,
+                    'pincode' => $p->pincode,
+                    'latitude' => $p->latitude ? (float) $p->latitude : null,
+                    'longitude' => $p->longitude ? (float) $p->longitude : null,
+                    'cached' => true,
+                    'provider' => 'database_listings',
+                ];
+            }
+        }
+
+        // 2. Search cached places in google_places table
+        $cachedQuery = GooglePlace::query()
+            ->where(function ($q) use ($rawQuery, $cleanQuery) {
+                $q->where('name', 'LIKE', "%{$rawQuery}%")
+                    ->orWhere('normalized_query', 'LIKE', "%{$cleanQuery}%")
+                    ->orWhere('locality', 'LIKE', "%{$rawQuery}%")
+                    ->orWhere('formatted_address', 'LIKE', "%{$rawQuery}%")
+                    ->orWhere('sub_locality', 'LIKE', "%{$rawQuery}%");
+            });
+
+        if (! empty($city)) {
+            $cachedQuery->where(function ($q) use ($city) {
+                $q->where('city', 'LIKE', "%{$city}%")
+                    ->orWhereNull('city');
+            });
+        }
+
+        $cachedHits = $cachedQuery->orderByDesc('hit_count')->take(6)->get();
+
+        foreach ($cachedHits as $place) {
+            $loc = $place->locality;
+            $subLoc = $place->sub_locality;
+            $cityName = $place->city;
+
+            if ($loc && $cityName && strtolower($loc) === strtolower($cityName) && $subLoc) {
+                $loc = $subLoc;
+                $subLoc = null;
+            }
+
+            $types = is_array($place->types) ? $place->types : (is_string($place->types) ? json_decode($place->types, true) : []);
+            $classified = self::classifyPlace($place->name, $loc, $cityName, $types);
+
+            $key = strtolower(trim($place->name.' '.($classified['locality'] ?? '').' '.($classified['city'] ?? '')));
+            if (! isset($seenKeys[$key])) {
+                $seenKeys[$key] = true;
+                $place->increment('hit_count');
+                $stateName = $place->state ?: self::getStateForCity($classified['city']);
+                $subtitle = $place->formatted_address ?: implode(', ', array_filter([$classified['locality'], $classified['city'], $stateName]));
+
+                $results[] = [
+                    'id' => $place->place_id,
+                    'place_id' => $place->place_id,
+                    'name' => $place->name,
+                    'title' => $place->name,
+                    'subtitle' => $subtitle,
+                    'display' => $place->formatted_address ?: implode(', ', array_filter([$place->name, $classified['locality'], $classified['city']])),
+                    'category' => $classified['category'],
+                    'category_label' => $classified['category_label'],
+                    'icon' => $classified['icon'],
+                    'city' => $classified['city'],
+                    'state' => $stateName,
+                    'locality' => $classified['locality'],
+                    'sub_locality' => $subLoc,
+                    'project_name' => $classified['project_name'],
+                    'house_no' => null,
+                    'pincode' => $place->pincode,
+                    'latitude' => (float) $place->latitude,
+                    'longitude' => (float) $place->longitude,
+                    'cached' => true,
+                    'provider' => $place->provider,
+                ];
+            }
+        }
+
+        // 3. Search local database localities
+        $dbLocs = Locality::with('city.state')
+            ->where('name', 'LIKE', "%{$rawQuery}%");
+
+        if (! empty($city)) {
+            $dbLocs->whereHas('city', fn ($cq) => $cq->where('name', 'LIKE', "%{$city}%"));
+        }
+
+        $locHits = $dbLocs->take(4)->get();
+        foreach ($locHits as $l) {
+            $cityName = $l->city?->name ?: ($city ?? 'Ahmedabad');
+            $stateName = $l->city?->state?->name ?: self::getStateForCity($cityName);
+            $key = strtolower(trim($l->name.' '.$cityName));
+            if (! isset($seenKeys[$key])) {
+                $seenKeys[$key] = true;
+                $results[] = [
+                    'id' => 'locality_'.$l->id,
+                    'place_id' => 'locality_'.$l->id,
+                    'name' => $l->name,
+                    'title' => $l->name,
+                    'subtitle' => "{$cityName}, {$stateName}",
+                    'display' => "{$l->name}, {$cityName}, {$stateName}",
+                    'category' => 'locality',
+                    'category_label' => 'Locality',
+                    'icon' => '📍',
+                    'city' => $cityName,
+                    'state' => $stateName,
+                    'locality' => $l->name,
+                    'sub_locality' => null,
+                    'project_name' => null,
+                    'house_no' => null,
+                    'pincode' => $l->pincode,
+                    'latitude' => $l->latitude ? (float) $l->latitude : null,
+                    'longitude' => $l->longitude ? (float) $l->longitude : null,
+                    'cached' => true,
+                    'provider' => 'database',
+                ];
+            }
+        }
+
+        // 4. Search local database cities
+        $dbCities = City::with('state')
+            ->where('name', 'LIKE', "%{$rawQuery}%")
+            ->orderBy('is_metro', 'desc')
+            ->take(3)
+            ->get();
+
+        foreach ($dbCities as $c) {
+            $stateName = $c->state?->name ?? self::getStateForCity($c->name);
+            $key = strtolower($c->name);
+            if (! isset($seenKeys[$key])) {
+                $seenKeys[$key] = true;
+                $results[] = [
+                    'id' => 'city_'.$c->id,
+                    'place_id' => 'city_'.$c->id,
+                    'name' => $c->name,
+                    'title' => $c->name,
+                    'subtitle' => "{$stateName}, India",
+                    'display' => "{$c->name}, {$stateName}",
+                    'category' => 'city',
+                    'category_label' => 'City',
+                    'icon' => '🏙️',
+                    'city' => $c->name,
+                    'state' => $stateName,
+                    'locality' => null,
+                    'sub_locality' => null,
+                    'project_name' => null,
+                    'house_no' => null,
+                    'pincode' => null,
+                    'latitude' => $c->latitude ? (float) $c->latitude : null,
+                    'longitude' => $c->longitude ? (float) $c->longitude : null,
+                    'cached' => true,
+                    'provider' => 'database',
+                ];
+            }
+        }
+
+        // 5. Query Google Places API (New) Autocomplete if needed
+        $apiKey = config('services.google.places_api_key');
+        if ($apiKey && count($results) < $limit) {
+            try {
+                $searchParts = [$rawQuery];
+                if ($city && ! str_contains(strtolower($rawQuery), strtolower($city))) {
+                    $searchParts[] = $city;
+                }
+                $searchParts[] = 'India';
+                $fullSearch = implode(', ', array_unique($searchParts));
+
+                $autoPayload = [
+                    'input' => $fullSearch,
+                    'includedRegionCodes' => ['IN'],
+                    'languageCode' => 'en',
+                ];
+
+                $response = Http::timeout(5)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'X-Goog-Api-Key' => $apiKey,
+                    ])
+                    ->post('https://places.googleapis.com/v1/places:autocomplete', $autoPayload);
+
+                if ($response->successful()) {
+                    $suggestions = $response->json('suggestions') ?? [];
+                    foreach ($suggestions as $sug) {
+                        if (count($results) >= $limit) {
+                            break;
+                        }
+
+                        $pred = $sug['placePrediction'] ?? null;
+                        if (! $pred) {
+                            continue;
+                        }
+
+                        $placeId = $pred['placeId'] ?? (isset($pred['place']) ? str_replace('places/', '', $pred['place']) : null);
+                        if (! $placeId) {
+                            continue;
+                        }
+
+                        $cleanId = str_replace('places/', '', $placeId);
+
+                        // Check if in DB
+                        $existing = GooglePlace::where('place_id', $cleanId)->first();
+                        if ($existing) {
+                            $existing->increment('hit_count');
+                            $loc = $existing->locality;
+                            $subLoc = $existing->sub_locality;
+                            $cityName = $existing->city;
+
+                            if ($loc && $cityName && strtolower($loc) === strtolower($cityName) && $subLoc) {
+                                $loc = $subLoc;
+                                $subLoc = null;
+                            }
+
+                            $types = is_array($existing->types) ? $existing->types : (is_string($existing->types) ? json_decode($existing->types, true) : []);
+                            $classified = self::classifyPlace($existing->name, $loc, $cityName, $types);
+
+                            $key = strtolower(trim($existing->name.' '.($classified['locality'] ?? '').' '.($classified['city'] ?? '')));
+                            if (! isset($seenKeys[$key])) {
+                                $seenKeys[$key] = true;
+                                $stateName = $existing->state ?: self::getStateForCity($classified['city']);
+                                $results[] = [
+                                    'id' => $existing->place_id,
+                                    'place_id' => $existing->place_id,
+                                    'name' => $existing->name,
+                                    'title' => $existing->name,
+                                    'subtitle' => $existing->formatted_address ?: implode(', ', array_filter([$classified['locality'], $classified['city'], $stateName])),
+                                    'display' => $existing->formatted_address,
+                                    'category' => $classified['category'],
+                                    'category_label' => $classified['category_label'],
+                                    'icon' => $classified['icon'],
+                                    'city' => $classified['city'],
+                                    'state' => $stateName,
+                                    'locality' => $classified['locality'],
+                                    'sub_locality' => $subLoc,
+                                    'project_name' => $classified['project_name'],
+                                    'house_no' => null,
+                                    'pincode' => $existing->pincode,
+                                    'latitude' => (float) $existing->latitude,
+                                    'longitude' => (float) $existing->longitude,
+                                    'cached' => true,
+                                    'provider' => 'google_places_new',
+                                ];
+                            }
+
+                            continue;
+                        }
+
+                        // Fetch details
+                        $detailsRes = Http::timeout(5)
+                            ->withHeaders([
+                                'Content-Type' => 'application/json',
+                                'X-Goog-Api-Key' => $apiKey,
+                                'X-Goog-FieldMask' => 'id,displayName,formattedAddress,location,addressComponents,types',
+                            ])
+                            ->get("https://places.googleapis.com/v1/places/{$cleanId}");
+
+                        if ($detailsRes->successful()) {
+                            $detail = $detailsRes->json();
+                            $parsed = self::extractNewAddressComponents($detail['addressComponents'] ?? []);
+                            $placeName = $detail['displayName']['text'] ?? ($pred['structuredFormat']['mainText']['text'] ?? $rawQuery);
+                            $formattedAddr = $detail['formattedAddress'] ?? ($pred['text']['text'] ?? $rawQuery);
+                            $locObj = $detail['location'] ?? [];
+                            $lat = isset($locObj['latitude']) ? (float) $locObj['latitude'] : null;
+                            $lng = isset($locObj['longitude']) ? (float) $locObj['longitude'] : null;
+
+                            $detectedCity = $parsed['city'] ?: $city;
+                            $detectedLocality = $parsed['locality'];
+                            $detectedSubLocality = $parsed['sub_locality'];
+                            $detectedState = $parsed['state'] ?: self::getStateForCity($detectedCity);
+                            $types = $detail['types'] ?? ($pred['types'] ?? []);
+
+                            $classified = self::classifyPlace($placeName, $detectedLocality, $detectedCity, $types, $parsed['premise'] ?? null);
+
+                            GooglePlace::create([
+                                'place_id' => $cleanId,
+                                'query_hash' => hash('sha256', strtolower($placeName)),
+                                'raw_query' => $rawQuery,
+                                'normalized_query' => strtolower($placeName),
+                                'name' => $placeName,
+                                'formatted_address' => $formattedAddr,
+                                'locality' => $classified['locality'],
+                                'sub_locality' => $detectedSubLocality,
+                                'city' => $classified['city'],
+                                'state' => $detectedState,
+                                'pincode' => $parsed['pincode'],
+                                'latitude' => $lat ?? 0,
+                                'longitude' => $lng ?? 0,
+                                'types' => $types,
+                                'raw_response' => $detail,
+                                'hit_count' => 1,
+                                'provider' => 'google_places_new',
+                            ]);
+
+                            $key = strtolower(trim($placeName.' '.($classified['locality'] ?? '').' '.($classified['city'] ?? '')));
+                            if (! isset($seenKeys[$key])) {
+                                $seenKeys[$key] = true;
+                                $houseNo = $parsed['subpremise'] ?? ($parsed['street_number'] ?? null);
+                                $results[] = [
+                                    'id' => $cleanId,
+                                    'place_id' => $cleanId,
+                                    'name' => $placeName,
+                                    'title' => $placeName,
+                                    'subtitle' => $formattedAddr,
+                                    'display' => $formattedAddr,
+                                    'category' => $classified['category'],
+                                    'category_label' => $classified['category_label'],
+                                    'icon' => $classified['icon'],
+                                    'city' => $classified['city'],
+                                    'state' => $detectedState,
+                                    'locality' => $classified['locality'],
+                                    'sub_locality' => $detectedSubLocality,
+                                    'project_name' => $classified['project_name'],
+                                    'house_no' => $houseNo,
+                                    'pincode' => $parsed['pincode'],
+                                    'latitude' => $lat,
+                                    'longitude' => $lng,
+                                    'cached' => false,
+                                    'provider' => 'google_places_new',
+                                ];
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Google Places API (New) searchAll error: '.$e->getMessage());
+            }
+        }
+
+        return array_slice($results, 0, $limit);
     }
 }

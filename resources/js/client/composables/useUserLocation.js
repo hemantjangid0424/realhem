@@ -38,11 +38,17 @@ export function useUserLocation() {
     };
 
     /**
-     * Fetch nearby localities within 3-5 km for a given city and locality.
+     * Fetch nearby localities within 3-5 km for a given city, locality, and real GPS coordinates.
      */
-    const fetchNearbyLocalities = async (city, locality = '') => {
+    const fetchNearbyLocalities = async (city, locality = '', lat = null, lng = null) => {
         try {
-            const res = await fetch(`/api/locations/nearby?city=${encodeURIComponent(city)}&locality=${encodeURIComponent(locality || '')}`);
+            const params = new URLSearchParams();
+            if (city) params.set('city', city);
+            if (locality) params.set('locality', locality);
+            if (lat !== null && lat !== undefined && !isNaN(Number(lat))) params.set('lat', String(lat));
+            if (lng !== null && lng !== undefined && !isNaN(Number(lng))) params.set('lng', String(lng));
+
+            const res = await fetch(`/api/locations/nearby?${params.toString()}`);
             const data = await res.json();
             if (data.nearby_localities && data.nearby_localities.length > 0) {
                 nearbyLocalities.value = data.nearby_localities;
