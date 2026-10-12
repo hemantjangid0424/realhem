@@ -51,6 +51,7 @@ class SettingController extends Controller
             'theme_border_radius' => 'nullable|string|max:20',
             'header_style' => 'nullable|string|max:50',
             'hero_style' => 'nullable|string|max:50',
+            'festival_animation' => 'nullable|string|max:50',
             'banner_enabled' => 'nullable|string|max:10',
             'banner_text' => 'nullable|string|max:500',
             'banner_badge' => 'nullable|string|max:50',
@@ -62,7 +63,7 @@ class SettingController extends Controller
 
         foreach ($validated as $key => $value) {
             $group = match ($key) {
-                'brand_primary_color', 'brand_secondary_color', 'brand_accent_color', 'theme_font_family', 'theme_border_radius', 'header_style', 'hero_style' => 'theme',
+                'brand_primary_color', 'brand_secondary_color', 'brand_accent_color', 'theme_font_family', 'theme_border_radius', 'header_style', 'hero_style', 'festival_animation' => 'theme',
                 'banner_enabled', 'banner_text', 'banner_badge', 'banner_link' => 'banner',
                 'company_phone', 'company_email' => 'contact',
                 'footer_about', 'copyright_text', 'footer_style' => 'footer',

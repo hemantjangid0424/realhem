@@ -19,6 +19,7 @@ const defaultBranding = {
     banner_text: "India's Biggest Property Fest 2026: Zero Brokerage on 10,000+ Verified Homes",
     banner_badge: 'MEGA LAUNCH',
     banner_link: '/listings?badge=fest',
+    festival_animation: 'none',
     footer_style: 'dark_slate',
     footer_about: 'RealHem is India\'s premier full-stack real estate discovery and property transaction portal, connecting verified property owners, top developers, and licensed brokers with over 5 Lakh+ buyers and tenants every week.',
     copyright_text: '© 2026 RealHem India Pvt. Ltd. All rights reserved.',
@@ -111,6 +112,7 @@ export function useCompanyBranding() {
     const bannerText = computed(() => companySettings.value.banner_text || "India's Biggest Property Fest 2026: Zero Brokerage on 10,000+ Verified Homes");
     const bannerBadge = computed(() => companySettings.value.banner_badge || 'MEGA LAUNCH');
     const bannerLink = computed(() => companySettings.value.banner_link || '/listings?badge=fest');
+    const festivalAnimation = computed(() => companySettings.value.festival_animation || 'none');
     const footerStyle = computed(() => companySettings.value.footer_style || 'dark_slate');
     const companyPhone = computed(() => companySettings.value.company_phone || '1800-41-9999');
     const companyEmail = computed(() => companySettings.value.company_email || 'contact@realhem.com');
@@ -194,6 +196,7 @@ export function useCompanyBranding() {
         bannerText,
         bannerBadge,
         bannerLink,
+        festivalAnimation,
         footerStyle,
         companyPhone,
         companyEmail,

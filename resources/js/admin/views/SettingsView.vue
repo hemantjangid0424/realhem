@@ -239,6 +239,30 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Festive Animation Selector -->
+                        <div class="pt-3 border-t border-slate-100">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold text-slate-700">Festive Hero Effect &amp; Animation</label>
+                                <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                    Indian Festivals &amp; Occasions
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mb-2.5">Subtle, lightweight CSS &amp; SVG animations overlaying your hero section.</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <button
+                                    v-for="anim in festivalAnimations"
+                                    :key="anim.id"
+                                    type="button"
+                                    @click="form.festival_animation = anim.id"
+                                    class="p-2.5 rounded-xl border text-xs font-bold text-left transition cursor-pointer flex items-center gap-2"
+                                    :class="form.festival_animation === anim.id ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-500/20 shadow-xs' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'"
+                                >
+                                    <span class="text-base">{{ anim.icon }}</span>
+                                    <span class="text-[11px] leading-tight truncate">{{ anim.name }}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Top Announcement Ribbon Bar -->
@@ -473,18 +497,26 @@
 
                             <!-- Preview 2: Hero Section & Search Bar -->
                             <div class="space-y-1">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Section &amp; Search Card</span>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Section &amp; Search Card</span>
+                                    <span v-if="form.festival_animation && form.festival_animation !== 'none'" class="text-[9px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/30">
+                                        Active Effect: {{ form.festival_animation }}
+                                    </span>
+                                </div>
                                 <div
-                                    class="p-4 rounded-xl text-white shadow-md space-y-3"
+                                    class="p-4 rounded-xl text-white shadow-md space-y-3 relative overflow-hidden"
                                     :style="{ background: previewHeroGradient }"
                                 >
-                                    <div class="text-center space-y-1">
+                                    <!-- Festive Hero Animation in Live Preview -->
+                                    <FestiveHeroAnimation :type="form.festival_animation" />
+
+                                    <div class="text-center space-y-1 relative z-10">
                                         <h3 class="font-black text-sm text-white">Find Your Dream Home</h3>
                                         <p class="text-[10px] text-white/80">Search from 50,000+ verified listings</p>
                                     </div>
 
                                     <!-- Search Box mockup -->
-                                    <div class="bg-white p-2 rounded-xl text-slate-800 shadow-sm space-y-2">
+                                    <div class="bg-white p-2 rounded-xl text-slate-800 shadow-sm space-y-2 relative z-20">
                                         <div class="flex gap-1 border-b border-slate-100 pb-1.5">
                                             <span
                                                 class="text-[10px] font-bold px-2 py-0.5 rounded-md text-white"
@@ -577,6 +609,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import AdminNavbar from '../components/AdminNavbar.vue';
+import FestiveHeroAnimation from '../../client/components/FestiveHeroAnimation.vue';
 
 const isSaving = ref(false);
 const successMessage = ref('');
@@ -603,6 +636,7 @@ const themePresets = [
         secondary: '#78350f',
         accent: '#ea580c',
         hero_style: 'diwali_gold',
+        festival_animation: 'diwali_diyas',
         font: 'Montserrat',
         radius: '18px',
         banner_badge: 'DIWALI DHAMAKA',
@@ -616,6 +650,7 @@ const themePresets = [
         secondary: '#6b21a8',
         accent: '#facc15',
         hero_style: 'navratri_glow',
+        festival_animation: 'navratri_garba',
         font: 'Outfit',
         radius: '16px',
         banner_badge: 'NAVRATRI UTSAV',
@@ -629,6 +664,7 @@ const themePresets = [
         secondary: '#166534',
         accent: '#eab308',
         hero_style: 'christmas_fest',
+        festival_animation: 'christmas_snow',
         font: 'Plus Jakarta Sans',
         radius: '18px',
         banner_badge: 'YEAR END FEST',
@@ -642,6 +678,7 @@ const themePresets = [
         secondary: '#db2777',
         accent: '#06b6d4',
         hero_style: 'holi_splash',
+        festival_animation: 'holi_colors',
         font: 'Poppins',
         radius: '20px',
         banner_badge: 'HOLI DHAMAAL',
@@ -655,6 +692,7 @@ const themePresets = [
         secondary: '#064e3b',
         accent: '#f59e0b',
         hero_style: 'emerald_luxury',
+        festival_animation: 'eid_lanterns',
         font: 'Outfit',
         radius: '16px',
         banner_badge: 'EID SPECIAL',
@@ -668,6 +706,7 @@ const themePresets = [
         secondary: '#ea580c',
         accent: '#facc15',
         hero_style: 'coral_sunset',
+        festival_animation: 'uttarayan_kites',
         font: 'Instrument Sans',
         radius: '14px',
         banner_badge: 'KAI PO CHE',
@@ -681,6 +720,7 @@ const themePresets = [
         secondary: '#1e3a8a',
         accent: '#15803d',
         hero_style: 'tricolor_pride',
+        festival_animation: 'tricolor_confetti',
         font: 'Instrument Sans',
         radius: '14px',
         banner_badge: 'AZADI FEST',
@@ -694,6 +734,7 @@ const themePresets = [
         secondary: '#991b1b',
         accent: '#eab308',
         hero_style: 'diwali_gold',
+        festival_animation: 'diwali_diyas',
         font: 'Montserrat',
         radius: '16px',
         banner_badge: 'BAPPA MAHOTSUV',
@@ -707,6 +748,7 @@ const themePresets = [
         secondary: '#be185d',
         accent: '#f59e0b',
         hero_style: 'deep_purple',
+        festival_animation: 'tricolor_confetti',
         font: 'Outfit',
         radius: '16px',
         banner_badge: 'RAKHI SPECIAL',
@@ -967,6 +1009,17 @@ const heroStyles = [
     { id: 'minimal_white', name: 'Minimal White', gradient: 'linear-gradient(180deg, #f8fafc, #ffffff)' },
 ];
 
+const festivalAnimations = [
+    { id: 'none', name: 'None (Clean)', icon: '🚫' },
+    { id: 'diwali_diyas', name: 'Diwali Diyas & Sparkles', icon: '🪔' },
+    { id: 'navratri_garba', name: 'Navratri Dandiya & Mandala', icon: '🪘' },
+    { id: 'christmas_snow', name: 'Christmas Drifting Snow', icon: '❄️' },
+    { id: 'holi_colors', name: 'Holi Organic Gulal Splash', icon: '🎨' },
+    { id: 'uttarayan_kites', name: 'Uttarayan Flying Kites', icon: '🪁' },
+    { id: 'eid_lanterns', name: 'Eid Glowing Lanterns', icon: '🌙' },
+    { id: 'tricolor_confetti', name: 'Tricolor Petal Confetti', icon: '🇮🇳' },
+];
+
 const form = ref({
     company_name: 'RealHem',
     company_short_name: 'RH',
@@ -982,6 +1035,7 @@ const form = ref({
     theme_border_radius: '16px',
     header_style: 'clean_white',
     hero_style: 'midnight_blue',
+    festival_animation: 'none',
     banner_enabled: 'true',
     banner_text: "India's Biggest Property Fest 2026: Zero Brokerage on 10,000+ Verified Homes",
     banner_badge: 'MEGA LAUNCH',
@@ -1038,6 +1092,7 @@ const applyPreset = (preset) => {
     form.value.brand_secondary_color = preset.secondary;
     form.value.brand_accent_color = preset.accent;
     form.value.hero_style = preset.hero_style;
+    form.value.festival_animation = preset.festival_animation || 'none';
     form.value.theme_font_family = preset.font;
     form.value.theme_border_radius = preset.radius;
     if (preset.banner_text) {
@@ -1116,6 +1171,7 @@ const resetToDefaults = () => {
         theme_border_radius: '16px',
         header_style: 'clean_white',
         hero_style: 'midnight_blue',
+        festival_animation: 'none',
         banner_enabled: 'true',
         banner_text: "India's Biggest Property Fest 2026: Zero Brokerage on 10,000+ Verified Homes",
         banner_badge: 'MEGA LAUNCH',

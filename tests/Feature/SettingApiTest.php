@@ -50,6 +50,7 @@ test('admin can retrieve and update company branding settings', function () {
         'company_email' => 'support@acres99.in',
         'brand_primary_color' => '#004e8f',
         'brand_secondary_color' => '#1d4ed8',
+        'festival_animation' => 'diwali_diyas',
         'footer_about' => 'Custom updated company about text.',
         'copyright_text' => '© 2026 Acres99 Bharat Ltd.',
     ];
@@ -65,6 +66,7 @@ test('admin can retrieve and update company branding settings', function () {
             'company_name' => 'Acres99 Bharat',
             'company_short_name' => 'A99',
             'brand_primary_color' => '#004e8f',
+            'festival_animation' => 'diwali_diyas',
         ]);
 
     // Verify public endpoint immediately reflects updated branding
@@ -74,5 +76,6 @@ test('admin can retrieve and update company branding settings', function () {
             'company_name' => 'Acres99 Bharat',
             'company_short_name' => 'A99',
             'company_tagline' => 'India\'s Largest Real Estate Super-App',
+            'festival_animation' => 'diwali_diyas',
         ]);
 });

@@ -34,6 +34,7 @@ class Setting extends Model
         'theme_border_radius' => '16px',
         'header_style' => 'clean_white',
         'hero_style' => 'midnight_blue',
+        'festival_animation' => 'none',
         'banner_enabled' => 'true',
         'banner_text' => "India's Biggest Property Fest 2026: Zero Brokerage on 10,000+ Verified Homes",
         'banner_badge' => 'MEGA LAUNCH',

@@ -2,9 +2,12 @@
     <div class="space-y-12 pb-20 bg-slate-50 text-slate-800">
         <!-- 99acres Signature Hero & Search Box -->
         <section
-            class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300"
+            class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300 overflow-hidden"
             :style="{ background: heroGradient }"
         >
+            <!-- Festive Hero Animation (Occasion & Festival Effects) -->
+            <FestiveHeroAnimation :type="festivalAnimation" />
+
             <!-- Decorative backdrop glow -->
             <div class="absolute inset-0 overflow-hidden pointer-events-none">
                 <div class="absolute -top-32 -left-32 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
@@ -525,6 +528,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import FestiveHeroAnimation from '../components/FestiveHeroAnimation.vue';
 import { useVoiceSearch } from '../composables/useVoiceSearch';
 import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
@@ -544,6 +548,7 @@ const {
     bannerText,
     bannerBadge,
     bannerLink,
+    festivalAnimation,
 } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
 
