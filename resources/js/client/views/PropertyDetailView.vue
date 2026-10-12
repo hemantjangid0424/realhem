@@ -130,10 +130,40 @@
                     <div class="sticky top-20 bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-5">
                         <!-- Price -->
                         <div class="border-b border-slate-100 pb-4">
-                            <div class="text-2xl font-black" :style="{ color: brandPrimaryColor }">{{ formatPrice(property.expected_price) }}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">
-                                <span v-if="property.price_per_sqft">₹ {{ Number(property.price_per_sqft).toLocaleString('en-IN') }}/sq.ft</span>
-                                <span v-if="property.price_negotiable" class="ml-2 text-emerald-600 font-bold">• Price Negotiable</span>
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <div class="text-2xl font-black" :style="{ color: brandPrimaryColor }">{{ formatPrice(property.expected_price) }}</div>
+                                    <div class="text-xs text-slate-500 mt-0.5">
+                                        <span v-if="property.price_per_sqft">₹ {{ Number(property.price_per_sqft).toLocaleString('en-IN') }}/sq.ft</span>
+                                        <span v-if="property.price_negotiable" class="ml-2 text-emerald-600 font-bold">• Price Negotiable</span>
+                                    </div>
+                                </div>
+                                <button
+                                    v-if="property.property_for === PROPERTY_FOR.SELL || !property.property_for"
+                                    type="button"
+                                    @click="isEmiModalOpen = true"
+                                    class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1 rounded-xl transition cursor-pointer shrink-0"
+                                    title="Open EMI Calculator"
+                                >
+                                    <span>🧮</span>
+                                    <span>EMI Calculator</span>
+                                </button>
+                            </div>
+
+                            <!-- Estimated Monthly EMI Pill (like 99acres & MagicBricks) -->
+                            <div
+                                v-if="(property.property_for === PROPERTY_FOR.SELL || !property.property_for) && property.expected_price > 0"
+                                @click="isEmiModalOpen = true"
+                                class="mt-3 p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200/80 hover:border-blue-200 transition cursor-pointer flex items-center justify-between text-xs group"
+                            >
+                                <div class="flex items-center gap-2 text-slate-700">
+                                    <span class="text-sm">🏦</span>
+                                    <span>EMI starts at <strong class="text-slate-900 font-black">{{ estimatedMonthlyEmiFormatted }}</strong>/mo</span>
+                                </div>
+                                <span class="text-[11px] font-bold text-blue-600 group-hover:text-blue-700 group-hover:underline flex items-center gap-0.5">
+                                    Calculate EMI
+                                    <svg class="w-3 h-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                </span>
                             </div>
                         </div>
 
@@ -340,6 +370,61 @@
                         </div>
                     </div>
 
+                    <!-- Home Loan & EMI Assistance Box -->
+                    <div
+                        v-if="(property.property_for === PROPERTY_FOR.SELL || !property.property_for) && property.expected_price > 0"
+                        class="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-slate-50 rounded-2xl border border-blue-200/70 shadow-xs p-5 space-y-4"
+                    >
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-100 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-xs">
+                                    🏦
+                                </div>
+                                <div>
+                                    <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Home Loan &amp; EMI Assistance</h2>
+                                    <p class="text-xs text-slate-500">Calculate customized monthly installments with lowest interest rates</p>
+                                </div>
+                            </div>
+                            <span class="self-start sm:self-auto text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Rates From 8.40% p.a.
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Estimated EMI</span>
+                                <div class="text-base sm:text-lg font-black text-slate-900">{{ estimatedMonthlyEmiFormatted }}<span class="text-xs font-normal text-slate-500">/mo</span></div>
+                                <span class="text-[10px] text-slate-500 block">for 20 Yrs @ 8.5% (20% Down)</span>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Max Loan Coverage</span>
+                                <div class="text-base sm:text-lg font-black text-blue-700">Up to 80%</div>
+                                <span class="text-[10px] text-slate-500 block">of property agreement value</span>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Top Lending Partners</span>
+                                <div class="text-xs font-bold text-slate-800 truncate">SBI · HDFC · ICICI · Axis</div>
+                                <span class="text-[10px] text-emerald-600 font-bold block">✓ Zero Processing Fee Offers</span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                            <p class="text-xs text-slate-600">
+                                Want to customize loan tenure, interest rate, or down payment?
+                            </p>
+                            <button
+                                type="button"
+                                @click="isEmiModalOpen = true"
+                                class="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-md transition cursor-pointer hover:opacity-95 flex items-center justify-center gap-1.5 shrink-0"
+                                :style="{ backgroundColor: brandPrimaryColor }"
+                            >
+                                <span>🧮</span>
+                                <span>Open Full EMI Calculator</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Right Column: Seller card repeat on mobile + Similar properties hint -->
@@ -425,6 +510,15 @@
                 <p class="text-[10px] text-slate-400 text-center">By contacting, you agree to {{ companyName }}'s Terms of Use.</p>
             </div>
         </div>
+
+        <!-- EMI Calculator Modal -->
+        <EmiCalculatorModal
+            :is-open="isEmiModalOpen"
+            :property-price="property?.expected_price"
+            :property-title="property?.title"
+            :property-city="property?.city"
+            @close="isEmiModalOpen = false"
+        />
     </div>
 </template>
 
@@ -432,6 +526,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import EmiCalculatorModal from '../components/EmiCalculatorModal.vue';
 import {
     PROPERTY_FOR,
     isResidentialType,
@@ -450,6 +545,7 @@ const isLoading = ref(true);
 const notFound = ref(false);
 const activePhotoIdx = ref(0);
 const showContactModal = ref(false);
+const isEmiModalOpen = ref(false);
 const descExpanded = ref(false);
 const copied = ref(false);
 
@@ -483,6 +579,22 @@ const formatPrice = (val) => {
     }
     return `₹ ${num.toLocaleString('en-IN')}`;
 };
+
+const estimatedMonthlyEmiFormatted = computed(() => {
+    const price = Number(property.value?.expected_price);
+    if (!price || price <= 0) return '₹ 0';
+    // Standard baseline: 20% down payment (80% loan), 8.5% interest, 20 years
+    const P = price * 0.8;
+    const r = 0.085 / 12;
+    const n = 240;
+    const factor = Math.pow(1 + r, n);
+    const emi = Math.round((P * r * factor) / (factor - 1));
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(emi);
+});
 
 const sellerInitials = computed(() => {
     const name = property.value?.user?.name;
