@@ -1,7 +1,5 @@
 <template>
-    <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <AdminNavbar />
-
+    <AdminLayout>
         <!-- Notification Toast -->
         <transition
             enter-active-class="transform ease-out duration-300 transition"
@@ -970,12 +968,15 @@
                 </div>
             </div>
         </div>
-    </div>
+    </AdminLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import AdminNavbar from '../components/AdminNavbar.vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import AdminLayout from '../layouts/AdminLayout.vue';
+
+const route = useRoute();
 
 // State
 const properties = ref([]);
@@ -1016,11 +1017,16 @@ const visiblePages = computed(() => {
 });
 
 const isLoading = ref(false);
-const activeTab = ref('all');
+const activeTab = ref(route.query.tab || 'all');
 const searchQuery = ref('');
 const filterPropertyFor = ref('all');
 const filterCity = ref('all');
 const sortBy = ref('latest');
+
+watch(() => route.query.tab, (newTab) => {
+    activeTab.value = newTab || 'all';
+    fetchProperties(1);
+});
 
 let searchDebounce = null;
 

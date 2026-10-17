@@ -1,8 +1,6 @@
 <template>
-    <div class="min-h-screen bg-slate-50 flex flex-col">
-        <AdminNavbar />
-
-        <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
+    <AdminLayout>
+        <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
@@ -602,13 +600,13 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import AdminNavbar from '../components/AdminNavbar.vue';
+import AdminLayout from '../layouts/AdminLayout.vue';
 import FestiveHeroAnimation from '../../client/components/FestiveHeroAnimation.vue';
 
 const isSaving = ref(false);

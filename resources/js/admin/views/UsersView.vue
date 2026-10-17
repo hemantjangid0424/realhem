@@ -1,8 +1,6 @@
 <template>
-    <div class="min-h-screen bg-slate-50 flex flex-col">
-        <AdminNavbar />
-
-        <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6">
+    <AdminLayout>
+        <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Users, Brokers &amp; Builders</h1>
@@ -10,13 +8,13 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button
-                        v-for="role in ['all', 'admin', 'agent', 'owner', 'user']"
+                        v-for="role in ['all', 'admin', 'agent', 'builder', 'owner', 'user']"
                         :key="role"
                         @click="currentRole = role; fetchUsers()"
                         class="px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition cursor-pointer"
                         :class="currentRole === role ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                     >
-                        {{ role === 'agent' ? 'Brokers' : (role === 'all' ? 'All Roles' : role + 's') }}
+                        {{ role === 'agent' ? 'Brokers' : (role === 'all' ? 'All Roles' : (role === 'builder' ? 'Builders' : role + 's')) }}
                     </button>
                 </div>
             </div>
@@ -71,17 +69,25 @@
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </AdminLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import AdminNavbar from '../components/AdminNavbar.vue';
+import { ref, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import AdminLayout from '../layouts/AdminLayout.vue';
+
+const route = useRoute();
 
 const users = ref([]);
-const currentRole = ref('all');
+const currentRole = ref(route.query.role || 'all');
 const isLoading = ref(false);
+
+watch(() => route.query.role, (newRole) => {
+    currentRole.value = newRole || 'all';
+    fetchUsers();
+});
 
 const fetchUsers = async () => {
     isLoading.value = true;
