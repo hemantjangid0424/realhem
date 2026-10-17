@@ -302,22 +302,6 @@
                         </label>
                     </div>
 
-                    <!-- City Filter -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">City</label>
-                        <select :value="activeCity" @change="onCityFilterChange" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold outline-none cursor-pointer">
-                            <option class="text-blue-600 font-bold bg-blue-50" value="__DETECT__">📍 Detect My Location</option>
-                            <option value="Ahmedabad">Ahmedabad</option>
-                            <option value="Delhi NCR">Delhi NCR</option>
-                            <option value="Mumbai">Mumbai</option>
-                            <option value="Bangalore">Bangalore</option>
-                            <option value="Pune">Pune</option>
-                            <option value="Hyderabad">Hyderabad</option>
-                            <option value="Chennai">Chennai</option>
-                            <option value="Kolkata">Kolkata</option>
-                        </select>
-                    </div>
-
                     <!-- Budget Range -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">Budget</label>
@@ -984,19 +968,6 @@ const detectLocationListings = () => {
             },
         });
     });
-};
-
-const onCityFilterChange = (e) => {
-    const val = e.target.value;
-    if (val === '__DETECT__') {
-        detectLocationListings();
-    } else {
-        setCity(val);
-        activeCity.value = val;
-        isNearMe.value = false;
-        activeNearbyAreas.value = [];
-        runSearch();
-    }
 };
 
 const openVoiceSearchListings = () => {
