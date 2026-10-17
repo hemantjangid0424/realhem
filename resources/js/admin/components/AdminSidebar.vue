@@ -221,6 +221,17 @@
                         <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                         <span v-show="!isCollapsed" class="truncate">Inquiries &amp; Feedback</span>
                     </router-link>
+
+                    <!-- Careers & Job Postings -->
+                    <router-link
+                        to="/jobs"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group cursor-pointer"
+                        :class="isActive('/jobs') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'"
+                        :title="isCollapsed ? 'Careers & Job Postings' : ''"
+                    >
+                        <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <span v-show="!isCollapsed" class="truncate">Careers &amp; Jobs</span>
+                    </router-link>
                 </div>
 
                 <!-- Section: PLATFORM & POLICIES -->

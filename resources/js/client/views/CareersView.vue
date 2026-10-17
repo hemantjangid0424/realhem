@@ -75,7 +75,24 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-if="filteredOpenings.length === 0" class="bg-white rounded-3xl p-10 border border-slate-200/80 shadow-xs text-center space-y-3">
+                <span class="text-3xl block">📋</span>
+                <h3 class="text-base font-bold text-slate-800">No active job openings at the moment</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                    We don't have open positions listed right now, but we are always eager to connect with exceptional talent. You can still submit your profile below!
+                </p>
+                <div class="pt-2">
+                    <a
+                        href="#apply-section"
+                        class="inline-block px-5 py-2.5 rounded-xl text-white font-bold text-xs shadow-xs transition hover:opacity-95"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        Submit General Application &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div
                     v-for="job in filteredOpenings"
                     :key="job.title"
@@ -89,7 +106,7 @@
                             <span class="text-xs font-semibold text-slate-500">{{ job.location }} &bull; {{ job.type }}</span>
                         </div>
                         <h3 class="text-base font-black text-slate-900">{{ job.title }}</h3>
-                        <p class="text-xs text-slate-600 leading-relaxed">{{ job.desc }}</p>
+                        <p class="text-xs text-slate-600 leading-relaxed">{{ job.description || job.desc }}</p>
                         <div class="flex items-center gap-2 flex-wrap pt-2">
                             <span v-for="tag in job.tags" :key="tag" class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 font-semibold">
                                 {{ tag }}
@@ -211,13 +228,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
 
 const { companyName, brandPrimaryColor } = useCompanyBranding();
 
 const activeDept = ref('All');
-const departments = ['All', 'Engineering', 'Product & Design', 'Sales & Growth', 'Operations'];
+const departments = ref(['All', 'Engineering', 'Product & Design', 'Sales & Growth', 'Operations']);
 
 const perks = [
     { icon: '🚀', title: 'High-Scale Systems', desc: 'Work on architectures serving millions of listing searches with sub-100ms response targets.' },
@@ -226,57 +243,11 @@ const perks = [
     { icon: '☕', title: 'Modern Work Environment', desc: 'Ergonomic workspaces, state-of-the-art Apple M-series hardware, and flexible hybrid arrangements.' },
 ];
 
-const openings = [
-    {
-        title: 'Senior Full-Stack Engineer (PHP / Laravel / Vue)',
-        department: 'Engineering',
-        location: 'Ahmedabad / Remote',
-        type: 'Full Time',
-        experience: '3–6 Years',
-        tags: ['Laravel 12', 'Vue 3', 'Tailwind', 'MySQL / Redis'],
-        desc: 'Lead the architecture of our marketplace discovery backend, geospatial indexing pipelines, and high-frequency OTP auth layers.',
-    },
-    {
-        title: 'Frontend Performance & UI Engineer',
-        department: 'Engineering',
-        location: 'Ahmedabad / Bengaluru',
-        type: 'Full Time',
-        experience: '2–5 Years',
-        tags: ['Vue 3', 'Vite', 'Tailwind v4', 'Core Web Vitals'],
-        desc: 'Build fluid, high-converting property search layouts, interactive floor plan viewers, and mobile-first listing experiences.',
-    },
-    {
-        title: 'Product Designer (Design Systems & UX)',
-        department: 'Product & Design',
-        location: 'Ahmedabad / Hybrid',
-        type: 'Full Time',
-        experience: '3+ Years',
-        tags: ['Figma', 'Design Systems', 'User Research', 'PropTech UX'],
-        desc: 'Craft intuitive owner listing flows, broker portal dashboards, and accessible consumer-facing filters.',
-    },
-    {
-        title: 'Enterprise Builder Partnerships Lead',
-        department: 'Sales & Growth',
-        location: 'Mumbai / Delhi NCR',
-        type: 'Full Time',
-        experience: '4–8 Years',
-        tags: ['B2B Sales', 'Real Estate Developers', 'Key Account Mgmt'],
-        desc: 'Partner with top Grade-A builders across Tier-1 metros to market new project launches and premium inventory.',
-    },
-    {
-        title: 'Trust, Safety & Verification Specialist',
-        department: 'Operations',
-        location: 'Ahmedabad',
-        type: 'Full Time',
-        experience: '1–3 Years',
-        tags: ['RERA Verification', 'Listing Quality', 'Fraud Prevention'],
-        desc: 'Audit seller credentials, verify title documents, and ensure complete authenticity across our property catalog.',
-    },
-];
+const openings = ref([]);
 
 const filteredOpenings = computed(() => {
-    if (activeDept.value === 'All') return openings;
-    return openings.filter(job => job.department === activeDept.value);
+    if (activeDept.value === 'All') return openings.value;
+    return openings.value.filter(job => job.department === activeDept.value);
 });
 
 const selectedJob = ref(null);
@@ -350,5 +321,24 @@ const submitApplication = async () => {
         isSubmitting.value = false;
     }
 };
+
+const fetchJobs = async () => {
+    try {
+        const res = await fetch('/api/jobs');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+            openings.value = data.data;
+            if (data.departments && data.departments.length > 0) {
+                departments.value = data.departments;
+            }
+        }
+    } catch (err) {
+        console.warn('Failed to load dynamic jobs:', err);
+    }
+};
+
+onMounted(() => {
+    fetchJobs();
+});
 </script>
 

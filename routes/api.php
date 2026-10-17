@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AdminPropertyController;
 use App\Http\Controllers\Api\InquiryController;
+use App\Http\Controllers\Api\JobPostingController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\SettingController;
@@ -58,10 +59,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
 });
 
-// Public Branding & Customization Settings API
+// Public Branding, Customization & Careers API
 Route::get('/settings', [SettingController::class, 'publicIndex']);
 Route::get('/legal', [SettingController::class, 'getLegalSettings']);
 Route::post('/inquiries', [InquiryController::class, 'store']);
+Route::get('/jobs', [JobPostingController::class, 'index']);
 
 // Admin SPA API Routes
 Route::prefix('admin')->group(function () {
@@ -93,5 +95,12 @@ Route::prefix('admin')->group(function () {
         Route::get('/inquiries', [InquiryController::class, 'adminIndex']);
         Route::patch('/inquiries/{inquiry}/status', [InquiryController::class, 'updateStatus']);
         Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy']);
+
+        // Careers & Job Postings Module
+        Route::get('/jobs', [JobPostingController::class, 'adminIndex']);
+        Route::post('/jobs', [JobPostingController::class, 'store']);
+        Route::put('/jobs/{job}', [JobPostingController::class, 'update']);
+        Route::patch('/jobs/{job}/toggle-active', [JobPostingController::class, 'toggleActive']);
+        Route::delete('/jobs/{job}', [JobPostingController::class, 'destroy']);
     });
 });

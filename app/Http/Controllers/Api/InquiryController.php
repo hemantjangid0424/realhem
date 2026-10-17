@@ -86,11 +86,15 @@ class InquiryController extends Controller
             'total' => Inquiry::count(),
             'pending' => Inquiry::where('status', 'pending')->count(),
             'resolved' => Inquiry::where('status', 'resolved')->count(),
+            'dismissed' => Inquiry::where('status', 'dismissed')->count(),
             'contact' => Inquiry::where('type', 'contact')->count(),
             'request_info' => Inquiry::where('type', 'request_info')->count(),
             'feedback' => Inquiry::where('type', 'feedback')->count(),
             'report_problem' => Inquiry::where('type', 'report_problem')->count(),
             'career' => Inquiry::where('type', 'career')->count(),
+            'career_pending' => Inquiry::where('type', 'career')->where('status', 'pending')->count(),
+            'career_resolved' => Inquiry::where('type', 'career')->where('status', 'resolved')->count(),
+            'career_dismissed' => Inquiry::where('type', 'career')->where('status', 'dismissed')->count(),
         ];
 
         return response()->json([

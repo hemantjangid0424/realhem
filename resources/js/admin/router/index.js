@@ -6,6 +6,7 @@ import UsersView from '../views/UsersView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import LegalSettingsView from '../views/LegalSettingsView.vue';
 import InquiriesView from '../views/InquiriesView.vue';
+import JobsView from '../views/JobsView.vue';
 
 const routes = [
     {
@@ -40,6 +41,12 @@ const routes = [
         path: '/inquiries',
         name: 'admin.inquiries',
         component: InquiriesView,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/jobs',
+        name: 'admin.jobs',
+        component: JobsView,
         meta: { requiresAuth: true },
     },
     {

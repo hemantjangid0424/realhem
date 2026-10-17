@@ -14,7 +14,7 @@
                         </span>
                     </div>
                     <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                        Review consumer information requests, user feedback, safety problem reports, and career job applications.
+                        Review consumer information requests, user feedback, safety problem reports, and direct contact messages.
                     </p>
                 </div>
 
@@ -350,7 +350,6 @@ const typeTabs = [
     { id: 'feedback', label: 'Feedback & Reviews' },
     { id: 'report_problem', label: 'Problem Reports' },
     { id: 'contact', label: 'Contact Messages' },
-    { id: 'career', label: 'Career Apps' },
 ];
 
 const fetchInquiries = async (page = 1) => {
