@@ -507,7 +507,9 @@
                         {{ property.user.country_code || '+91' }} {{ property.user.mobile }}
                     </a>
                 </div>
-                <p class="text-[10px] text-slate-400 text-center">By contacting, you agree to {{ companyName }}'s Terms of Use.</p>
+                <p class="text-[10px] text-slate-400 text-center">
+                    By contacting, you agree to {{ companyName }}'s <router-link to="/terms" class="underline hover:text-slate-600">Terms of Use</router-link> and <router-link to="/privacy" class="underline hover:text-slate-600">Privacy Policy</router-link>.
+                </p>
             </div>
         </div>
 

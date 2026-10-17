@@ -36,6 +36,26 @@ const routes = [
         component: () => import('../views/PropertyDetailView.vue'),
     },
     {
+        path: '/terms',
+        name: 'client.terms',
+        component: () => import('../views/LegalPageView.vue'),
+    },
+    {
+        path: '/privacy',
+        name: 'client.privacy',
+        component: () => import('../views/LegalPageView.vue'),
+    },
+    {
+        path: '/rera-disclaimer',
+        name: 'client.rera-disclaimer',
+        component: () => import('../views/LegalPageView.vue'),
+    },
+    {
+        path: '/refund-policy',
+        name: 'client.refund-policy',
+        component: () => import('../views/LegalPageView.vue'),
+    },
+    {
         path: '/:pathMatch(.*)*',
         redirect: '/',
     },

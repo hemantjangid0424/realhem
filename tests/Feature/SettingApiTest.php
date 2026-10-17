@@ -79,3 +79,78 @@ test('admin can retrieve and update company branding settings', function () {
             'festival_animation' => 'diwali_diyas',
         ]);
 });
+
+test('public can retrieve legal and statutory policy settings', function () {
+    $response = $this->getJson('/api/legal');
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+        ])
+        ->assertJsonStructure([
+            'success',
+            'legal' => [
+                'terms',
+                'privacy',
+                'rera',
+                'refund',
+                'updated_at',
+                'version',
+            ],
+        ]);
+});
+
+test('unauthenticated user cannot update legal policies', function () {
+    $response = $this->postJson('/api/admin/legal', [
+        'terms' => 'New custom terms and conditions',
+    ]);
+
+    $response->assertStatus(401);
+});
+
+test('admin can retrieve and update legal policies', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'email' => 'admin_legal@realhem.com',
+    ]);
+
+    $this->actingAs($admin, 'sanctum');
+
+    $adminGet = $this->getJson('/api/admin/legal');
+    $adminGet->assertStatus(200)
+        ->assertJsonStructure([
+            'success',
+            'legal',
+        ]);
+
+    $customLegal = [
+        'terms' => '### Custom Terms of Service\nUpdated broker and user agreement for RealHem platform.',
+        'privacy' => '### Custom Privacy Policy\nUser data encryption and location safety policies.',
+        'rera' => '### Custom RERA Advisory\nMandatory state authority registration details.',
+        'refund' => '### Custom Refund Policy\nDetailed cancellation guidelines for paid featured packages.',
+        'updated_at' => 'November 2026',
+        'version' => '3.0',
+    ];
+
+    $updateResponse = $this->postJson('/api/admin/legal', $customLegal);
+
+    $updateResponse->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'message' => 'Legal documents and policies updated successfully!',
+        ])
+        ->assertJsonFragment([
+            'terms' => '### Custom Terms of Service\nUpdated broker and user agreement for RealHem platform.',
+            'version' => '3.0',
+            'updated_at' => 'November 2026',
+        ]);
+
+    // Verify public endpoint reflects custom legal policies
+    $publicResponse = $this->getJson('/api/legal');
+    $publicResponse->assertStatus(200)
+        ->assertJsonFragment([
+            'terms' => '### Custom Terms of Service\nUpdated broker and user agreement for RealHem platform.',
+            'version' => '3.0',
+            'updated_at' => 'November 2026',
+        ]);
+});

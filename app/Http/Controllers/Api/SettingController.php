@@ -79,4 +79,54 @@ class SettingController extends Controller
             'settings' => Setting::getAll(),
         ]);
     }
+
+    /**
+     * Get legal pages and statutory policy texts.
+     */
+    public function getLegalSettings(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'legal' => [
+                'terms' => Setting::get('legal_terms', ''),
+                'privacy' => Setting::get('legal_privacy', ''),
+                'rera' => Setting::get('legal_rera', ''),
+                'refund' => Setting::get('legal_refund', ''),
+                'updated_at' => Setting::get('legal_updated_at', 'October 2026'),
+                'version' => Setting::get('legal_version', '2.4'),
+            ],
+        ])->header('Cache-Control', 'public, max-age=300');
+    }
+
+    /**
+     * Update legal pages and statutory policy texts (Admin only).
+     */
+    public function updateLegalSettings(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'terms' => 'nullable|string',
+            'privacy' => 'nullable|string',
+            'rera' => 'nullable|string',
+            'refund' => 'nullable|string',
+            'updated_at' => 'nullable|string|max:50',
+            'version' => 'nullable|string|max:20',
+        ]);
+
+        foreach ($validated as $key => $value) {
+            Setting::set("legal_{$key}", (string) ($value ?? ''), 'legal');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Legal documents and policies updated successfully!',
+            'legal' => [
+                'terms' => Setting::get('legal_terms', ''),
+                'privacy' => Setting::get('legal_privacy', ''),
+                'rera' => Setting::get('legal_rera', ''),
+                'refund' => Setting::get('legal_refund', ''),
+                'updated_at' => Setting::get('legal_updated_at', 'October 2026'),
+                'version' => Setting::get('legal_version', '2.4'),
+            ],
+        ]);
+    }
 }

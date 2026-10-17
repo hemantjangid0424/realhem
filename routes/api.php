@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // Public Branding & Customization Settings API
 Route::get('/settings', [SettingController::class, 'publicIndex']);
+Route::get('/legal', [SettingController::class, 'getLegalSettings']);
 
 // Admin SPA API Routes
 Route::prefix('admin')->group(function () {
@@ -71,6 +72,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/users', [AdminDashboardController::class, 'users']);
         Route::get('/settings', [SettingController::class, 'adminIndex']);
         Route::post('/settings', [SettingController::class, 'update']);
+        Route::get('/legal', [SettingController::class, 'getLegalSettings']);
+        Route::post('/legal', [SettingController::class, 'updateLegalSettings']);
 
         // Property Management Module
         Route::get('/properties', [AdminPropertyController::class, 'index']);

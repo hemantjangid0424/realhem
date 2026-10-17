@@ -72,23 +72,36 @@
                     </ul>
                 </div>
 
-                <!-- Col 4: For Partners & Builders -->
+                <!-- Col 4: Legal & Policies -->
                 <div>
-                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Partners</h4>
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Legal &amp; Trust</h4>
                     <ul class="space-y-2">
-                        <li><router-link to="/brokers" class="hover:text-white transition">Real Estate Agents / Brokers</router-link></li>
-                        <li><router-link to="/brokers" class="hover:text-white transition">Builders &amp; Developers</router-link></li>
-                        <li><router-link to="/brokers" class="hover:text-white transition">Lead Generation Packages</router-link></li>
-                        <li><a href="/admin/login" class="hover:text-white transition">Admin Portal Access</a></li>
+                        <li><router-link to="/terms" class="hover:text-white transition">Terms &amp; Conditions</router-link></li>
+                        <li><router-link to="/privacy" class="hover:text-white transition">Privacy Policy</router-link></li>
+                        <li><router-link to="/rera-disclaimer" class="hover:text-white transition">RERA Disclaimer</router-link></li>
+                        <li><router-link to="/refund-policy" class="hover:text-white transition">Refund &amp; Cancellation</router-link></li>
+                        <li><router-link to="/brokers" class="hover:text-white transition">Brokers &amp; Builders</router-link></li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Copyright -->
+        <!-- Bottom Copyright & Legal Links -->
         <div class="border-t border-slate-800 py-6 px-4 text-center text-slate-500 text-[11px]">
-            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                 <span>{{ copyrightText }}</span>
+
+                <!-- Legal policy inline links -->
+                <div class="flex items-center gap-4 flex-wrap justify-center text-[11px]">
+                    <router-link to="/terms" class="hover:text-slate-300 transition">Terms of Service</router-link>
+                    <span class="text-slate-700">•</span>
+                    <router-link to="/privacy" class="hover:text-slate-300 transition">Privacy Policy</router-link>
+                    <span class="text-slate-700">•</span>
+                    <router-link to="/rera-disclaimer" class="hover:text-slate-300 transition">RERA Disclaimer</router-link>
+                    <span class="text-slate-700">•</span>
+                    <router-link to="/refund-policy" class="hover:text-slate-300 transition">Refund &amp; Cancellation</router-link>
+                </div>
+
                 <span class="text-slate-400">Powered by {{ companyName }} Platform</span>
             </div>
         </div>

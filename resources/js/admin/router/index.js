@@ -4,6 +4,7 @@ import DashboardView from '../views/DashboardView.vue';
 import PropertiesView from '../views/PropertiesView.vue';
 import UsersView from '../views/UsersView.vue';
 import SettingsView from '../views/SettingsView.vue';
+import LegalSettingsView from '../views/LegalSettingsView.vue';
 
 const routes = [
     {
@@ -38,6 +39,12 @@ const routes = [
         path: '/settings',
         name: 'admin.settings',
         component: SettingsView,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/legal',
+        name: 'admin.legal',
+        component: LegalSettingsView,
         meta: { requiresAuth: true },
     },
     {
