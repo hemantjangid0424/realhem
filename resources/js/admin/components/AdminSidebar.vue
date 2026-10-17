@@ -210,6 +210,17 @@
                         <svg class="w-4 h-4 shrink-0 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span v-show="!isCollapsed" class="truncate">Individual Owners</span>
                     </router-link>
+
+                    <!-- Inquiries, Feedback & Reports -->
+                    <router-link
+                        to="/inquiries"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group cursor-pointer"
+                        :class="isActive('/inquiries') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'"
+                        :title="isCollapsed ? 'Inquiries & Feedback' : ''"
+                    >
+                        <svg class="w-4 h-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                        <span v-show="!isCollapsed" class="truncate">Inquiries &amp; Feedback</span>
+                    </router-link>
                 </div>
 
                 <!-- Section: PLATFORM & POLICIES -->

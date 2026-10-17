@@ -2,9 +2,9 @@
     <footer class="bg-slate-900 text-slate-400 text-xs border-t border-slate-800">
         <!-- Top Section -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
                 <!-- Col 1: Brand Info -->
-                <div class="lg:col-span-2 space-y-4">
+                <div class="lg:col-span-4 space-y-4">
                     <div class="flex items-center gap-3">
                         <div
                             v-if="companyLogoUrl"
@@ -48,39 +48,46 @@
                     </div>
                 </div>
 
-                <!-- Col 2: Real Estate in Cities -->
-                <div>
-                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Top Cities</h4>
-                    <ul class="space-y-2">
-                        <li><router-link to="/listings?city=Delhi NCR" class="hover:text-white transition">Property in Delhi NCR</router-link></li>
-                        <li><router-link to="/listings?city=Ahmedabad" class="hover:text-white transition">Property in Ahmedabad</router-link></li>
-                        <li><router-link to="/listings?city=Mumbai" class="hover:text-white transition">Property in Mumbai</router-link></li>
-                        <li><router-link to="/listings?city=Bangalore" class="hover:text-white transition">Property in Bangalore</router-link></li>
-                        <li><router-link to="/listings?city=Pune" class="hover:text-white transition">Property in Pune</router-link></li>
+                <!-- Col 2: Company (99acres standard 12 items) -->
+                <div class="lg:col-span-3">
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Company</h4>
+                    <ul class="grid grid-cols-1 gap-1.5 text-xs">
+                        <li><router-link to="/about-us" class="hover:text-white transition">About us</router-link></li>
+                        <li><router-link to="/contact-us" class="hover:text-white transition">Contact us</router-link></li>
+                        <li><router-link to="/careers" class="hover:text-white transition">Careers with us</router-link></li>
+                        <li><router-link to="/terms" class="hover:text-white transition">Terms &amp; Conditions</router-link></li>
+                        <li><router-link to="/request-info" class="hover:text-white transition">Request Info</router-link></li>
+                        <li><router-link to="/feedback" class="hover:text-white transition">Feedback</router-link></li>
+                        <li><router-link to="/report-problem" class="hover:text-white transition">Report a problem</router-link></li>
+                        <li><router-link to="/testimonials" class="hover:text-white transition">Testimonials</router-link></li>
+                        <li><router-link to="/privacy" class="hover:text-white transition">Privacy Policy</router-link></li>
+                        <li><router-link to="/safety-guide" class="hover:text-white transition">Safety Guide</router-link></li>
                     </ul>
                 </div>
 
-                <!-- Col 3: Property Categories -->
-                <div>
-                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Categories</h4>
+                <!-- Col 3: Real Estate in Cities -->
+                <div class="lg:col-span-2">
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Top Cities</h4>
+                    <ul class="space-y-2">
+                        <li><router-link to="/listings?city=Delhi NCR" class="hover:text-white transition">Delhi NCR</router-link></li>
+                        <li><router-link to="/listings?city=Ahmedabad" class="hover:text-white transition">Ahmedabad</router-link></li>
+                        <li><router-link to="/listings?city=Mumbai" class="hover:text-white transition">Mumbai</router-link></li>
+                        <li><router-link to="/listings?city=Bangalore" class="hover:text-white transition">Bangalore</router-link></li>
+                        <li><router-link to="/listings?city=Pune" class="hover:text-white transition">Pune</router-link></li>
+                        <li><router-link to="/listings?city=Hyderabad" class="hover:text-white transition">Hyderabad</router-link></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Property Categories -->
+                <div class="lg:col-span-3">
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Explore Marketplace</h4>
                     <ul class="space-y-2">
                         <li><router-link to="/listings?type=buy" class="hover:text-white transition">Flats &amp; Apartments for Sale</router-link></li>
                         <li><router-link to="/listings?type=rent" class="hover:text-white transition">House &amp; Flat for Rent</router-link></li>
                         <li><router-link to="/listings?type=commercial" class="hover:text-white transition">Commercial Shops &amp; Offices</router-link></li>
                         <li><router-link to="/listings?type=plots" class="hover:text-white transition">Residential Land &amp; Plots</router-link></li>
                         <li><router-link to="/post-property" class="hover:text-white transition">Post Free Property Ad</router-link></li>
-                    </ul>
-                </div>
-
-                <!-- Col 4: Legal & Policies -->
-                <div>
-                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Legal &amp; Trust</h4>
-                    <ul class="space-y-2">
-                        <li><router-link to="/terms" class="hover:text-white transition">Terms &amp; Conditions</router-link></li>
-                        <li><router-link to="/privacy" class="hover:text-white transition">Privacy Policy</router-link></li>
-                        <li><router-link to="/rera-disclaimer" class="hover:text-white transition">RERA Disclaimer</router-link></li>
-                        <li><router-link to="/refund-policy" class="hover:text-white transition">Refund &amp; Cancellation</router-link></li>
-                        <li><router-link to="/brokers" class="hover:text-white transition">Brokers &amp; Builders</router-link></li>
+                        <li><router-link to="/brokers" class="hover:text-white transition">Broker &amp; Builder Network</router-link></li>
                     </ul>
                 </div>
             </div>

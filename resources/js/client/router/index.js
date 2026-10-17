@@ -56,6 +56,46 @@ const routes = [
         component: () => import('../views/LegalPageView.vue'),
     },
     {
+        path: '/about-us',
+        name: 'client.about-us',
+        component: () => import('../views/AboutUsView.vue'),
+    },
+    {
+        path: '/contact-us',
+        name: 'client.contact-us',
+        component: () => import('../views/ContactUsView.vue'),
+    },
+    {
+        path: '/careers',
+        name: 'client.careers',
+        component: () => import('../views/CareersView.vue'),
+    },
+    {
+        path: '/request-info',
+        name: 'client.request-info',
+        component: () => import('../views/InquiryFormsView.vue'),
+    },
+    {
+        path: '/feedback',
+        name: 'client.feedback',
+        component: () => import('../views/InquiryFormsView.vue'),
+    },
+    {
+        path: '/report-problem',
+        name: 'client.report-problem',
+        component: () => import('../views/InquiryFormsView.vue'),
+    },
+    {
+        path: '/testimonials',
+        name: 'client.testimonials',
+        component: () => import('../views/TestimonialsView.vue'),
+    },
+    {
+        path: '/safety-guide',
+        name: 'client.safety-guide',
+        component: () => import('../views/SafetyGuideView.vue'),
+    },
+    {
         path: '/:pathMatch(.*)*',
         redirect: '/',
     },

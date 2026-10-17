@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AdminPropertyController;
+use App\Http\Controllers\Api\InquiryController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\SettingController;
@@ -60,6 +61,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // Public Branding & Customization Settings API
 Route::get('/settings', [SettingController::class, 'publicIndex']);
 Route::get('/legal', [SettingController::class, 'getLegalSettings']);
+Route::post('/inquiries', [InquiryController::class, 'store']);
 
 // Admin SPA API Routes
 Route::prefix('admin')->group(function () {
@@ -86,5 +88,10 @@ Route::prefix('admin')->group(function () {
         Route::patch('/properties/{property}/toggle-featured', [AdminPropertyController::class, 'toggleFeatured']);
         Route::put('/properties/{property}', [AdminPropertyController::class, 'update']);
         Route::delete('/properties/{property}', [AdminPropertyController::class, 'destroy']);
+
+        // Customer Support, Feedback & Inquiries Module
+        Route::get('/inquiries', [InquiryController::class, 'adminIndex']);
+        Route::patch('/inquiries/{inquiry}/status', [InquiryController::class, 'updateStatus']);
+        Route::delete('/inquiries/{inquiry}', [InquiryController::class, 'destroy']);
     });
 });

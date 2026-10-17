@@ -5,6 +5,7 @@ import PropertiesView from '../views/PropertiesView.vue';
 import UsersView from '../views/UsersView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import LegalSettingsView from '../views/LegalSettingsView.vue';
+import InquiriesView from '../views/InquiriesView.vue';
 
 const routes = [
     {
@@ -33,6 +34,12 @@ const routes = [
         path: '/users',
         name: 'admin.users',
         component: UsersView,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/inquiries',
+        name: 'admin.inquiries',
+        component: InquiriesView,
         meta: { requiresAuth: true },
     },
     {
