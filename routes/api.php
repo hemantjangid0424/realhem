@@ -44,8 +44,8 @@ Route::prefix('locations')->group(function () {
 Route::get('/properties', [PropertyController::class, 'index']);
 Route::get('/search/suggestions', [PropertyController::class, 'suggestions']);
 Route::get('/properties/{property}', [PropertyController::class, 'show']);
-// Slug-based single property lookup (preferred, SEO-friendly)
-Route::get('/property/{property:slug}', [PropertyController::class, 'show']);
+// Slug or ID-based single property lookup
+Route::get('/property/{property}', [PropertyController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/user/profile', [UserAuthController::class, 'updateProfile']);

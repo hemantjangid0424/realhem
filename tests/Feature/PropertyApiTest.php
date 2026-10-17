@@ -259,3 +259,46 @@ test('commercial properties are returned when filtering by type=commercial and k
         ->assertJsonFragment(['id' => $commercial->id, 'property_type' => 'Commercial Shop'])
         ->assertJsonMissing(['id' => $residential->id, 'property_type' => 'Residential Apartment']);
 });
+
+test('properties can be sorted by price low to high and high to low', function () {
+    $user = User::factory()->create();
+
+    $cheap = Property::factory()->create([
+        'user_id' => $user->id,
+        'city' => 'Ahmedabad',
+        'expected_price' => 2500000,
+        'status' => 'active',
+    ]);
+
+    $expensive = Property::factory()->create([
+        'user_id' => $user->id,
+        'city' => 'Ahmedabad',
+        'expected_price' => 15000000,
+        'status' => 'active',
+    ]);
+
+    $resLow = $this->getJson('/api/properties?city=Ahmedabad&sort=price_low');
+    $resLow->assertStatus(200);
+    $dataLow = $resLow->json('data');
+    expect($dataLow[0]['id'])->toBe($cheap->id);
+
+    $resHigh = $this->getJson('/api/properties?city=Ahmedabad&sort=price_high');
+    $resHigh->assertStatus(200);
+    $dataHigh = $resHigh->json('data');
+    expect($dataHigh[0]['id'])->toBe($expensive->id);
+});
+
+test('properties support simple pagination without full count overhead', function () {
+    $user = User::factory()->create();
+    Property::factory()->count(5)->create([
+        'user_id' => $user->id,
+        'city' => 'Surat',
+        'status' => 'active',
+    ]);
+
+    $response = $this->getJson('/api/properties?city=Surat&per_page=2&simple=1');
+    $response->assertStatus(200)
+        ->assertJsonStructure(['data', 'current_page', 'per_page', 'next_page_url']);
+
+    expect(count($response->json('data')))->toBe(2);
+});

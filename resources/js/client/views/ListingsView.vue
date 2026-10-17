@@ -11,6 +11,7 @@
                             @change="runSearch"
                             class="bg-transparent border-none text-xs font-bold text-slate-800 outline-none cursor-pointer pr-4 appearance-none capitalize"
                         >
+                            <option value="all">All</option>
                             <option value="buy">Buy</option>
                             <option value="rent">Rent</option>
                             <option value="commercial">Commercial</option>
@@ -126,7 +127,7 @@
             <!-- Quick Stats & City Title -->
             <div class="text-right hidden md:block">
                 <span class="text-xs font-black text-slate-900 block">
-                    {{ displayedListings.length }} verified {{ displayedListings.length === 1 ? 'property' : 'properties' }} found
+                    {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} verified {{ (totalCount || displayedListings.length) === 1 ? 'property' : 'properties' }} found
                 </span>
                 <span class="text-[11px] text-slate-500">
                     {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : ''}` }}
@@ -140,10 +141,10 @@
                 <div>
                     <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                         <span v-if="isNearMe">
-                            {{ displayedListings.length }} results | Properties in 3 Km Near Me
+                            {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} results | Properties in 3 Km Near Me
                         </span>
                         <span v-else>
-                            {{ displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : '' }}
+                            {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : '' }}
                         </span>
                     </h1>
                     <p class="text-xs text-slate-500 mt-0.5">
@@ -442,14 +443,14 @@
                 </div>
 
                 <!-- 99acres Property Card Template -->
-                <router-link
+                <div
                     v-for="item in displayedListings"
                     :key="item.id"
-                    :to="{ name: 'client.property-detail', params: { slug: item.slug } }"
+                    @click="goToDetail(item)"
                     class="bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg p-5 flex flex-col md:flex-row gap-5 group cursor-pointer relative"
                     :class="item.is_featured
                         ? 'border-amber-300 ring-1 ring-amber-400/30 shadow-xs bg-gradient-to-r from-amber-50/20 via-white to-white'
-                        : 'border-slate-200/80 shadow-xs'"
+                        : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
                 >
                     <!-- Property Thumbnail / Gallery Carousel View -->
                     <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
@@ -457,7 +458,7 @@
                             v-if="item.photos && item.photos.length > 0"
                             :src="item.photos[0]"
                             :alt="item.title"
-                            class="absolute inset-0 w-full h-full object-cover"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div v-if="item.photos && item.photos.length > 0" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
                         <div class="text-center p-4 relative z-20">
@@ -497,7 +498,7 @@
                         </span>
 
                         <!-- Bottom Tag & Image count -->
-                        <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90">
+                        <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
                             <span class="bg-black/60 px-2 py-0.5 rounded">{{ item.status }}</span>
                             <span class="bg-black/60 px-2 py-0.5 rounded">1/{{ item.photosCount || 6 }}</span>
                         </div>
@@ -510,7 +511,7 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <div class="flex items-center gap-2 flex-wrap">
-                                        <h3 class="font-black text-lg text-slate-900 group-hover:opacity-85 cursor-pointer transition">
+                                        <h3 class="font-black text-lg text-slate-900 group-hover:text-blue-600 cursor-pointer transition">
                                             {{ item.title }}
                                         </h3>
                                         <span v-if="item.is_featured" class="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
@@ -532,7 +533,18 @@
                                 </div>
                                 <div class="text-right flex-shrink-0">
                                     <span class="text-lg font-black block" :style="{ color: brandPrimaryColor }">{{ item.price }}</span>
-                                    <span v-if="item.rate" class="text-[10px] text-slate-400 font-semibold">{{ item.rate }}</span>
+                                    <span v-if="item.rate" class="text-[10px] text-slate-400 font-semibold block">{{ item.rate }}</span>
+                                    <!-- EMI Quick Trigger Pill -->
+                                    <button
+                                        v-if="item.rawPrice > 0"
+                                        type="button"
+                                        @click.stop.prevent="openEmiCalculator(item)"
+                                        class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/90 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200/70 transition cursor-pointer shadow-2xs hover:shadow-xs"
+                                        title="Calculate EMI for this property"
+                                    >
+                                        <span>🏦</span>
+                                        <span>EMI {{ getEstimatedEmi(item.rawPrice) }}/mo</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -544,7 +556,7 @@
                                 </div>
                             </div>
 
-                            <!-- Nearby Landmark & Metro tags (from screenshot: Nearby: The Hillock Ahmedabad, SP Ring Road) -->
+                            <!-- Nearby Landmark & Metro tags -->
                             <div v-if="item.nearbyLandmarks && item.nearbyLandmarks.length > 0" class="mt-3 text-xs flex items-center gap-1.5 flex-wrap">
                                 <span class="text-[11px] font-bold text-slate-500">Nearby :</span>
                                 <span
@@ -579,7 +591,7 @@
                             <div class="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    @click="downloadBrochure(item)"
+                                    @click.stop.prevent="downloadBrochure(item)"
                                     class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
                                 >
                                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -588,7 +600,7 @@
 
                                 <button
                                     type="button"
-                                    @click="contactSeller(item)"
+                                    @click.stop.prevent="contactSeller(item)"
                                     class="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 hover:opacity-90"
                                     :style="{ backgroundColor: brandPrimaryColor }"
                                 >
@@ -598,9 +610,75 @@
                             </div>
                         </div>
                     </div>
-                </router-link>
+                </div>
+
+                <!-- Load More / Pagination Stream for Crores of Records -->
+                <div v-if="hasNextPage" class="pt-4 pb-8 flex flex-col items-center justify-center gap-2">
+                    <button
+                        type="button"
+                        @click="loadNextPage"
+                        :disabled="isLoadingMore"
+                        class="px-6 py-3 rounded-2xl text-sm font-extrabold text-white shadow-md transition-all cursor-pointer hover:shadow-lg disabled:opacity-60 flex items-center gap-2"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        <span v-if="isLoadingMore" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>{{ isLoadingMore ? 'Loading More Properties...' : 'Load More Properties' }}</span>
+                    </button>
+                    <span class="text-xs text-slate-400 font-semibold">
+                        Showing {{ apiProperties.length }} of {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : apiProperties.length }} listings
+                    </span>
+                </div>
             </div>
         </div>
+
+        <!-- Contact Modal -->
+        <div v-if="showContactModal && selectedContactProperty" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showContactModal = false"></div>
+            <div class="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-5 z-10 animate-fadeIn">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-black text-slate-900">Contact Seller</h3>
+                    <button @click="showContactModal = false" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer text-sm">✕</button>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-base flex-shrink-0 shadow-md" :style="{ backgroundColor: brandPrimaryColor }">
+                        {{ (selectedContactProperty.builder || selectedContactProperty.postedBy || 'V').slice(0, 2).toUpperCase() }}
+                    </div>
+                    <div>
+                        <div class="text-sm font-black text-slate-900">{{ selectedContactProperty.builder || selectedContactProperty.postedBy }}</div>
+                        <div class="text-[11px] text-emerald-600 font-bold">✓ Verified Partner</div>
+                    </div>
+                </div>
+                <div v-if="selectedContactProperty.sellerPhone" class="space-y-2.5">
+                    <a
+                        :href="'tel:' + selectedContactProperty.sellerPhone"
+                        class="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl text-white font-bold text-sm transition cursor-pointer shadow-md hover:opacity-95"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        Call {{ selectedContactProperty.sellerPhone }}
+                    </a>
+                </div>
+                <div v-else class="text-xs text-slate-600 bg-amber-50 border border-amber-200 p-3 rounded-xl text-center">
+                    Phone number will be shared via SMS / Email for verified inquiries.
+                </div>
+                <button
+                    type="button"
+                    @click="goToDetail(selectedContactProperty); showContactModal = false"
+                    class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+                >
+                    View Full Property Details &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- EMI Calculator Modal -->
+        <EmiCalculatorModal
+            :is-open="isEmiModalOpen"
+            :property-price="selectedEmiProperty?.rawPrice || 5000000"
+            :property-title="selectedEmiProperty?.title || ''"
+            :property-city="selectedEmiProperty?.city || ''"
+            @close="isEmiModalOpen = false"
+        />
     </div>
 </template>
 
@@ -612,6 +690,7 @@ import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
 import { useSearchSuggestions } from '../composables/useSearchSuggestions';
 import { isResidentialType } from '../constants/propertyConstants';
+import EmiCalculatorModal from '../components/EmiCalculatorModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -626,7 +705,7 @@ const searchKeyword = ref(route.query.keyword || (route.query.near_me === 'true'
 const searchInput = ref('');
 const isNearMe = ref(route.query.near_me === 'true');
 const selectedBhks = ref(route.query.bhk ? route.query.bhk.split(',') : []);
-const selectedTags = ref(['new_launch']);
+const selectedTags = ref([]);
 const selectedPropTypes = ref([]);
 const verifiedOnly = ref(false);
 const featuredOnly = ref(false);
@@ -635,6 +714,41 @@ const underConstruction = ref(false);
 const budgetMin = ref('');
 const budgetMax = ref('');
 const sortBy = ref('relevance');
+
+const currentPage = ref(1);
+const totalCount = ref(0);
+const hasNextPage = ref(false);
+const isLoadingMore = ref(false);
+
+const isEmiModalOpen = ref(false);
+const selectedEmiProperty = ref(null);
+const showContactModal = ref(false);
+const selectedContactProperty = ref(null);
+
+const openEmiCalculator = (item) => {
+    selectedEmiProperty.value = item;
+    isEmiModalOpen.value = true;
+};
+
+const getEstimatedEmi = (rawPrice) => {
+    const price = Number(rawPrice);
+    if (!price || price <= 0) return '₹ 0';
+    const P = price * 0.8;
+    const r = 0.085 / 12;
+    const n = 240;
+    const factor = Math.pow(1 + r, n);
+    const emi = Math.round((P * r * factor) / (factor - 1));
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(emi);
+};
+
+const goToDetail = (item) => {
+    const slugOrId = item.slug || item.id;
+    router.push(`/property/${slugOrId}`);
+};
 
 const isSuggestionsOpen = ref(false);
 const activeSuggestionIndex = ref(-1);
@@ -748,6 +862,7 @@ const hasActiveFilters = computed(() => {
         !!searchKeyword.value ||
         selectedBhks.value.length > 0 ||
         selectedPropTypes.value.length > 0 ||
+        selectedTags.value.length > 0 ||
         !!budgetMin.value ||
         !!budgetMax.value ||
         verifiedOnly.value ||
@@ -990,12 +1105,8 @@ const resetFilters = () => {
 };
 
 const contactSeller = (item) => {
-    const phone = item.sellerPhone || '';
-    if (phone) {
-        alert(`Connecting you to ${item.builder || item.postedBy} for "${item.title}".\nDirect Phone: ${phone}`);
-    } else {
-        alert(`Connecting you to ${item.builder || item.postedBy} for "${item.title}".`);
-    }
+    selectedContactProperty.value = item;
+    showContactModal.value = true;
 };
 
 const downloadBrochure = (item) => {
@@ -1174,11 +1285,20 @@ const formatPriceWords = (val) => {
     return `₹ ${num.toLocaleString('en-IN')}`;
 };
 
-const fetchApiProperties = async () => {
-    isLoadingProperties.value = true;
+const fetchApiProperties = async (page = 1, append = false) => {
+    if (append) {
+        isLoadingMore.value = true;
+    } else {
+        isLoadingProperties.value = true;
+        currentPage.value = 1;
+    }
+
     try {
         let url = '/api/properties';
         const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('per_page', '15');
+
         if (activeCity.value && activeCity.value !== 'All' && !isNearMe.value) {
             params.set('city', activeCity.value);
         }
@@ -1209,68 +1329,89 @@ const fetchApiProperties = async () => {
         if (featuredOnly.value) {
             params.set('featured_only', '1');
         }
+        if (selectedTags.value.length > 0) {
+            params.set('tags', selectedTags.value.join(','));
+        }
+        if (sortBy.value) {
+            params.set('sort', sortBy.value);
+        }
+        if (readyToMove.value && !underConstruction.value) {
+            params.set('construction_status', 'ready');
+        } else if (!readyToMove.value && underConstruction.value) {
+            params.set('construction_status', 'under');
+        }
+
         if (params.toString()) {
             url += '?' + params.toString();
         }
+
         const res = await fetch(url);
         if (res.ok) {
             const data = await res.json();
-            const list = data.data || data || [];
-            if (Array.isArray(list) && list.length > 0) {
-                apiProperties.value = list.map(p => {
-                    const isRes = isResidentialType(p.property_type);
-                    const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
-                    return {
-                        id: p.id,
-                        slug: p.slug || String(p.id),
-                        title: p.title,
-                        type: p.property_type || 'Apartment',
-                        bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
-                        bedrooms: bedrooms,
-                        price: formatPriceWords(p.expected_price),
-                        rawPrice: p.expected_price || 0,
-                        rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
-                        locality: p.locality || '',
-                        city: p.city || '',
-                        area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
-                        status: p.construction_status || 'Ready to Move',
-                        builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
-                        project_name: p.project_name || '',
-                        postedBy: p.user ? p.user.name : 'Owner',
-                        sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
-                        isNewBooking: false,
-                        is_verified: !!p.is_verified,
-                        is_featured: !!p.is_featured,
-                        isRera: !!p.is_verified,
-                        zeroBrokerage: true,
-                        photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
-                        photos: p.photos || [],
-                        nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
-                        description: p.description || '',
-                        property_for: p.property_for || 'Sell',
-                    };
-                });
+            const list = data.data || (Array.isArray(data) ? data : []);
+            totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
+            hasNextPage.value = !!data.next_page_url;
+            currentPage.value = data.current_page || page;
+
+            const mapped = list.map(p => {
+                const isRes = isResidentialType(p.property_type);
+                const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
+                return {
+                    id: p.id,
+                    slug: p.slug || String(p.id),
+                    title: p.title,
+                    type: p.property_type || 'Apartment',
+                    bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
+                    bedrooms: bedrooms,
+                    price: formatPriceWords(p.expected_price),
+                    rawPrice: p.expected_price || 0,
+                    rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
+                    locality: p.locality || '',
+                    city: p.city || '',
+                    area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
+                    status: p.construction_status || 'Ready to Move',
+                    builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
+                    project_name: p.project_name || '',
+                    postedBy: p.user ? p.user.name : 'Owner',
+                    sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
+                    isNewBooking: false,
+                    is_verified: !!p.is_verified,
+                    is_featured: !!p.is_featured,
+                    isRera: !!p.is_verified,
+                    zeroBrokerage: true,
+                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
+                    photos: p.photos || [],
+                    nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
+                    description: p.description || '',
+                    property_for: p.property_for || 'Sell',
+                };
+            });
+
+            if (append) {
+                apiProperties.value = [...apiProperties.value, ...mapped];
             } else {
-                if (hasActiveFilters.value || (activeType.value && activeType.value !== 'all') || (activeCity.value && activeCity.value !== 'All')) {
-                    apiProperties.value = [];
-                } else {
-                    apiProperties.value = [...defaultFallbackListings];
-                }
+                apiProperties.value = mapped;
             }
         } else {
-            apiProperties.value = [];
+            if (!append) apiProperties.value = [];
         }
     } catch (err) {
-        console.warn('Could not fetch API properties, using fallback:', err);
-        apiProperties.value = [];
+        console.warn('Could not fetch API properties:', err);
+        if (!append) apiProperties.value = [];
     } finally {
         isLoadingProperties.value = false;
+        isLoadingMore.value = false;
     }
+};
+
+const loadNextPage = () => {
+    if (!hasNextPage.value || isLoadingMore.value) return;
+    fetchApiProperties(currentPage.value + 1, true);
 };
 
 onMounted(() => {
     initNearbyAreas();
-    fetchApiProperties();
+    fetchApiProperties(1, false);
 });
 
 watch(
@@ -1280,122 +1421,39 @@ watch(
         searchKeyword.value,
         selectedPropTypes.value,
         selectedBhks.value,
+        selectedTags.value,
+        sortBy.value,
+        readyToMove.value,
+        underConstruction.value,
         budgetMin.value,
         budgetMax.value,
         verifiedOnly.value,
         featuredOnly.value,
     ],
     () => {
-        fetchApiProperties();
+        fetchApiProperties(1, false);
     },
     { deep: true }
 );
 
 const displayedListings = computed(() => {
-    const list = apiProperties.value.length > 0 ? apiProperties.value : (hasActiveFilters.value || (activeType.value && activeType.value !== 'all') ? [] : defaultFallbackListings);
-
-    const filtered = list.filter((item) => {
-        // ── Near-me locality filter ──────────────────────────────────────────
+    if (apiProperties.value.length > 0) {
         if (isNearMe.value && activeNearbyAreas.value.length > 0) {
-            const matchesNearby = activeNearbyAreas.value.some((area) =>
-                (item.locality && item.locality.toLowerCase().includes(area.toLowerCase())) ||
-                (item.locality && area.toLowerCase().includes(item.locality.toLowerCase()))
+            return apiProperties.value.filter((item) =>
+                activeNearbyAreas.value.some((area) =>
+                    (item.locality && item.locality.toLowerCase().includes(area.toLowerCase())) ||
+                    (item.locality && area.toLowerCase().includes(item.locality.toLowerCase()))
+                )
             );
-            if (!matchesNearby) return false;
-        } else if (searchKeyword.value && !isNearMe.value) {
-            const q = searchKeyword.value.toLowerCase();
-            const match =
-                (item.title && item.title.toLowerCase().includes(q)) ||
-                (item.locality && item.locality.toLowerCase().includes(q)) ||
-                (item.city && item.city.toLowerCase().includes(q)) ||
-                (item.bhk && item.bhk.toLowerCase().includes(q)) ||
-                (item.type && item.type.toLowerCase().includes(q)) ||
-                (item.builder && item.builder.toLowerCase().includes(q)) ||
-                (item.project_name && item.project_name.toLowerCase().includes(q));
-            if (!match) return false;
         }
+        return apiProperties.value;
+    }
 
-        // ── City filter ──────────────────────────────────────────────────────
-        if (!isNearMe.value && activeCity.value && activeCity.value !== 'All') {
-            if (!item.city.toLowerCase().includes(activeCity.value.toLowerCase())) {
-                return false;
-            }
-        }
+    if (hasActiveFilters.value || (activeType.value && activeType.value !== 'all')) {
+        return [];
+    }
 
-        // ── Category / Transaction Type Filter ──────────────────────────────
-        if (activeType.value === 'commercial') {
-            const isComm = (item.type && item.type.toLowerCase().includes('commercial')) || isCommercialType(item.type);
-            if (!isComm) return false;
-        } else if (activeType.value === 'plots' || activeType.value === 'plots_land') {
-            const isPlt = (item.type && (item.type.toLowerCase().includes('plot') || item.type.toLowerCase().includes('land'))) || isPlotType(item.type);
-            if (!isPlt) return false;
-        } else if (activeType.value === 'rent') {
-            if (item.property_for && item.property_for.toLowerCase() !== 'rent') return false;
-        } else if (activeType.value === 'buy') {
-            if (item.property_for && item.property_for.toLowerCase() !== 'sell') return false;
-        }
-
-        // ── Property type filter ─────────────────────────────────────────────
-        if (selectedPropTypes.value.length > 0) {
-            const matchesType = selectedPropTypes.value.some((pt) =>
-                item.type && item.type.toLowerCase() === pt.toLowerCase()
-            );
-            if (!matchesType) return false;
-        }
-
-        // ── BHK / Bedrooms filter ────────────────────────────────────────────
-        if (selectedBhks.value.length > 0) {
-            const hasBhk = selectedBhks.value.some((bhk) => {
-                if (bhk === '4+ BHK' || bhk === '4 BHK' || bhk === '5 BHK') {
-                    if (bhk === '4+ BHK') return item.bedrooms >= 4;
-                    const num = parseInt(bhk, 10);
-                    return item.bedrooms === num;
-                }
-                const num = parseInt(bhk, 10);
-                return item.bedrooms === num;
-            });
-            if (!hasBhk) return false;
-        }
-
-        // ── Budget filter (dropdown values are in Lakhs, rawPrice is in ₹) ──
-        const lakhs = 100000;
-        if (budgetMin.value) {
-            const minRupees = Number(budgetMin.value) * lakhs;
-            if (item.rawPrice < minRupees) return false;
-        }
-        if (budgetMax.value) {
-            const maxRupees = Number(budgetMax.value) * lakhs;
-            if (item.rawPrice > maxRupees) return false;
-        }
-
-        // ── Possession status filter ─────────────────────────────────────────
-        if (!readyToMove.value || !underConstruction.value) {
-            const s = (item.status || '').toLowerCase();
-            const isReady = s.includes('ready');
-            const isUnder = s.includes('under') || s.includes('construction');
-            if (readyToMove.value && !underConstruction.value && !isReady) return false;
-            if (!readyToMove.value && underConstruction.value && !isUnder) return false;
-            if (!readyToMove.value && !underConstruction.value) return false;
-        }
-
-        // ── Verified-only filter ─────────────────────────────────────────────
-        if (verifiedOnly.value && !item.is_verified && !item.isRera) {
-            return false;
-        }
-
-        // ── Featured-only filter ─────────────────────────────────────────────
-        if (featuredOnly.value && !item.is_featured) {
-            return false;
-        }
-
-        return true;
-    });
-
-    return [...filtered].sort((a, b) => {
-        if (a.is_featured && !b.is_featured) return -1;
-        if (!a.is_featured && b.is_featured) return 1;
-        return 0;
-    });
+    return defaultFallbackListings;
 });
 
 const filteredListings = computed(() => displayedListings.value || []);

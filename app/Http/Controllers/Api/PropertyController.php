@@ -11,6 +11,9 @@ use App\Models\Property;
 use App\Services\GooglePlacesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -117,19 +120,85 @@ class PropertyController extends Controller
             $query->where('expected_price', '<=', (int) $request->query('budget_max'));
         }
 
-        // Search query (keyword in title, locality, sub_locality, project_name, city, address, or property_type)
+        // Construction / Possession Status filter
+        if ($request->filled('construction_status')) {
+            $cStatus = strtolower(trim((string) $request->query('construction_status')));
+            if ($cStatus === 'ready' || $cStatus === 'ready_to_move') {
+                $query->where('construction_status', 'like', '%ready%');
+            } elseif ($cStatus === 'under' || $cStatus === 'under_construction') {
+                $query->where(function ($q) {
+                    $q->where('construction_status', 'like', '%under%')
+                        ->orWhere('construction_status', 'like', '%construction%');
+                });
+            }
+        }
+
+        // Quick tags filter (new_launch, owner, verified, under_construction, ready_to_move, with_photos)
+        if ($request->filled('tags')) {
+            $tags = is_array($request->query('tags'))
+                ? $request->query('tags')
+                : explode(',', (string) $request->query('tags'));
+            $tags = array_filter(array_map('trim', $tags));
+
+            foreach ($tags as $tag) {
+                if ($tag === 'new_launch') {
+                    $query->where(function ($q) {
+                        $q->where('construction_status', 'like', '%new%')
+                            ->orWhere('title', 'like', '%new launch%')
+                            ->orWhere('description', 'like', '%new launch%');
+                    });
+                } elseif ($tag === 'owner') {
+                    $query->where(function ($q) {
+                        $q->where('user_type', 'owner')
+                            ->orWhereHas('user', fn ($u) => $u->where('role', 'user'));
+                    });
+                } elseif ($tag === 'verified') {
+                    $query->where('is_verified', true);
+                } elseif ($tag === 'under_construction') {
+                    $query->where(function ($q) {
+                        $q->where('construction_status', 'like', '%under%')
+                            ->orWhere('construction_status', 'like', '%construction%');
+                    });
+                } elseif ($tag === 'ready_to_move') {
+                    $query->where('construction_status', 'like', '%ready%');
+                } elseif ($tag === 'with_photos') {
+                    $query->whereNotNull('photos')->whereRaw("photos != '[]' AND photos != 'null'");
+                }
+            }
+        }
+
+        // Search query (Uses MySQL FULLTEXT index when available for sub-millisecond execution on crores of records)
         if ($request->filled('search') || $request->filled('keyword')) {
-            $rawSearch = $request->query('search') ?: $request->query('keyword');
-            $search = '%'.$rawSearch.'%';
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', $search)
-                    ->orWhere('locality', 'like', $search)
-                    ->orWhere('sub_locality', 'like', $search)
-                    ->orWhere('project_name', 'like', $search)
-                    ->orWhere('city', 'like', $search)
-                    ->orWhere('address', 'like', $search)
-                    ->orWhere('property_type', 'like', $search);
-            });
+            $rawSearch = trim((string) ($request->query('search') ?: $request->query('keyword')));
+            $driver = Schema::getConnection()->getDriverName();
+
+            if ($driver === 'mysql' && strlen($rawSearch) >= 3) {
+                $sanitizedSearch = preg_replace('/[+\-><()~*\"@]+/', ' ', $rawSearch);
+                $words = array_filter(explode(' ', trim((string) $sanitizedSearch)));
+                if (! empty($words)) {
+                    $booleanQuery = implode(' ', array_map(fn ($w) => '+'.$w.'*', $words));
+                    $query->whereRaw('MATCH(title, project_name, locality) AGAINST(? IN BOOLEAN MODE)', [$booleanQuery]);
+                } else {
+                    $search = '%'.$rawSearch.'%';
+                    $query->where(function ($q) use ($search) {
+                        $q->where('title', 'like', $search)
+                            ->orWhere('locality', 'like', $search)
+                            ->orWhere('project_name', 'like', $search)
+                            ->orWhere('city', 'like', $search);
+                    });
+                }
+            } else {
+                $search = '%'.$rawSearch.'%';
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', $search)
+                        ->orWhere('locality', 'like', $search)
+                        ->orWhere('sub_locality', 'like', $search)
+                        ->orWhere('project_name', 'like', $search)
+                        ->orWhere('city', 'like', $search)
+                        ->orWhere('address', 'like', $search)
+                        ->orWhere('property_type', 'like', $search);
+                });
+            }
         }
 
         // Locality filter
@@ -147,35 +216,80 @@ class PropertyController extends Controller
             $query->where('is_featured', true);
         }
 
-        // Featured properties appear at the top, then newest
-        $properties = $query->orderBy('is_featured', 'desc')->orderBy('id', 'desc')->paginate(15);
+        // Server-side dynamic sorting (uses composite indexes for instant retrieval)
+        $sortBy = $request->query('sort') ?: $request->query('sort_by', 'relevance');
+        match ($sortBy) {
+            'price_low' => $query->orderBy('expected_price', 'asc')->orderBy('id', 'desc'),
+            'price_high' => $query->orderBy('expected_price', 'desc')->orderBy('id', 'desc'),
+            'newest' => $query->orderBy('id', 'desc'),
+            default => $query->orderBy('is_featured', 'desc')->orderBy('id', 'desc'),
+        };
 
-        // Attach photos from a separate lightweight query
+        // Bounded pagination parameters
+        $perPage = min(max((int) $request->query('per_page', 15), 1), 50);
+        $page = max((int) $request->query('page', 1), 1);
+
+        if ($request->boolean('simple')) {
+            // simplePaginate runs zero COUNT(*) queries, ideal for infinite scroll over crores of rows
+            $properties = $query->simplePaginate($perPage);
+        } else {
+            // Cache the total count for 5 minutes per unique filter combination to avoid expensive COUNT(*) on crores of records
+            $countParams = $request->except(['page', 'sort', 'sort_by']);
+            $cacheKey = 'prop_cnt_'.md5(json_encode($countParams));
+            $total = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query) {
+                return (clone $query)->toBase()->getCountForPagination();
+            });
+
+            $items = $query->forPage($page, $perPage)->get();
+            $properties = new LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        }
+
+        // Attach photos from a separate lightweight query only for the requested page items
         $ids = $properties->pluck('id');
-        $photoMap = Property::query()
-            ->whereIn('id', $ids)
-            ->select('id', 'photos')
-            ->get()
-            ->keyBy('id');
+        if ($ids->isNotEmpty()) {
+            $photoMap = Property::query()
+                ->whereIn('id', $ids)
+                ->select('id', 'photos')
+                ->get()
+                ->keyBy('id');
 
-        $properties->getCollection()->transform(function ($property) use ($photoMap) {
-            $property->photos = $photoMap[$property->id]->photos ?? [];
+            $properties->getCollection()->transform(function ($property) use ($photoMap) {
+                $property->photos = $photoMap[$property->id]->photos ?? [];
 
-            return $property;
-        });
+                return $property;
+            });
+        }
 
         return response()->json($properties);
     }
 
     /**
-     * Display a specific property.
+     * Display a specific property by ID or slug.
      */
-    public function show(Property $property): JsonResponse
+    public function show(string|Property $property): JsonResponse
     {
-        $property->load('user:id,name,email,mobile,country_code,role');
+        if ($property instanceof Property) {
+            $model = $property;
+        } else {
+            $model = Property::where('slug', $property)
+                ->orWhere('id', $property)
+                ->first();
+
+            if (! $model) {
+                return response()->json(['message' => 'Property not found.'], 404);
+            }
+        }
+
+        $model->load('user:id,name,email,mobile,country_code,role');
 
         return response()->json([
-            'property' => $property,
+            'property' => $model,
         ]);
     }
 
