@@ -201,9 +201,18 @@ class PropertyController extends Controller
             }
         }
 
-        // Locality filter
-        if ($request->filled('locality')) {
-            $query->where('locality', 'like', '%'.$request->query('locality').'%');
+        // Locality filter (single or multiple nearby localities using indexed match)
+        if ($request->filled('localities')) {
+            $locList = is_array($request->query('localities'))
+                ? $request->query('localities')
+                : explode(',', (string) $request->query('localities'));
+            $locList = array_values(array_filter(array_map('trim', $locList)));
+            if (! empty($locList)) {
+                $query->whereIn('locality', $locList);
+            }
+        } elseif ($request->filled('locality')) {
+            $loc = trim((string) $request->query('locality'));
+            $query->where('locality', $loc);
         }
 
         // Verified only

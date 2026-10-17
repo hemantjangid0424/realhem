@@ -697,7 +697,7 @@ import EmiCalculatorModal from '../components/EmiCalculatorModal.vue';
 const route = useRoute();
 const router = useRouter();
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
-const { currentCity, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
+const { currentCity, currentLocality, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
 const { brandPrimaryColor } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
 const { fetchWithCache, get: getFromCache, invalidate: invalidateCache } = useFrontendCache();
@@ -892,10 +892,14 @@ const initNearbyAreas = async () => {
     if (isNearMe.value) {
         const lat = route.query.lat ? parseFloat(route.query.lat) : null;
         const lng = route.query.lng ? parseFloat(route.query.lng) : null;
-        const locality = route.query.locality || currentLocality.value || '';
+        const locality = route.query.locality || currentLocality?.value || '';
 
-        const fetched = await fetchNearbyLocalities(activeCity.value, locality, lat, lng);
-        activeNearbyAreas.value = fetched && fetched.length > 0 ? [...fetched] : (locality ? [locality] : []);
+        try {
+            const fetched = await fetchNearbyLocalities(activeCity.value, locality, lat, lng);
+            activeNearbyAreas.value = fetched && fetched.length > 0 ? [...fetched] : (locality ? [locality] : []);
+        } catch {
+            activeNearbyAreas.value = locality ? [locality] : [];
+        }
     } else {
         activeNearbyAreas.value = [];
     }
@@ -906,7 +910,12 @@ watch(
     () => route.query,
     async (newQ) => {
         activeType.value = newQ.type || 'all';
-        if (newQ.city) activeCity.value = newQ.city;
+        if (newQ.city) {
+            activeCity.value = newQ.city;
+        } else if (!activeCity.value || activeCity.value === 'All') {
+            activeCity.value = currentCity.value || 'Ahmedabad';
+        }
+
         if (newQ.near_me === 'true') {
             isNearMe.value = true;
             searchKeyword.value = 'Near me';
@@ -923,7 +932,7 @@ watch(
         } else {
             selectedBhks.value = [];
         }
-        fetchApiProperties();
+        fetchApiProperties(1, false);
     }
 );
 
@@ -1369,13 +1378,15 @@ const fetchApiProperties = async (page = 1, append = false) => {
         params.set('page', String(page));
         params.set('per_page', '15');
 
-        if (activeCity.value && activeCity.value !== 'All' && !isNearMe.value) {
+        if (activeCity.value && activeCity.value !== 'All') {
             params.set('city', activeCity.value);
         }
         if (activeType.value && activeType.value !== 'all') {
             params.set('type', activeType.value);
         }
-        if (searchKeyword.value && !isNearMe.value) {
+        if (isNearMe.value && activeNearbyAreas.value.length > 0) {
+            params.set('localities', activeNearbyAreas.value.join(','));
+        } else if (searchKeyword.value && !isNearMe.value) {
             params.set('search', searchKeyword.value);
         }
         if (selectedBhks.value.length > 0) {
@@ -1451,8 +1462,10 @@ const loadNextPage = () => {
     fetchApiProperties(currentPage.value + 1, true);
 };
 
-onMounted(() => {
-    initNearbyAreas();
+onMounted(async () => {
+    if (isNearMe.value) {
+        await initNearbyAreas();
+    }
     fetchApiProperties(1, false);
 
     const onInvalidate = () => {

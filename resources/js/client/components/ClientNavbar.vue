@@ -203,25 +203,25 @@
                             <!-- Default Navigation Links -->
                             <nav v-else key="nav" class="hidden lg:flex items-center gap-1">
                                 <router-link
-                                    to="/listings?type=buy"
+                                    :to="{ path: '/listings', query: { type: 'buy', city: selectedCity } }"
                                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
                                 >
                                     Buy
                                 </router-link>
                                 <router-link
-                                    to="/listings?type=rent"
+                                    :to="{ path: '/listings', query: { type: 'rent', city: selectedCity } }"
                                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
                                 >
                                     Rent
                                 </router-link>
                                 <router-link
-                                    to="/listings?type=commercial"
+                                    :to="{ path: '/listings', query: { type: 'commercial', city: selectedCity } }"
                                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
                                 >
                                     Commercial
                                 </router-link>
                                 <router-link
-                                    to="/listings?type=plots"
+                                    :to="{ path: '/listings', query: { type: 'plots', city: selectedCity } }"
                                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
                                 >
                                     Plots / Land

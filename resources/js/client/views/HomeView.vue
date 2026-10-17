@@ -771,7 +771,10 @@ const handleSearch = () => {
 const filterByCategory = (categoryType) => {
     router.push({
         path: '/listings',
-        query: { type: categoryType },
+        query: {
+            type: categoryType,
+            city: searchForm.value.city || currentCity.value || undefined,
+        },
     });
 };
 
