@@ -72,6 +72,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/users', [AdminDashboardController::class, 'users']);
         Route::get('/settings', [SettingController::class, 'adminIndex']);
         Route::post('/settings', [SettingController::class, 'update']);
+        Route::post('/settings/upload-asset', [SettingController::class, 'uploadAsset']);
         Route::get('/legal', [SettingController::class, 'getLegalSettings']);
         Route::post('/legal', [SettingController::class, 'updateLegalSettings']);
 

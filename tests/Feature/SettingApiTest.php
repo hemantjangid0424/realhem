@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -153,4 +155,79 @@ test('admin can retrieve and update legal policies', function () {
             'version' => '3.0',
             'updated_at' => 'November 2026',
         ]);
+});
+
+test('admin can upload brand logo and favicon asset files', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'email' => 'admin_branding@realhem.com',
+    ]);
+
+    $this->actingAs($admin, 'sanctum');
+
+    // 1. Upload Logo
+    $logoFile = UploadedFile::fake()->image('company_logo.png', 400, 100);
+    $logoResponse = $this->postJson('/api/admin/settings/upload-asset', [
+        'file' => $logoFile,
+        'type' => 'logo',
+    ]);
+
+    $logoResponse->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+        ]);
+    $logoUrl = $logoResponse->json('url');
+    expect($logoUrl)->toContain('/storage/branding/logo_');
+
+    // 2. Upload Favicon
+    $faviconFile = UploadedFile::fake()->image('favicon.png', 32, 32);
+    $faviconResponse = $this->postJson('/api/admin/settings/upload-asset', [
+        'file' => $faviconFile,
+        'type' => 'favicon',
+    ]);
+
+    $faviconResponse->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+        ]);
+    $faviconUrl = $faviconResponse->json('url');
+    expect($faviconUrl)->toContain('/storage/branding/favicon_');
+
+    // 3. Save branding with uploaded URLs
+    $updateResponse = $this->postJson('/api/admin/settings', [
+        'company_name' => 'RealHem Luxury',
+        'company_short_name' => 'RHL',
+        'company_tagline' => 'Prime Real Estate Hub',
+        'company_logo_url' => $logoUrl,
+        'company_favicon_url' => $faviconUrl,
+    ]);
+
+    $updateResponse->assertStatus(200)
+        ->assertJsonFragment([
+            'company_name' => 'RealHem Luxury',
+            'company_logo_url' => $logoUrl,
+            'company_favicon_url' => $faviconUrl,
+        ]);
+
+    // 4. Verify public settings reflect logo & favicon
+    $publicSettings = $this->getJson('/api/settings');
+    $publicSettings->assertStatus(200)
+        ->assertJsonFragment([
+            'company_logo_url' => $logoUrl,
+            'company_favicon_url' => $faviconUrl,
+        ]);
+});
+
+test('unauthenticated user cannot upload brand assets', function () {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('logo.png');
+
+    $response = $this->postJson('/api/admin/settings/upload-asset', [
+        'file' => $file,
+        'type' => 'logo',
+    ]);
+
+    $response->assertStatus(401);
 });

@@ -7,6 +7,12 @@
 
     <title>RealHem &bull; Buy, Rent, Sell Property &amp; New Projects</title>
 
+    @php
+        $brandingSettings = \App\Models\Setting::getAll();
+        $faviconUrl = !empty($brandingSettings['company_favicon_url']) ? $brandingSettings['company_favicon_url'] : '/favicon.ico';
+    @endphp
+    <link rel="icon" id="app-favicon" href="{{ $faviconUrl }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">

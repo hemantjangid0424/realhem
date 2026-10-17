@@ -8,9 +8,9 @@
                     <div class="flex items-center gap-3">
                         <div
                             v-if="companyLogoUrl"
-                            class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border border-slate-700 bg-white"
+                            class="h-9 max-w-[160px] rounded-xl overflow-hidden flex items-center justify-center p-1 bg-white/10"
                         >
-                            <img :src="companyLogoUrl" :alt="companyName" class="w-full h-full object-contain" />
+                            <img :src="companyLogoUrl" :alt="companyName" class="max-h-8 max-w-full object-contain" />
                         </div>
                         <div
                             v-else

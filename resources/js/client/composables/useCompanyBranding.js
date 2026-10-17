@@ -6,6 +6,7 @@ const defaultBranding = {
     company_tagline: '99acres Real Estate Architecture & Portal',
     company_sub_tagline: 'Buy, Rent, PG, Commercial & Builder Projects',
     company_logo_url: '',
+    company_favicon_url: '',
     company_phone: '1800-41-9999',
     company_email: 'contact@realhem.com',
     brand_primary_color: '#005ca8',
@@ -69,6 +70,17 @@ export function applyThemeToDom(s) {
         }
         link.href = `https://fonts.googleapis.com/css2?family=${fontName}:wght@400;500;600;700;800;900&display=swap`;
     }
+
+    // Dynamically update browser favicon if custom favicon set
+    if (s.company_favicon_url) {
+        let faviconLink = document.querySelector("link[rel*='icon']");
+        if (!faviconLink) {
+            faviconLink = document.createElement('link');
+            faviconLink.rel = 'icon';
+            document.head.appendChild(faviconLink);
+        }
+        faviconLink.href = s.company_favicon_url;
+    }
 }
 
 // Initial theme application
@@ -101,6 +113,7 @@ export function useCompanyBranding() {
     const companyTagline = computed(() => companySettings.value.company_tagline || 'Real Estate Portal');
     const companySubTagline = computed(() => companySettings.value.company_sub_tagline || 'Buy, Rent, PG, Commercial & Builder Projects');
     const companyLogoUrl = computed(() => companySettings.value.company_logo_url || '');
+    const companyFaviconUrl = computed(() => companySettings.value.company_favicon_url || '');
     const brandPrimaryColor = computed(() => companySettings.value.brand_primary_color || '#005ca8');
     const brandSecondaryColor = computed(() => companySettings.value.brand_secondary_color || '#1e40af');
     const brandAccentColor = computed(() => companySettings.value.brand_accent_color || '#ff6b35');
@@ -184,6 +197,7 @@ export function useCompanyBranding() {
         companyTagline,
         companySubTagline,
         companyLogoUrl,
+        companyFaviconUrl,
         brandPrimaryColor,
         brandSecondaryColor,
         brandAccentColor,

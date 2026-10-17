@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SettingController extends Controller
 {
@@ -32,6 +34,29 @@ class SettingController extends Controller
     }
 
     /**
+     * Upload branding asset (Logo or Favicon).
+     */
+    public function uploadAsset(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:png,jpg,jpeg,svg,webp,ico|max:4096',
+            'type' => 'nullable|string|in:logo,favicon,general',
+        ]);
+
+        $file = $request->file('file');
+        $prefix = $request->input('type', 'brand');
+        $filename = $prefix.'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs('branding', $filename, 'public');
+
+        return response()->json([
+            'success' => true,
+            'url' => Storage::url($path),
+            'filename' => $filename,
+            'message' => ucfirst((string) $prefix).' uploaded successfully!',
+        ]);
+    }
+
+    /**
      * Update branding and company settings (Admin only).
      */
     public function update(Request $request): JsonResponse
@@ -42,6 +67,7 @@ class SettingController extends Controller
             'company_tagline' => 'required|string|max:255',
             'company_sub_tagline' => 'nullable|string|max:255',
             'company_logo_url' => 'nullable|string|max:500',
+            'company_favicon_url' => 'nullable|string|max:500',
             'company_phone' => 'nullable|string|max:50',
             'company_email' => 'nullable|email|max:100',
             'brand_primary_color' => 'nullable|string|max:20',

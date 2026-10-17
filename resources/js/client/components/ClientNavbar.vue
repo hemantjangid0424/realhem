@@ -56,9 +56,9 @@
                         <router-link to="/" class="flex items-center gap-2.5 group">
                             <div
                                 v-if="companyLogoUrl"
-                                class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 shadow-sm transition-transform group-hover:scale-105"
+                                class="h-9 max-w-[160px] rounded-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105"
                             >
-                                <img :src="companyLogoUrl" :alt="companyName" class="w-full h-full object-contain" />
+                                <img :src="companyLogoUrl" :alt="companyName" class="max-h-9 max-w-full object-contain" />
                             </div>
                             <div
                                 v-else

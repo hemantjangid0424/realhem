@@ -354,22 +354,199 @@
                                 class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium outline-none focus:border-blue-500 focus:bg-white transition"
                             />
                         </div>
+                    </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Custom Logo Image URL (Optional)</label>
-                            <input
-                                v-model="form.company_logo_url"
-                                type="url"
-                                placeholder="https://example.com/logo.png (leave empty for monogram)"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-mono outline-none focus:border-blue-500 focus:bg-white transition"
-                            />
+                    <!-- 6. Website Logo & Favicon Studio -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
+                        <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <div>
+                                <h2 class="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                                    <span>🖼️</span>
+                                    <span>6. Website Logo &amp; Favicon Studio</span>
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">Upload or link your official brand logo and browser tab favicon</p>
+                            </div>
+                            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
+                                Live Synced
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Logo Box -->
+                            <div class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">🏢</span>
+                                        <label class="text-xs font-black text-slate-800 uppercase tracking-wider">Website Header Logo</label>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-medium">SVG / PNG / WebP</span>
+                                </div>
+
+                                <!-- Logo Preview Box -->
+                                <div class="space-y-2">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <!-- Light Preview -->
+                                        <div class="h-20 bg-white rounded-xl border border-slate-200 p-2 flex flex-col items-center justify-center relative overflow-hidden group">
+                                            <span class="text-[9px] font-bold text-slate-400 absolute top-1 left-2 uppercase">Light Bg</span>
+                                            <img
+                                                v-if="form.company_logo_url"
+                                                :src="form.company_logo_url"
+                                                alt="Logo Light"
+                                                class="max-h-12 max-w-[130px] object-contain"
+                                            />
+                                            <div v-else class="text-xs font-black text-slate-400 flex items-center gap-1">
+                                                <span>{{ form.company_short_name || 'RH' }}</span>
+                                                <span class="text-[10px] font-normal text-slate-400">(Monogram)</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Dark Preview -->
+                                        <div class="h-20 bg-slate-900 rounded-xl border border-slate-800 p-2 flex flex-col items-center justify-center relative overflow-hidden group">
+                                            <span class="text-[9px] font-bold text-slate-500 absolute top-1 left-2 uppercase">Dark Bg</span>
+                                            <img
+                                                v-if="form.company_logo_url"
+                                                :src="form.company_logo_url"
+                                                alt="Logo Dark"
+                                                class="max-h-12 max-w-[130px] object-contain"
+                                            />
+                                            <div v-else class="text-xs font-black text-white flex items-center gap-1">
+                                                <span>{{ form.company_short_name || 'RH' }}</span>
+                                                <span class="text-[10px] font-normal text-slate-400">(Monogram)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="form.company_logo_url" class="flex items-center justify-between text-[11px] text-slate-500">
+                                        <span class="truncate max-w-[180px]" :title="form.company_logo_url">{{ form.company_logo_url }}</span>
+                                        <button
+                                            type="button"
+                                            @click="form.company_logo_url = ''"
+                                            class="text-rose-600 hover:text-rose-700 font-bold cursor-pointer"
+                                        >
+                                            Remove Logo
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Upload / URL actions -->
+                                <div class="space-y-2 pt-1">
+                                    <input
+                                        type="file"
+                                        ref="logoFileInput"
+                                        @change="handleLogoFileUpload"
+                                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                        class="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="logoFileInput?.click()"
+                                        :disabled="isUploadingLogo"
+                                        class="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <svg v-if="isUploadingLogo" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                        <span>{{ isUploadingLogo ? 'Uploading Logo...' : 'Upload Logo from Computer' }}</span>
+                                    </button>
+
+                                    <div class="relative">
+                                        <input
+                                            v-model="form.company_logo_url"
+                                            type="url"
+                                            placeholder="Or paste image URL (https://...)"
+                                            class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-mono outline-none focus:border-blue-500 transition"
+                                        />
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Recommended: Transparent PNG or SVG, height 40px–60px, width up to 250px.</p>
+                                </div>
+                            </div>
+
+                            <!-- Favicon Box -->
+                            <div class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">🌐</span>
+                                        <label class="text-xs font-black text-slate-800 uppercase tracking-wider">Browser Tab Favicon</label>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-medium">ICO / PNG / SVG</span>
+                                </div>
+
+                                <!-- Browser Tab Mockup Preview -->
+                                <div class="space-y-2">
+                                    <div class="h-20 bg-slate-200/70 rounded-xl p-2.5 flex items-end">
+                                        <!-- Simulated Chrome/Safari Tab -->
+                                        <div class="bg-white rounded-t-xl px-3 py-1.5 shadow-sm border border-slate-200 border-b-0 flex items-center gap-2 w-full max-w-[220px]">
+                                            <div class="w-4 h-4 rounded shrink-0 flex items-center justify-center overflow-hidden">
+                                                <img
+                                                    v-if="form.company_favicon_url"
+                                                    :src="form.company_favicon_url"
+                                                    alt="Favicon"
+                                                    class="w-full h-full object-contain"
+                                                />
+                                                <div
+                                                    v-else
+                                                    class="w-full h-full rounded text-[8px] font-black text-white flex items-center justify-center"
+                                                    :style="{ backgroundColor: form.brand_primary_color || '#005ca8' }"
+                                                >
+                                                    {{ (form.company_short_name || 'R').charAt(0) }}
+                                                </div>
+                                            </div>
+                                            <span class="text-[11px] font-semibold text-slate-800 truncate leading-none">
+                                                {{ form.company_name || 'RealHem' }}
+                                            </span>
+                                            <span class="text-[9px] text-slate-400 ml-auto shrink-0">&times;</span>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="form.company_favicon_url" class="flex items-center justify-between text-[11px] text-slate-500">
+                                        <span class="truncate max-w-[180px]" :title="form.company_favicon_url">{{ form.company_favicon_url }}</span>
+                                        <button
+                                            type="button"
+                                            @click="form.company_favicon_url = ''"
+                                            class="text-rose-600 hover:text-rose-700 font-bold cursor-pointer"
+                                        >
+                                            Remove Favicon
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Upload / URL actions -->
+                                <div class="space-y-2 pt-1">
+                                    <input
+                                        type="file"
+                                        ref="faviconFileInput"
+                                        @change="handleFaviconFileUpload"
+                                        accept="image/x-icon,image/vnd.microsoft.icon,image/png,image/svg+xml"
+                                        class="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="faviconFileInput?.click()"
+                                        :disabled="isUploadingFavicon"
+                                        class="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <svg v-if="isUploadingFavicon" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                        <span>{{ isUploadingFavicon ? 'Uploading Favicon...' : 'Upload Favicon from Computer' }}</span>
+                                    </button>
+
+                                    <div class="relative">
+                                        <input
+                                            v-model="form.company_favicon_url"
+                                            type="url"
+                                            placeholder="Or paste favicon URL (https://.../favicon.ico)"
+                                            class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-mono outline-none focus:border-blue-500 transition"
+                                        />
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Recommended: Square 32x32px or 64x64px, .ico or .png format.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Contact & Communication -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
                         <div class="border-b border-slate-100 pb-3">
-                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">6. Support &amp; Contact Info</h2>
+                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">7. Support &amp; Contact Info</h2>
                             <p class="text-xs text-slate-500 mt-0.5">Displayed to buyers and sellers for inquiries</p>
                         </div>
 
@@ -399,7 +576,7 @@
                     <!-- Footer & Legal -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
                         <div class="border-b border-slate-100 pb-3">
-                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">7. Footer &amp; Legal</h2>
+                            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">8. Footer &amp; Legal</h2>
                             <p class="text-xs text-slate-500 mt-0.5">Set the company description paragraph and copyright line</p>
                         </div>
 
@@ -455,6 +632,34 @@
                                 </div>
                             </div>
 
+                            <!-- Preview 0: Browser Tab with Favicon -->
+                            <div class="space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Browser Tab &amp; Favicon Preview</span>
+                                <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center">
+                                    <div class="bg-slate-800 rounded-t-lg px-2.5 py-1.5 flex items-center gap-2 max-w-full truncate border border-slate-700 border-b-0 shadow-xs">
+                                        <div class="w-4 h-4 rounded shrink-0 flex items-center justify-center overflow-hidden">
+                                            <img
+                                                v-if="form.company_favicon_url"
+                                                :src="form.company_favicon_url"
+                                                alt="Favicon"
+                                                class="w-full h-full object-contain"
+                                            />
+                                            <div
+                                                v-else
+                                                class="w-full h-full rounded text-[8px] font-black text-white flex items-center justify-center"
+                                                :style="{ backgroundColor: form.brand_primary_color || '#005ca8' }"
+                                            >
+                                                {{ (form.company_short_name || 'R').charAt(0) }}
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-slate-200 truncate">
+                                            {{ form.company_name || 'RealHem' }} &bull; {{ form.company_tagline || 'Real Estate Portal' }}
+                                        </span>
+                                        <span class="text-[9px] text-slate-400 ml-1">&times;</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Preview 1: Header / Navbar -->
                             <div class="space-y-1">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Main Navbar</span>
@@ -462,13 +667,13 @@
                                     <div class="flex items-center gap-2">
                                         <div
                                             v-if="form.company_logo_url"
-                                            class="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center border border-slate-200"
+                                            class="h-8 max-w-[120px] rounded-lg overflow-hidden flex items-center justify-center border border-slate-200 p-0.5"
                                         >
-                                            <img :src="form.company_logo_url" alt="Logo" class="w-full h-full object-contain" />
+                                            <img :src="form.company_logo_url" alt="Logo" class="max-h-full max-w-full object-contain" />
                                         </div>
                                         <div
                                             v-else
-                                            class="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white shadow-xs"
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs text-white shadow-xs shrink-0"
                                             :style="{ backgroundColor: form.brand_primary_color || '#005ca8' }"
                                         >
                                             {{ form.company_short_name || 'RH' }}
@@ -1018,12 +1223,18 @@ const festivalAnimations = [
     { id: 'tricolor_confetti', name: 'Tricolor Petal Confetti', icon: '🇮🇳' },
 ];
 
+const logoFileInput = ref(null);
+const faviconFileInput = ref(null);
+const isUploadingLogo = ref(false);
+const isUploadingFavicon = ref(false);
+
 const form = ref({
     company_name: 'RealHem',
     company_short_name: 'RH',
     company_tagline: '99acres Real Estate Architecture & Portal',
     company_sub_tagline: 'Buy, Rent, PG, Commercial & Builder Projects',
     company_logo_url: '',
+    company_favicon_url: '',
     company_phone: '1800-41-9999',
     company_email: 'contact@realhem.com',
     brand_primary_color: '#005ca8',
@@ -1153,6 +1364,63 @@ const saveSettings = async () => {
     }
 };
 
+const handleLogoFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadBrandFile(file, 'logo');
+    if (logoFileInput.value) logoFileInput.value.value = '';
+};
+
+const handleFaviconFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadBrandFile(file, 'favicon');
+    if (faviconFileInput.value) faviconFileInput.value.value = '';
+};
+
+const uploadBrandFile = async (file, type) => {
+    const isLogo = type === 'logo';
+    if (isLogo) isUploadingLogo.value = true;
+    else isUploadingFavicon.value = true;
+
+    const token = localStorage.getItem('realhem_admin_token');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+        const res = await fetch('/api/admin/settings/upload-asset', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok && data.url) {
+            if (isLogo) {
+                form.value.company_logo_url = data.url;
+            } else {
+                form.value.company_favicon_url = data.url;
+            }
+            successMessage.value = data.message || `${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully!`;
+            setTimeout(() => {
+                successMessage.value = '';
+            }, 3500);
+        } else {
+            alert(data.message || `Failed to upload ${type}.`);
+        }
+    } catch (err) {
+        console.error(`Error uploading ${type}:`, err);
+        alert(`Network error while uploading ${type}.`);
+    } finally {
+        if (isLogo) isUploadingLogo.value = false;
+        else isUploadingFavicon.value = false;
+    }
+};
+
 const resetToDefaults = () => {
     form.value = {
         company_name: 'RealHem',
@@ -1160,6 +1428,7 @@ const resetToDefaults = () => {
         company_tagline: '99acres Real Estate Architecture & Portal',
         company_sub_tagline: 'Buy, Rent, PG, Commercial & Builder Projects',
         company_logo_url: '',
+        company_favicon_url: '',
         company_phone: '1800-41-9999',
         company_email: 'contact@realhem.com',
         brand_primary_color: '#005ca8',

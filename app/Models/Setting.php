@@ -25,6 +25,7 @@ class Setting extends Model
         'company_tagline' => '99acres Real Estate Architecture & Portal',
         'company_sub_tagline' => 'Buy, Rent, PG, Commercial & Builder Projects',
         'company_logo_url' => '',
+        'company_favicon_url' => '',
         'company_phone' => '1800-41-9999',
         'company_email' => 'contact@realhem.com',
         'brand_primary_color' => '#005ca8',
@@ -75,10 +76,14 @@ class Setting extends Model
      */
     public static function getAll(): array
     {
-        return Cache::remember('app_branding_settings', 3600, function () {
-            $dbSettings = static::pluck('value', 'key')->toArray();
+        try {
+            return Cache::remember('app_branding_settings', 3600, function () {
+                $dbSettings = static::pluck('value', 'key')->toArray();
 
-            return array_merge(self::DEFAULTS, $dbSettings);
-        });
+                return array_merge(self::DEFAULTS, $dbSettings);
+            });
+        } catch (\Throwable) {
+            return self::DEFAULTS;
+        }
     }
 }
