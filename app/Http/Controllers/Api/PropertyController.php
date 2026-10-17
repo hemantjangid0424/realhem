@@ -266,7 +266,7 @@ class PropertyController extends Controller
             });
         }
 
-        return response()->json($properties);
+        return response()->json($properties)->header('Cache-Control', 'public, max-age=60');
     }
 
     /**
@@ -275,22 +275,30 @@ class PropertyController extends Controller
     public function show(string|Property $property): JsonResponse
     {
         if ($property instanceof Property) {
-            $model = $property;
+            $id = $property->id;
         } else {
-            $model = Property::where('slug', $property)
+            $foundId = Property::where('slug', $property)
                 ->orWhere('id', $property)
-                ->first();
+                ->value('id');
 
-            if (! $model) {
+            if (! $foundId) {
                 return response()->json(['message' => 'Property not found.'], 404);
             }
+            $id = $foundId;
         }
 
-        $model->load('user:id,name,email,mobile,country_code,role');
+        $cacheKey = "prop_show_{$id}";
+        $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($id) {
+            $model = Property::with('user:id,name,email,mobile,country_code,role')->find($id);
 
-        return response()->json([
-            'property' => $model,
-        ]);
+            return $model ? ['property' => $model] : null;
+        });
+
+        if (! $data) {
+            return response()->json(['message' => 'Property not found.'], 404);
+        }
+
+        return response()->json($data)->header('Cache-Control', 'public, max-age=120');
     }
 
     /**
@@ -535,6 +543,8 @@ class PropertyController extends Controller
             'longitude' => $resolvedLocation['longitude'],
         ]));
 
+        Cache::forget("prop_show_{$property->id}");
+
         return response()->json([
             'status' => 'success',
             'message' => 'Property updated successfully.',
@@ -558,6 +568,8 @@ class PropertyController extends Controller
 
         $property->update(['status' => $validated['status']]);
 
+        Cache::forget("prop_show_{$property->id}");
+
         return response()->json([
             'status' => 'success',
             'message' => 'Property status updated to '.$validated['status'].'.',
@@ -574,6 +586,8 @@ class PropertyController extends Controller
         if ($property->user_id !== $user->id && ! $user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized. You do not own this property.'], 403);
         }
+
+        Cache::forget("prop_show_{$property->id}");
 
         $property->delete();
 
@@ -595,152 +609,157 @@ class PropertyController extends Controller
             return response()->json([]);
         }
 
-        $suggestions = collect();
+        $cacheKey = 'sugg_'.md5(strtolower($city).'_'.strtolower($q));
+        $data = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($q, $city) {
+            $suggestions = collect();
 
-        // 1. Matching Cities
-        $matchingCities = City::query()
-            ->where('name', 'LIKE', "{$q}%")
-            ->orWhere('name', 'LIKE', "%{$q}%")
-            ->take(3)
-            ->get(['id', 'name'])
-            ->map(function ($c) {
+            // 1. Matching Cities
+            $matchingCities = City::query()
+                ->where('name', 'LIKE', "{$q}%")
+                ->orWhere('name', 'LIKE', "%{$q}%")
+                ->take(3)
+                ->get(['id', 'name'])
+                ->map(function ($c) {
+                    return [
+                        'type' => 'city',
+                        'category' => 'City',
+                        'icon' => '📍',
+                        'title' => $c->name,
+                        'subtitle' => 'City in India',
+                        'city' => $c->name,
+                        'keyword' => '',
+                    ];
+                });
+            $suggestions = $suggestions->concat($matchingCities);
+
+            // 2. Matching Localities / Areas (powered by DB Cache + Google Places API)
+            $matchingLocalities = collect(GooglePlacesService::searchPlaces(
+                query: $q,
+                city: ! empty($city) ? $city : null,
+                limit: 4
+            ))->map(function ($loc) {
+                $title = $loc['title'] ?? ($loc['name'] ?: $loc['locality']);
+
                 return [
-                    'type' => 'city',
-                    'category' => 'City',
-                    'icon' => '📍',
-                    'title' => $c->name,
-                    'subtitle' => 'City in India',
-                    'city' => $c->name,
-                    'keyword' => '',
+                    'type' => 'locality',
+                    'category' => 'Locality / Area',
+                    'icon' => '🏘️',
+                    'title' => $title,
+                    'subtitle' => $loc['display'] ?: ($loc['city'] ? "Locality in {$loc['city']}" : 'Locality'),
+                    'city' => $loc['city'],
+                    'keyword' => $title,
+                    'locality' => $loc['locality'],
+                    'sub_locality' => $loc['sub_locality'],
+                    'pincode' => $loc['pincode'],
+                    'latitude' => $loc['latitude'],
+                    'longitude' => $loc['longitude'],
+                    'cached' => $loc['cached'],
+                    'provider' => $loc['provider'],
                 ];
             });
-        $suggestions = $suggestions->concat($matchingCities);
+            $suggestions = $suggestions->concat($matchingLocalities);
 
-        // 2. Matching Localities / Areas (powered by DB Cache + Google Places API)
-        $matchingLocalities = collect(GooglePlacesService::searchPlaces(
-            query: $q,
-            city: ! empty($city) ? $city : null,
-            limit: 4
-        ))->map(function ($loc) {
-            $title = $loc['title'] ?? ($loc['name'] ?: $loc['locality']);
+            // 3. Matching Projects / Societies / Apartments / Buildings (Google Places API + DB Cache + Listings)
+            $googleProjects = collect(GooglePlacesService::searchProjects(
+                query: $q,
+                city: ! empty($city) ? $city : null,
+                limit: 5
+            ))->map(function ($proj) {
+                $name = $proj['name'] ?: $proj['title'];
 
-            return [
-                'type' => 'locality',
-                'category' => 'Locality / Area',
-                'icon' => '🏘️',
-                'title' => $title,
-                'subtitle' => $loc['display'] ?: ($loc['city'] ? "Locality in {$loc['city']}" : 'Locality'),
-                'city' => $loc['city'],
-                'keyword' => $title,
-                'locality' => $loc['locality'],
-                'sub_locality' => $loc['sub_locality'],
-                'pincode' => $loc['pincode'],
-                'latitude' => $loc['latitude'],
-                'longitude' => $loc['longitude'],
-                'cached' => $loc['cached'],
-                'provider' => $loc['provider'],
-            ];
-        });
-        $suggestions = $suggestions->concat($matchingLocalities);
-
-        // 3. Matching Projects / Societies / Apartments / Buildings (Google Places API + DB Cache + Listings)
-        $googleProjects = collect(GooglePlacesService::searchProjects(
-            query: $q,
-            city: ! empty($city) ? $city : null,
-            limit: 5
-        ))->map(function ($proj) {
-            $name = $proj['name'] ?: $proj['title'];
-
-            return [
-                'type' => 'project',
-                'category' => 'Apartment / Project',
-                'icon' => '🏢',
-                'title' => $name,
-                'subtitle' => $proj['display'] ?: implode(', ', array_filter([$proj['locality'] ?? null, $proj['city'] ?? null])),
-                'city' => $proj['city'] ?? null,
-                'keyword' => $name,
-                'locality' => $proj['locality'] ?? null,
-                'sub_locality' => $proj['sub_locality'] ?? null,
-                'pincode' => $proj['pincode'] ?? null,
-                'latitude' => $proj['latitude'] ?? null,
-                'longitude' => $proj['longitude'] ?? null,
-                'cached' => $proj['cached'] ?? false,
-                'provider' => $proj['provider'] ?? 'google_places_new',
-            ];
-        });
-
-        $projQuery = Property::query()
-            ->whereNotNull('project_name')
-            ->where('project_name', '!=', '')
-            ->where('project_name', 'LIKE', "%{$q}%");
-        if (! empty($city)) {
-            $projQuery->where('city', $city);
-        }
-        $dbProjects = $projQuery
-            ->select(['project_name', 'locality', 'sub_locality', 'city', 'pincode', 'latitude', 'longitude'])
-            ->distinct()
-            ->take(4)
-            ->get()
-            ->map(function ($prop) {
                 return [
                     'type' => 'project',
                     'category' => 'Apartment / Project',
                     'icon' => '🏢',
-                    'title' => $prop->project_name,
-                    'subtitle' => implode(', ', array_filter([$prop->locality, $prop->city])),
-                    'city' => $prop->city,
-                    'keyword' => $prop->project_name,
-                    'locality' => $prop->locality,
-                    'sub_locality' => $prop->sub_locality,
-                    'pincode' => $prop->pincode,
-                    'latitude' => (float) $prop->latitude,
-                    'longitude' => (float) $prop->longitude,
-                    'cached' => true,
-                    'provider' => 'database',
+                    'title' => $name,
+                    'subtitle' => $proj['display'] ?: implode(', ', array_filter([$proj['locality'] ?? null, $proj['city'] ?? null])),
+                    'city' => $proj['city'] ?? null,
+                    'keyword' => $name,
+                    'locality' => $proj['locality'] ?? null,
+                    'sub_locality' => $proj['sub_locality'] ?? null,
+                    'pincode' => $proj['pincode'] ?? null,
+                    'latitude' => $proj['latitude'] ?? null,
+                    'longitude' => $proj['longitude'] ?? null,
+                    'cached' => $proj['cached'] ?? false,
+                    'provider' => $proj['provider'] ?? 'google_places_new',
                 ];
             });
 
-        $matchingProjects = $googleProjects->concat($dbProjects)->unique(function ($item) {
-            return strtolower(trim(($item['title'] ?? '').' '.($item['city'] ?? '')));
-        })->values()->take(5);
+            $projQuery = Property::query()
+                ->whereNotNull('project_name')
+                ->where('project_name', '!=', '')
+                ->where('project_name', 'LIKE', "%{$q}%");
+            if (! empty($city)) {
+                $projQuery->where('city', $city);
+            }
+            $dbProjects = $projQuery
+                ->select(['project_name', 'locality', 'sub_locality', 'city', 'pincode', 'latitude', 'longitude'])
+                ->distinct()
+                ->take(4)
+                ->get()
+                ->map(function ($prop) {
+                    return [
+                        'type' => 'project',
+                        'category' => 'Apartment / Project',
+                        'icon' => '🏢',
+                        'title' => $prop->project_name,
+                        'subtitle' => implode(', ', array_filter([$prop->locality, $prop->city])),
+                        'city' => $prop->city,
+                        'keyword' => $prop->project_name,
+                        'locality' => $prop->locality,
+                        'sub_locality' => $prop->sub_locality,
+                        'pincode' => $prop->pincode,
+                        'latitude' => (float) $prop->latitude,
+                        'longitude' => (float) $prop->longitude,
+                        'cached' => true,
+                        'provider' => 'database',
+                    ];
+                });
 
-        $suggestions = $suggestions->concat($matchingProjects);
+            $matchingProjects = $googleProjects->concat($dbProjects)->unique(function ($item) {
+                return strtolower(trim(($item['title'] ?? '').' '.($item['city'] ?? '')));
+            })->values()->take(5);
 
-        // 4. Matching Property Titles / Direct Listings
-        $propQuery = Property::query()
-            ->where(function ($query) use ($q) {
-                $query->where('title', 'LIKE', "%{$q}%")
-                    ->orWhere('locality', 'LIKE', "%{$q}%")
-                    ->orWhere('sub_locality', 'LIKE', "%{$q}%");
-            });
-        if (! empty($city)) {
-            $propQuery->where('city', $city);
-        }
-        $matchingProperties = $propQuery
-            ->select(['id', 'title', 'slug', 'locality', 'city', 'expected_price', 'bedrooms', 'property_type'])
-            ->take(4)
-            ->get()
-            ->map(function ($prop) {
-                $formattedPrice = $prop->expected_price ? '₹ '.(
-                    $prop->expected_price >= 10000000
-                        ? round($prop->expected_price / 10000000, 2).' Cr'
-                        : round($prop->expected_price / 100000, 2).' Lac'
-                ) : '';
+            $suggestions = $suggestions->concat($matchingProjects);
 
-                return [
-                    'type' => 'property',
-                    'category' => 'Property Listing',
-                    'icon' => '🏠',
-                    'title' => $prop->title,
-                    'subtitle' => implode(' • ', array_filter([$prop->locality.', '.$prop->city, $formattedPrice])),
-                    'city' => $prop->city,
-                    'keyword' => $prop->title,
-                    'slug' => $prop->slug,
-                    'id' => $prop->id,
-                ];
-            });
-        $suggestions = $suggestions->concat($matchingProperties);
+            // 4. Matching Property Titles / Direct Listings
+            $propQuery = Property::query()
+                ->where(function ($query) use ($q) {
+                    $query->where('title', 'LIKE', "%{$q}%")
+                        ->orWhere('locality', 'LIKE', "%{$q}%")
+                        ->orWhere('sub_locality', 'LIKE', "%{$q}%");
+                });
+            if (! empty($city)) {
+                $propQuery->where('city', $city);
+            }
+            $matchingProperties = $propQuery
+                ->select(['id', 'title', 'slug', 'locality', 'city', 'expected_price', 'bedrooms', 'property_type'])
+                ->take(4)
+                ->get()
+                ->map(function ($prop) {
+                    $formattedPrice = $prop->expected_price ? '₹ '.(
+                        $prop->expected_price >= 10000000
+                            ? round($prop->expected_price / 10000000, 2).' Cr'
+                            : round($prop->expected_price / 100000, 2).' Lac'
+                    ) : '';
 
-        return response()->json($suggestions->values()->take(10));
+                    return [
+                        'type' => 'property',
+                        'category' => 'Property Listing',
+                        'icon' => '🏠',
+                        'title' => $prop->title,
+                        'subtitle' => implode(' • ', array_filter([$prop->locality.', '.$prop->city, $formattedPrice])),
+                        'city' => $prop->city,
+                        'keyword' => $prop->title,
+                        'slug' => $prop->slug,
+                        'id' => $prop->id,
+                    ];
+                });
+            $suggestions = $suggestions->concat($matchingProperties);
+
+            return $suggestions->values()->take(10)->all();
+        });
+
+        return response()->json($data)->header('Cache-Control', 'public, max-age=300');
     }
 }

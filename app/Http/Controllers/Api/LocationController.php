@@ -9,6 +9,7 @@ use App\Services\GeocodingService;
 use App\Services\GooglePlacesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class LocationController extends Controller
@@ -21,19 +22,22 @@ class LocationController extends Controller
         $stateId = $request->query('state_id');
         $metrosOnly = $request->boolean('metros', false);
 
-        $query = City::with('state:id,name');
+        $cacheKey = "loc_cities_s{$stateId}_m".($metrosOnly ? '1' : '0');
+        $cities = Cache::remember($cacheKey, now()->addHours(24), function () use ($stateId, $metrosOnly) {
+            $query = City::with('state:id,name');
 
-        if ($stateId) {
-            $query->where('state_id', $stateId);
-        }
+            if ($stateId) {
+                $query->where('state_id', $stateId);
+            }
 
-        if ($metrosOnly) {
-            $query->where('is_metro', true);
-        }
+            if ($metrosOnly) {
+                $query->where('is_metro', true);
+            }
 
-        $cities = $query->orderBy('is_metro', 'desc')->orderBy('name')->take(50)->get();
+            return $query->orderBy('is_metro', 'desc')->orderBy('name')->take(50)->get();
+        });
 
-        return response()->json($cities);
+        return response()->json($cities)->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -44,20 +48,23 @@ class LocationController extends Controller
         $cityId = $request->query('city_id');
         $cityName = $request->query('city');
 
-        $query = Locality::query();
+        $cacheKey = 'loc_localities_'.md5("cid:{$cityId}_cn:{$cityName}");
+        $localities = Cache::remember($cacheKey, now()->addHours(24), function () use ($cityId, $cityName) {
+            $query = Locality::query();
 
-        if ($cityId) {
-            $query->where('city_id', $cityId);
-        } elseif ($cityName) {
-            $city = City::where('name', $cityName)->first();
-            if ($city) {
-                $query->where('city_id', $city->id);
+            if ($cityId) {
+                $query->where('city_id', $cityId);
+            } elseif ($cityName) {
+                $city = City::where('name', $cityName)->first();
+                if ($city) {
+                    $query->where('city_id', $city->id);
+                }
             }
-        }
 
-        $localities = $query->orderBy('name')->get();
+            return $query->orderBy('name')->get();
+        });
 
-        return response()->json($localities);
+        return response()->json($localities)->header('Cache-Control', 'public, max-age=86400');
     }
 
     /**
@@ -282,23 +289,28 @@ class LocationController extends Controller
         $lng = $request->float('lng') ?: null;
         $radiusKm = (float) $request->query('radius', 3.0);
 
-        $nearbyList = GeocodingService::getNearbyLocalities(
-            $city,
-            $locality,
-            $lat,
-            $lng,
-            $radiusKm
-        );
+        $cacheKey = 'loc_nearby_'.md5("{$city}_{$locality}_{$lat}_{$lng}_{$radiusKm}");
+        $data = Cache::remember($cacheKey, now()->addHours(2), function () use ($city, $locality, $lat, $lng, $radiusKm) {
+            $nearbyList = GeocodingService::getNearbyLocalities(
+                $city,
+                $locality,
+                $lat,
+                $lng,
+                $radiusKm
+            );
 
-        return response()->json([
-            'success' => true,
-            'city' => $city,
-            'locality' => $locality,
-            'lat' => $lat,
-            'lng' => $lng,
-            'radius_km' => $radiusKm,
-            'nearby_localities' => $nearbyList,
-        ]);
+            return [
+                'success' => true,
+                'city' => $city,
+                'locality' => $locality,
+                'lat' => $lat,
+                'lng' => $lng,
+                'radius_km' => $radiusKm,
+                'nearby_localities' => $nearbyList,
+            ];
+        });
+
+        return response()->json($data)->header('Cache-Control', 'public, max-age=1800');
     }
 
     /**

@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { useFrontendCache } from './useFrontendCache';
 
 const currentCity = ref(localStorage.getItem('realhem_city') || 'Delhi NCR');
 const currentLocality = ref('');
@@ -41,6 +42,7 @@ export function useUserLocation() {
      * Fetch nearby localities within 3-5 km for a given city, locality, and real GPS coordinates.
      */
     const fetchNearbyLocalities = async (city, locality = '', lat = null, lng = null) => {
+        const { fetchWithCache } = useFrontendCache();
         try {
             const params = new URLSearchParams();
             if (city) params.set('city', city);
@@ -48,12 +50,16 @@ export function useUserLocation() {
             if (lat !== null && lat !== undefined && !isNaN(Number(lat))) params.set('lat', String(lat));
             if (lng !== null && lng !== undefined && !isNaN(Number(lng))) params.set('lng', String(lng));
 
-            const res = await fetch(`/api/locations/nearby?${params.toString()}`);
-            const data = await res.json();
-            if (data.nearby_localities && data.nearby_localities.length > 0) {
+            const url = `/api/locations/nearby?${params.toString()}`;
+            const data = await fetchWithCache(url, {
+                ttlMs: 30 * 60 * 1000, // 30 minutes cache for geographic proximity
+                swr: true,
+            });
+
+            if (data && data.nearby_localities && data.nearby_localities.length > 0) {
                 nearbyLocalities.value = data.nearby_localities;
             }
-            return data.nearby_localities || [];
+            return data?.nearby_localities || [];
         } catch (err) {
             console.warn('Failed to fetch nearby localities:', err);
             return [];

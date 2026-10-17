@@ -446,7 +446,9 @@
                         />
                         <div v-if="item.photos && item.photos.length > 0" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
                         <div class="text-center p-4 relative z-20">
-                            <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">{{ item.builder }}</span>
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
+                                {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
+                            </span>
                             <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
                             <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
                         </div>
@@ -469,6 +471,20 @@
                             >
                                 <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                 <span>VERIFIED</span>
+                            </span>
+
+                            <!-- Poster Type Badge (By Owner / Agent / Builder) -->
+                            <span
+                                v-if="item.sellerLabel === 'Owner'"
+                                class="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <span>BY OWNER</span>
+                            </span>
+                            <span
+                                v-else-if="item.sellerLabel === 'Agent'"
+                                class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <span>AGENT</span>
                             </span>
 
                             <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
@@ -559,12 +575,13 @@
                             </p>
                         </div>
 
-                        <!-- Footer: Builder Info & Action Buttons -->
+                        <!-- Footer: Seller Info & Action Buttons -->
                         <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                             <div>
-                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Builder</span>
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-xs font-bold text-slate-800">{{ item.builder }}</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">{{ item.sellerLabel || 'Owner' }}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-bold text-slate-800">{{ item.sellerName || item.postedBy }}</span>
+                                    <span v-if="item.sellerLabel === 'Owner' && item.project_name" class="text-[11px] text-slate-400 font-medium">({{ item.project_name }})</span>
                                     <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                         Verified
@@ -625,11 +642,11 @@
                 </div>
                 <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl">
                     <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-base flex-shrink-0 shadow-md" :style="{ backgroundColor: brandPrimaryColor }">
-                        {{ (selectedContactProperty.builder || selectedContactProperty.postedBy || 'V').slice(0, 2).toUpperCase() }}
+                        {{ (selectedContactProperty.sellerName || selectedContactProperty.postedBy || 'V').slice(0, 2).toUpperCase() }}
                     </div>
                     <div>
-                        <div class="text-sm font-black text-slate-900">{{ selectedContactProperty.builder || selectedContactProperty.postedBy }}</div>
-                        <div class="text-[11px] text-emerald-600 font-bold">✓ Verified Partner</div>
+                        <div class="text-sm font-black text-slate-900">{{ selectedContactProperty.sellerName || selectedContactProperty.postedBy }}</div>
+                        <div class="text-[11px] text-emerald-600 font-bold">✓ Verified {{ selectedContactProperty.sellerLabel || 'Owner' }}</div>
                     </div>
                 </div>
                 <div v-if="selectedContactProperty.sellerPhone" class="space-y-2.5">
@@ -673,6 +690,7 @@ import { useVoiceSearch } from '../composables/useVoiceSearch';
 import { useUserLocation } from '../composables/useUserLocation';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
 import { useSearchSuggestions } from '../composables/useSearchSuggestions';
+import { useFrontendCache } from '../composables/useFrontendCache';
 import { isResidentialType } from '../constants/propertyConstants';
 import EmiCalculatorModal from '../components/EmiCalculatorModal.vue';
 
@@ -682,6 +700,7 @@ const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
 const { brandPrimaryColor } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
+const { fetchWithCache, get: getFromCache, invalidate: invalidateCache } = useFrontendCache();
 
 const activeType = ref(route.query.type || 'all');
 const activeCity = ref(route.query.city || currentCity.value || 'Ahmedabad');
@@ -1103,7 +1122,10 @@ const defaultFallbackListings = [
         area: '1,935 sqft (180 sqm)',
         status: 'Under Construction',
         builder: 'SUNWOODS-SHREENATH BUILDCON',
-        postedBy: 'Builder',
+        project_name: 'The Metropark',
+        postedBy: 'SUNWOODS-SHREENATH BUILDCON',
+        sellerLabel: 'Builder',
+        sellerName: 'SUNWOODS-SHREENATH BUILDCON',
         sellerPhone: '+91 98250 12345',
         isNewBooking: true,
         is_featured: true,
@@ -1134,7 +1156,10 @@ const defaultFallbackListings = [
         area: '2,763 sqft (257 sqm)',
         status: 'Under Construction',
         builder: 'Trinay Group',
-        postedBy: 'Builder',
+        project_name: 'Trinay Anagh',
+        postedBy: 'Trinay Group',
+        sellerLabel: 'Builder',
+        sellerName: 'Trinay Group',
         sellerPhone: '+91 98251 54321',
         isNewBooking: true,
         is_featured: false,
@@ -1164,8 +1189,11 @@ const defaultFallbackListings = [
         city: 'Ahmedabad',
         area: '2,150 sqft (200 sqm)',
         status: 'Ready to Move',
-        builder: 'Godrej Properties',
-        postedBy: 'Owner',
+        builder: 'Rajesh Patel',
+        project_name: 'Godrej Garden City',
+        postedBy: 'Rajesh Patel',
+        sellerLabel: 'Owner',
+        sellerName: 'Rajesh Patel',
         sellerPhone: '+91 98980 11223',
         isNewBooking: false,
         is_featured: false,
@@ -1194,8 +1222,11 @@ const defaultFallbackListings = [
         city: 'Ahmedabad',
         area: '2,050 sqft (190 sqm)',
         status: 'Ready to Move',
-        builder: 'Shaligram Group',
-        postedBy: 'Verified Owner',
+        builder: 'Mukesh Shah',
+        project_name: 'Shaligram Lakeview',
+        postedBy: 'Mukesh Shah',
+        sellerLabel: 'Owner',
+        sellerName: 'Mukesh Shah',
         sellerPhone: '+91 97270 33445',
         isNewBooking: false,
         is_featured: false,
@@ -1224,8 +1255,11 @@ const defaultFallbackListings = [
         city: 'Ahmedabad',
         area: '1,350 sqft (125 sqm)',
         status: 'Ready to Move',
-        builder: 'Aarohi Group',
-        postedBy: 'Agent',
+        builder: 'Aarohi Real Estate',
+        project_name: 'Aarohi Elysium',
+        postedBy: 'Aarohi Real Estate',
+        sellerLabel: 'Agent',
+        sellerName: 'Aarohi Real Estate',
         sellerPhone: '+91 98240 55667',
         isNewBooking: false,
         is_featured: false,
@@ -1256,14 +1290,79 @@ const formatPriceWords = (val) => {
     return `₹ ${num.toLocaleString('en-IN')}`;
 };
 
-const fetchApiProperties = async (page = 1, append = false) => {
-    if (append) {
-        isLoadingMore.value = true;
+const mapPropertyItem = (p) => {
+    const isRes = isResidentialType(p.property_type);
+    const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
+
+    const rawRole = String(p.user_type || p.user?.role || '').toLowerCase();
+    let sellerLabel = 'Owner';
+    if (rawRole.includes('builder') || rawRole.includes('developer')) {
+        sellerLabel = 'Builder';
+    } else if (rawRole.includes('agent') || rawRole.includes('broker') || rawRole.includes('dealer')) {
+        sellerLabel = 'Agent';
     } else {
-        isLoadingProperties.value = true;
-        currentPage.value = 1;
+        sellerLabel = 'Owner';
     }
 
+    let sellerName = '';
+    if (sellerLabel === 'Owner') {
+        sellerName = p.user?.name || 'Verified Owner';
+    } else if (sellerLabel === 'Agent') {
+        sellerName = p.user?.name || 'Authorized Agent';
+    } else {
+        sellerName = p.project_name || p.user?.name || 'Verified Builder';
+    }
+
+    return {
+        id: p.id,
+        slug: p.slug || String(p.id),
+        title: p.title,
+        type: p.property_type || 'Apartment',
+        bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
+        bedrooms: bedrooms,
+        price: formatPriceWords(p.expected_price),
+        rawPrice: p.expected_price || 0,
+        rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
+        locality: p.locality || '',
+        city: p.city || '',
+        area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
+        status: p.construction_status || 'Ready to Move',
+        builder: p.project_name || sellerName,
+        project_name: p.project_name || '',
+        postedBy: sellerName,
+        user_type: sellerLabel,
+        sellerLabel: sellerLabel,
+        sellerName: sellerName,
+        sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
+        isNewBooking: false,
+        is_verified: !!p.is_verified,
+        is_featured: !!p.is_featured,
+        isRera: !!p.is_verified,
+        zeroBrokerage: true,
+        photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
+        photos: p.photos || [],
+        nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
+        description: p.description || '',
+        property_for: p.property_for || 'Sell',
+    };
+};
+
+const applyPropertiesData = (data, append = false, page = 1) => {
+    if (!data) return;
+    const list = data.data || (Array.isArray(data) ? data : []);
+    totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
+    hasNextPage.value = !!data.next_page_url;
+    currentPage.value = data.current_page || page;
+
+    const mapped = list.map(mapPropertyItem);
+    if (append) {
+        apiProperties.value = [...apiProperties.value, ...mapped];
+    } else {
+        apiProperties.value = mapped;
+    }
+};
+
+const fetchApiProperties = async (page = 1, append = false) => {
     try {
         let url = '/api/properties';
         const params = new URLSearchParams();
@@ -1316,59 +1415,31 @@ const fetchApiProperties = async (page = 1, append = false) => {
             url += '?' + params.toString();
         }
 
-        const res = await fetch(url);
-        if (res.ok) {
-            const data = await res.json();
-            const list = data.data || (Array.isArray(data) ? data : []);
-            totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
-            hasNextPage.value = !!data.next_page_url;
-            currentPage.value = data.current_page || page;
-
-            const mapped = list.map(p => {
-                const isRes = isResidentialType(p.property_type);
-                const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
-                return {
-                    id: p.id,
-                    slug: p.slug || String(p.id),
-                    title: p.title,
-                    type: p.property_type || 'Apartment',
-                    bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
-                    bedrooms: bedrooms,
-                    price: formatPriceWords(p.expected_price),
-                    rawPrice: p.expected_price || 0,
-                    rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
-                    locality: p.locality || '',
-                    city: p.city || '',
-                    area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
-                    status: p.construction_status || 'Ready to Move',
-                    builder: p.project_name || (p.user ? p.user.name : 'Verified Owner'),
-                    project_name: p.project_name || '',
-                    postedBy: p.user ? p.user.name : 'Owner',
-                    sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
-                    isNewBooking: false,
-                    is_verified: !!p.is_verified,
-                    is_featured: !!p.is_featured,
-                    isRera: !!p.is_verified,
-                    zeroBrokerage: true,
-                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
-                    photos: p.photos || [],
-                    nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
-                    description: p.description || '',
-                    property_for: p.property_for || 'Sell',
-                };
-            });
-
-            if (append) {
-                apiProperties.value = [...apiProperties.value, ...mapped];
+        // 1. Instant Cache Display (0ms latency if cached and not appending)
+        if (!append) {
+            const cached = getFromCache(url);
+            if (cached) {
+                applyPropertiesData(cached, false, page);
+                isLoadingProperties.value = false;
             } else {
-                apiProperties.value = mapped;
+                isLoadingProperties.value = true;
             }
         } else {
-            if (!append) apiProperties.value = [];
+            isLoadingMore.value = true;
         }
+
+        const data = await fetchWithCache(url, {
+            ttlMs: 3 * 60 * 1000, // 3 minutes cache
+            swr: true,
+            onBackgroundUpdate: (freshData) => {
+                applyPropertiesData(freshData, append, page);
+            },
+        });
+
+        applyPropertiesData(data, append, page);
     } catch (err) {
         console.warn('Could not fetch API properties:', err);
-        if (!append) apiProperties.value = [];
+        if (!append && !getFromCache(url)) apiProperties.value = [];
     } finally {
         isLoadingProperties.value = false;
         isLoadingMore.value = false;
@@ -1383,6 +1454,12 @@ const loadNextPage = () => {
 onMounted(() => {
     initNearbyAreas();
     fetchApiProperties(1, false);
+
+    const onInvalidate = () => {
+        invalidateCache('api/properties');
+        fetchApiProperties(1, false);
+    };
+    window.addEventListener('realhem-property-invalidated', onInvalidate);
 });
 
 watch(

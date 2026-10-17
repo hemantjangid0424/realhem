@@ -1,8 +1,10 @@
 import { ref } from 'vue';
+import { useFrontendCache } from './useFrontendCache';
 
 export function useSearchSuggestions() {
     const suggestions = ref([]);
     const isLoading = ref(false);
+    const { fetchWithCache, get } = useFrontendCache();
     let debounceTimeout = null;
     let abortController = null;
 
@@ -18,43 +20,48 @@ export function useSearchSuggestions() {
             return;
         }
 
+        const params = new URLSearchParams({ q: trimmed });
+        if (city) params.append('city', city);
+        const cacheUrl = `/api/search/suggestions?${params.toString()}`;
+
+        // If present in cache, display immediately (0ms latency!)
+        const cached = get(cacheUrl);
+        if (cached && Array.isArray(cached)) {
+            suggestions.value = cached;
+            isLoading.value = false;
+        }
+
         debounceTimeout = setTimeout(async () => {
             if (abortController) {
                 abortController.abort();
             }
             abortController = new AbortController();
 
-            isLoading.value = true;
-            try {
-                const params = new URLSearchParams({
-                    q: trimmed,
-                });
-                if (city) {
-                    params.append('city', city);
-                }
+            if (!cached) isLoading.value = true;
 
-                const res = await fetch(`/api/search/suggestions?${params.toString()}`, {
-                    signal: abortController.signal,
-                    headers: {
-                        'Accept': 'application/json',
+            try {
+                const data = await fetchWithCache(cacheUrl, {
+                    ttlMs: 5 * 60 * 1000, // 5 minutes cache
+                    swr: true,
+                    fetchOptions: { signal: abortController.signal },
+                    onBackgroundUpdate: (freshData) => {
+                        if (Array.isArray(freshData)) {
+                            suggestions.value = freshData;
+                        }
                     },
                 });
 
-                if (res.ok) {
-                    const data = await res.json();
-                    suggestions.value = Array.isArray(data) ? data : [];
-                } else {
-                    suggestions.value = [];
+                if (Array.isArray(data)) {
+                    suggestions.value = data;
                 }
             } catch (err) {
                 if (err.name !== 'AbortError') {
                     console.error('Failed to fetch search suggestions:', err);
-                    suggestions.value = [];
                 }
             } finally {
                 isLoading.value = false;
             }
-        }, 150);
+        }, cached ? 300 : 150);
     };
 
     const clearSuggestions = () => {

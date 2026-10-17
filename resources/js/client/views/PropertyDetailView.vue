@@ -526,6 +526,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCompanyBranding } from '../composables/useCompanyBranding';
+import { useFrontendCache } from '../composables/useFrontendCache';
 import EmiCalculatorModal from '../components/EmiCalculatorModal.vue';
 import {
     PROPERTY_FOR,
@@ -536,6 +537,7 @@ import {
 } from '../constants/propertyConstants';
 
 const { companyName, brandPrimaryColor, brandAccentColor } = useCompanyBranding();
+const { get: getFromCache, fetchWithCache } = useFrontendCache();
 
 const route = useRoute();
 const router = useRouter();
@@ -681,22 +683,41 @@ const copyLink = async () => {
 };
 
 const fetchProperty = async () => {
-    isLoading.value = true;
+    const slug = route.params.slug;
+    if (!slug) return;
+    const url = `/api/property/${slug}`;
+
+    // Instant 0ms cache check (from memory or sessionStorage)
+    const cached = getFromCache(url);
+    if (cached) {
+        property.value = cached.property ?? cached;
+        isLoading.value = false;
+    } else {
+        isLoading.value = true;
+    }
     notFound.value = false;
+
     try {
-        const res = await fetch(`/api/property/${route.params.slug}`);
-        if (res.status === 404) {
-            notFound.value = true;
+        const data = await fetchWithCache(url, {
+            ttlMs: 5 * 60 * 1000,
+            swr: true,
+            onBackgroundUpdate: (fresh) => {
+                if (fresh) {
+                    property.value = fresh.property ?? fresh;
+                }
+            },
+        });
+        if (!data) {
+            if (!property.value) {
+                notFound.value = true;
+            }
             return;
         }
-        if (!res.ok) {
-            notFound.value = true;
-            return;
-        }
-        const data = await res.json();
         property.value = data.property ?? data;
     } catch {
-        notFound.value = true;
+        if (!property.value) {
+            notFound.value = true;
+        }
     } finally {
         isLoading.value = false;
     }
