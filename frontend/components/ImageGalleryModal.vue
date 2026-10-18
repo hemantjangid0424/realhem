@@ -306,15 +306,10 @@ const photosList = computed<string[]>(() => {
         return p.property.photos.filter(Boolean);
     }
 
-    // 3. Single photo fallback
+    // 3. Single photo fallback (only if real photo)
     const singlePhoto = (p as any).photo || p.metadata?.photo || p.property?.photos?.[0];
-    if (singlePhoto) {
+    if (singlePhoto && typeof singlePhoto === 'string' && !singlePhoto.includes('unsplash.com')) {
         return [singlePhoto];
-    }
-
-    // 4. Default unsplash property fallback if no videos exist
-    if (videosList.value.length === 0) {
-        return ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80'];
     }
 
     return [];

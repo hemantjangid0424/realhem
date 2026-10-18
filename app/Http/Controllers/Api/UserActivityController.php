@@ -18,7 +18,7 @@ class UserActivityController extends Controller
         $user = $request->user();
 
         $query = $user->activities()
-            ->with(['property:id,title,slug,city,locality,expected_price,property_for,property_type,photos,status'])
+            ->with(['property:id,title,slug,city,locality,expected_price,property_for,property_type,photos,videos,status'])
             ->latest();
 
         if ($request->filled('type')) {

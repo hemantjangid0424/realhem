@@ -411,14 +411,27 @@
                         >
                             <!-- Left: Thumbnail & Details -->
                             <div class="flex items-start gap-4 flex-1">
-                                <div class="w-24 sm:w-28 h-20 rounded-xl bg-slate-100 overflow-hidden relative shrink-0 border border-slate-200/80">
+                                <div class="w-24 sm:w-28 h-20 rounded-xl bg-slate-900 overflow-hidden relative shrink-0 border border-slate-200/80 flex items-center justify-center">
                                     <img
-                                        :src="prop.photos?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
+                                        v-if="prop.photos && prop.photos.length > 0"
+                                        :src="prop.photos[0]"
                                         class="w-full h-full object-cover"
                                         alt="Thumbnail"
                                     />
-                                    <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">
-                                        {{ prop.photos?.length || 1 }} 📷
+                                    <video
+                                        v-else-if="prop.videos && prop.videos.length > 0"
+                                        :src="prop.videos[0] + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 pointer-events-none"
+                                    ></video>
+                                    <div v-else class="text-2xl text-slate-500">🏠</div>
+
+                                    <span v-if="((prop.photos?.length || 0) + (prop.videos?.length || 0)) > 0" class="absolute bottom-1 right-1 bg-slate-900/85 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10">
+                                        <span v-if="!prop.photos || prop.photos.length === 0">🎥</span>
+                                        <span v-else>📷</span>
+                                        <span>{{ (prop.photos?.length || 0) + (prop.videos?.length || 0) }}</span>
                                     </span>
                                 </div>
 
@@ -691,21 +704,32 @@
                                         :src="act.property?.photos?.[0] || act.metadata?.photo"
                                         class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                     />
+                                    <video
+                                        v-else-if="act.property?.videos?.[0] || act.metadata?.videos?.[0]"
+                                        :src="(act.property?.videos?.[0] || act.metadata?.videos?.[0]) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 pointer-events-none"
+                                    ></video>
                                     <div v-else class="w-full h-full flex items-center justify-center text-3xl text-slate-500">
                                         🏠
                                     </div>
                                     <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold">
                                         For {{ act.property?.property_for || act.metadata?.property_for }}
                                     </span>
-                                    <!-- Photo Count Badge -->
+                                    <!-- Combined Media Count Badge -->
                                     <button
+                                        v-if="((act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) + (act.property?.videos?.length || (act.metadata?.videos?.length || 0))) > 0"
                                         type="button"
                                         @click.stop.prevent="openImageGallery(act.property || act.metadata)"
-                                        class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
-                                        title="View photo gallery"
+                                        class="absolute bottom-2 right-2 bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
+                                        :title="(!act.property?.photos?.length && !act.metadata?.photo) ? 'View video tour' : 'View media gallery'"
                                     >
-                                        <span>📷</span>
-                                        <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                        <span v-if="!act.property?.photos?.length && !act.metadata?.photo">🎥</span>
+                                        <span v-else>📷</span>
+                                        <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) + (act.property?.videos?.length || (act.metadata?.videos?.length || 0)) }}</span>
+                                        <span v-if="(act.property?.videos?.length || act.metadata?.videos?.length) && (act.property?.photos?.length || act.metadata?.photo)" class="text-purple-300 text-[9px] font-bold">🎥</span>
                                     </button>
                                 </div>
                                 <div class="p-4 space-y-1.5">

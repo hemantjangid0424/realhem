@@ -113,6 +113,7 @@ export function useUserActivity() {
         locality: property.locality,
         expected_price: property.expected_price,
         photos: property.photos || [],
+        videos: property.videos || [],
       },
       metadata: {
         slug: property.slug,
@@ -123,6 +124,7 @@ export function useUserActivity() {
         locality: property.locality,
         expected_price: property.expected_price,
         photo: property.photos && property.photos.length > 0 ? property.photos[0] : null,
+        videos: property.videos || [],
       },
       created_at: new Date().toISOString(),
     };
@@ -275,6 +277,7 @@ export function useUserActivity() {
           expected_price: property.expected_price,
           carpet_area: property.carpet_area,
           photos: property.photos || [],
+          videos: property.videos || [],
         },
         metadata: {
           slug: property.slug,
@@ -286,6 +289,7 @@ export function useUserActivity() {
           expected_price: property.expected_price,
           carpet_area: property.carpet_area,
           photo: property.photos && property.photos.length > 0 ? property.photos[0] : null,
+          videos: property.videos || [],
         },
         created_at: new Date().toISOString(),
       };

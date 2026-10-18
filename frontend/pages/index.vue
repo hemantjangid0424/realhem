@@ -322,17 +322,37 @@
                             class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
                         >
                             <div
-                                class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                                class="h-36 bg-slate-900 relative flex items-center justify-center overflow-hidden cursor-pointer"
                                 @click.stop.prevent="openImageGallery(act.property || act.metadata)"
-                                title="Click to view photos"
+                                title="Click to view media"
                             >
                                 <img
-                                    v-if="act.property?.photos?.[0] || act.metadata?.photo"
-                                    :src="act.property?.photos?.[0] || act.metadata?.photo"
+                                    v-if="getItemPhoto(act)"
+                                    :src="getItemPhoto(act)"
                                     :alt="act.property?.title || act.metadata?.title"
                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                 />
-                                <div v-else class="text-2xl">🏠</div>
+                                <div
+                                    v-else-if="getItemVideo(act)"
+                                    class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                                >
+                                    <video
+                                        :src="getItemVideo(act) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                                    ></video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1">
+                                    <span class="text-2xl">🏠</span>
+                                    <span class="text-[9px] font-semibold text-slate-400">No media</span>
+                                </div>
 
                                 <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
                                     <ShortlistButton
@@ -346,15 +366,26 @@
                                     For {{ act.property?.property_for || act.metadata?.property_for }}
                                 </span>
 
-                                <!-- Photo Count Badge (Bottom Right) -->
+                                <!-- Media Count Badge (Bottom Right) -->
                                 <button
+                                    v-if="getItemPhotoCount(act) > 0"
                                     type="button"
                                     @click.stop.prevent="openImageGallery(act.property || act.metadata)"
                                     class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View photo gallery"
                                 >
                                     <span>📷</span>
-                                    <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                    <span>{{ getItemPhotoCount(act) }}</span>
+                                </button>
+                                <button
+                                    v-else-if="getItemVideoCount(act) > 0"
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                    class="absolute bottom-2 right-2 bg-purple-600/90 hover:bg-purple-600 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                    title="View video tour"
+                                >
+                                    <span>🎥</span>
+                                    <span>{{ getItemVideoCount(act) }}</span>
                                 </button>
                             </div>
 
@@ -394,15 +425,37 @@
                             class="bg-white rounded-2xl border border-rose-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
                         >
                             <div
-                                class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                                class="h-36 bg-slate-900 relative flex items-center justify-center overflow-hidden cursor-pointer"
                                 @click.stop.prevent="openImageGallery(item.property || item.metadata)"
-                                title="Click to view photos"
+                                title="Click to view media"
                             >
                                 <img
-                                    :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
+                                    v-if="getItemPhoto(item)"
+                                    :src="getItemPhoto(item)"
                                     :alt="item.property?.title || item.metadata?.title"
                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                 />
+                                <div
+                                    v-else-if="getItemVideo(item)"
+                                    class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                                >
+                                    <video
+                                        :src="getItemVideo(item) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                                    ></video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1">
+                                    <span class="text-2xl">🏠</span>
+                                    <span class="text-[9px] font-semibold text-slate-400">No media</span>
+                                </div>
 
                                 <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
                                     <ShortlistButton
@@ -412,15 +465,26 @@
                                     />
                                 </div>
 
-                                <!-- Photo Count Badge (Bottom Right) -->
+                                <!-- Media Count Badge (Bottom Right) -->
                                 <button
+                                    v-if="getItemPhotoCount(item) > 0"
                                     type="button"
                                     @click.stop.prevent="openImageGallery(item.property || item.metadata)"
                                     class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View photo gallery"
                                 >
                                     <span>📷</span>
-                                    <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                    <span>{{ getItemPhotoCount(item) }}</span>
+                                </button>
+                                <button
+                                    v-else-if="getItemVideoCount(item) > 0"
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                    class="absolute bottom-2 right-2 bg-purple-600/90 hover:bg-purple-600 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                    title="View video tour"
+                                >
+                                    <span>🎥</span>
+                                    <span>{{ getItemVideoCount(item) }}</span>
                                 </button>
                             </div>
 
@@ -507,6 +571,23 @@
                             :alt="prop.title"
                             class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                         />
+                        <div
+                            v-else-if="prop.videos && prop.videos.length"
+                            class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                        >
+                            <video
+                                :src="prop.videos[0] + '#t=0.5'"
+                                preload="metadata"
+                                muted
+                                playsinline
+                                class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                            ></video>
+                            <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                    <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                </div>
+                            </div>
+                        </div>
                         <div v-else class="text-3xl">🏠</div>
 
                         <!-- Badge Overlay -->
@@ -568,13 +649,16 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-slate-300 text-[11px] font-medium">{{ prop.area }} sq.ft</span>
                                 <button
+                                    v-if="((prop.photos?.length || 0) + (prop.videos?.length || 0)) > 0"
                                     type="button"
                                     @click.stop.prevent="openImageGallery(prop)"
-                                    class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer shadow-xs"
-                                    title="View photo gallery"
+                                    class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer shadow-xs border border-white/10"
+                                    :title="(!prop.photos || prop.photos.length === 0) ? 'View video tour' : 'View media gallery'"
                                 >
-                                    <span>📷</span>
-                                    <span>{{ prop.photosCount }}</span>
+                                    <span v-if="!prop.photos || prop.photos.length === 0">🎥</span>
+                                    <span v-else>📷</span>
+                                    <span>{{ (prop.photos?.length || 0) + (prop.videos?.length || 0) }}</span>
+                                    <span v-if="prop.videos && prop.videos.length > 0 && prop.photos && prop.photos.length > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
                                 </button>
                             </div>
                         </div>
@@ -846,6 +930,42 @@ const openImageGallery = (prop, index = 0) => {
     activeGalleryProperty.value = prop;
     activeGalleryIndex.value = index;
     isGalleryOpen.value = true;
+};
+
+const getItemPhoto = (item) => {
+    const photo = item?.property?.photos?.[0] || item?.metadata?.photo;
+    if (photo && typeof photo === 'string' && !photo.includes('unsplash.com')) {
+        return photo;
+    }
+    return null;
+};
+
+const getItemVideo = (item) => {
+    const video = item?.property?.videos?.[0] || item?.metadata?.videos?.[0];
+    if (video && typeof video === 'string') {
+        return video;
+    }
+    return null;
+};
+
+const getItemPhotoCount = (item) => {
+    if (Array.isArray(item?.property?.photos) && item.property.photos.length > 0) {
+        return item.property.photos.length;
+    }
+    if (item?.metadata?.photo && typeof item.metadata.photo === 'string' && !item.metadata.photo.includes('unsplash.com')) {
+        return 1;
+    }
+    return 0;
+};
+
+const getItemVideoCount = (item) => {
+    if (Array.isArray(item?.property?.videos) && item.property.videos.length > 0) {
+        return item.property.videos.length;
+    }
+    if (Array.isArray(item?.metadata?.videos) && item.metadata.videos.length > 0) {
+        return item.metadata.videos.length;
+    }
+    return 0;
 };
 const {
     recentActivities,
@@ -1228,8 +1348,11 @@ watch(() => propertiesResponse.value, (data) => {
                     is_verified: !!p.is_verified,
                     is_featured: !!p.is_featured,
                     badge: p.is_featured ? 'Featured' : (p.is_verified ? 'Verified' : 'Owner'),
-                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
-                    photos: p.photos || [],
+                    photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 0,
+                    photos: Array.isArray(p.photos) ? p.photos : [],
+                    videosCount: p.videos && Array.isArray(p.videos) ? p.videos.length : 0,
+                    videos: Array.isArray(p.videos) ? p.videos : [],
+                    mediaCount: (Array.isArray(p.photos) ? p.photos.length : 0) + (Array.isArray(p.videos) ? p.videos.length : 0),
                     sellerType: p.user_type || (p.user ? p.user.role : 'Owner'),
                 };
             });

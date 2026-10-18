@@ -197,14 +197,24 @@
                                                 class="w-full h-full object-cover group-hover:scale-105 transition"
                                                 loading="lazy"
                                             />
+                                            <video
+                                                v-else-if="prop.videos && prop.videos.length > 0"
+                                                :src="prop.videos[0] + '#t=0.5'"
+                                                preload="metadata"
+                                                muted
+                                                playsinline
+                                                class="w-full h-full object-cover pointer-events-none opacity-80"
+                                            ></video>
                                             <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                             </div>
                                             <span
-                                                v-if="prop.photos && prop.photos.length > 1"
-                                                class="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/70 text-white rounded text-[9px] font-bold"
+                                                v-if="((prop.photos?.length || 0) + (prop.videos?.length || 0)) > 0"
+                                                class="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/75 text-white rounded text-[9px] font-bold flex items-center gap-0.5"
                                             >
-                                                {{ prop.photos.length }}
+                                                <span v-if="!prop.photos || prop.photos.length === 0">🎥</span>
+                                                <span v-else>📷</span>
+                                                <span>{{ (prop.photos?.length || 0) + (prop.videos?.length || 0) }}</span>
                                             </span>
                                         </div>
 

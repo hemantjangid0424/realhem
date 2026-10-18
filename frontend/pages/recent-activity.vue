@@ -301,16 +301,34 @@
                             <div
                                 class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
                                 @click.stop.prevent="openImageGallery(act.property || act.metadata)"
-                                title="Click to view photos"
+                                title="Click to view media"
                             >
                                 <img
-                                    v-if="act.property?.photos?.[0] || act.metadata?.photo"
-                                    :src="act.property?.photos?.[0] || act.metadata?.photo"
+                                    v-if="getItemPhoto(act)"
+                                    :src="getItemPhoto(act)"
                                     :alt="act.property?.title || act.metadata?.title"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
-                                <div v-else class="w-full h-full flex items-center justify-center text-3xl text-slate-500">
-                                    🏠
+                                <div
+                                    v-else-if="getItemVideo(act)"
+                                    class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                                >
+                                    <video
+                                        :src="getItemVideo(act) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                                    ></video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <div class="w-9 h-9 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                            <svg class="w-4 h-4 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
+                                    <span class="text-3xl">🏠</span>
+                                    <span class="text-[10px] font-semibold text-slate-400">No media</span>
                                 </div>
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
@@ -346,13 +364,16 @@
                                             {{ act.property?.carpet_area || act.metadata?.carpet_area }} sq.ft
                                         </span>
                                         <button
+                                            v-if="getItemMediaCount(act) > 0"
                                             type="button"
                                             @click.stop.prevent="openImageGallery(act.property || act.metadata)"
-                                            class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
-                                            title="View photo gallery"
+                                            class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
+                                            :title="getItemPhotoCount(act) === 0 ? 'View video tour' : 'View media gallery'"
                                         >
-                                            <span>📷</span>
-                                            <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                            <span v-if="getItemPhotoCount(act) === 0">🎥</span>
+                                            <span v-else>📷</span>
+                                            <span>{{ getItemMediaCount(act) }}</span>
+                                            <span v-if="getItemVideoCount(act) > 0 && getItemPhotoCount(act) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
                                         </button>
                                     </div>
                                 </div>
@@ -426,13 +447,35 @@
                             <div
                                 class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
                                 @click.stop.prevent="openImageGallery(item.property || item.metadata)"
-                                title="Click to view photos"
+                                title="Click to view media"
                             >
                                 <img
-                                    :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
+                                    v-if="getItemPhoto(item)"
+                                    :src="getItemPhoto(item)"
                                     :alt="item.property?.title || item.metadata?.title"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
+                                <div
+                                    v-else-if="getItemVideo(item)"
+                                    class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                                >
+                                    <video
+                                        :src="getItemVideo(item) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                                    ></video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
+                                    <span class="text-3xl">🏠</span>
+                                    <span class="text-[10px] font-semibold text-slate-400">No media</span>
+                                </div>
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
                                     <span class="px-2.5 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
@@ -459,13 +502,16 @@
                                             {{ item.property?.carpet_area || item.metadata?.carpet_area }} sq.ft
                                         </span>
                                         <button
+                                            v-if="getItemMediaCount(item) > 0"
                                             type="button"
                                             @click.stop.prevent="openImageGallery(item.property || item.metadata)"
-                                            class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
-                                            title="View photo gallery"
+                                            class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
+                                            :title="getItemPhotoCount(item) === 0 ? 'View video tour' : 'View media gallery'"
                                         >
-                                            <span>📷</span>
-                                            <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                            <span v-if="getItemPhotoCount(item) === 0">🎥</span>
+                                            <span v-else>📷</span>
+                                            <span>{{ getItemMediaCount(item) }}</span>
+                                            <span v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
                                         </button>
                                     </div>
                                 </div>
@@ -533,13 +579,35 @@
                             <div
                                 class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
                                 @click.stop.prevent="openImageGallery(item.property || item.metadata)"
-                                title="Click to view photos"
+                                title="Click to view media"
                             >
                                 <img
-                                    :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
+                                    v-if="getItemPhoto(item)"
+                                    :src="getItemPhoto(item)"
                                     :alt="item.property?.title || item.metadata?.title"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
+                                <div
+                                    v-else-if="getItemVideo(item)"
+                                    class="w-full h-full relative flex items-center justify-center bg-slate-950"
+                                >
+                                    <video
+                                        :src="getItemVideo(item) + '#t=0.5'"
+                                        preload="metadata"
+                                        muted
+                                        playsinline
+                                        class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-300 pointer-events-none"
+                                    ></video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
+                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
+                                    <span class="text-3xl">🏠</span>
+                                    <span class="text-[10px] font-semibold text-slate-400">No media</span>
+                                </div>
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
                                     <span class="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
@@ -561,13 +629,16 @@
                                         {{ formatPrice(item.property?.expected_price || item.metadata?.expected_price) }}
                                     </span>
                                     <button
+                                        v-if="getItemMediaCount(item) > 0"
                                         type="button"
                                         @click.stop.prevent="openImageGallery(item.property || item.metadata)"
-                                        class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
-                                        title="View photo gallery"
+                                        class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
+                                        :title="getItemPhotoCount(item) === 0 ? 'View video tour' : 'View media gallery'"
                                     >
-                                        <span>📷</span>
-                                        <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                        <span v-if="getItemPhotoCount(item) === 0">🎥</span>
+                                        <span v-else>📷</span>
+                                        <span>{{ getItemMediaCount(item) }}</span>
+                                        <span v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
                                     </button>
                                 </div>
                             </div>
@@ -655,6 +726,46 @@ const openImageGallery = (property: any, index = 0) => {
     activeGalleryProperty.value = property;
     activeGalleryIndex.value = index;
     isGalleryOpen.value = true;
+};
+
+const getItemPhoto = (item: any) => {
+    const photo = item?.property?.photos?.[0] || item?.metadata?.photo;
+    if (photo && typeof photo === 'string' && !photo.includes('unsplash.com')) {
+        return photo;
+    }
+    return null;
+};
+
+const getItemVideo = (item: any) => {
+    const video = item?.property?.videos?.[0] || item?.metadata?.videos?.[0];
+    if (video && typeof video === 'string') {
+        return video;
+    }
+    return null;
+};
+
+const getItemPhotoCount = (item: any) => {
+    if (Array.isArray(item?.property?.photos) && item.property.photos.length > 0) {
+        return item.property.photos.length;
+    }
+    if (item?.metadata?.photo && typeof item.metadata.photo === 'string' && !item.metadata.photo.includes('unsplash.com')) {
+        return 1;
+    }
+    return 0;
+};
+
+const getItemVideoCount = (item: any) => {
+    if (Array.isArray(item?.property?.videos) && item.property.videos.length > 0) {
+        return item.property.videos.length;
+    }
+    if (Array.isArray(item?.metadata?.videos) && item.metadata.videos.length > 0) {
+        return item.metadata.videos.length;
+    }
+    return 0;
+};
+
+const getItemMediaCount = (item: any) => {
+    return getItemPhotoCount(item) + getItemVideoCount(item);
 };
 
 const searchFilterQuery = ref('');
