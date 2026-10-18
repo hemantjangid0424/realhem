@@ -2,7 +2,7 @@
     <div class="space-y-12 pb-20 bg-slate-50 text-slate-800">
         <!-- 99acres Signature Hero & Search Box -->
         <section
-            class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300 overflow-hidden"
+            class="relative z-20 text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 transition-all duration-300"
             :style="{ background: heroGradient }"
         >
             <!-- Festive Hero Animation (Occasion & Festival Effects) -->
@@ -32,7 +32,7 @@
                 </p>
 
                 <!-- Floating 99acres Style Search Card -->
-                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto relative z-30">
+                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto relative z-40">
                     <!-- Tab Pills: Buy | Rent | Commercial | Plots | PG/Co-living -->
                     <div class="flex items-center gap-2 border-b border-slate-100 pb-3.5 overflow-x-auto">
                         <button
@@ -49,9 +49,9 @@
                     </div>
 
                     <!-- Search Input Bar -->
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-4 relative z-50">
                         <!-- Locality, City, Project or Builder Search Box -->
-                        <div class="md:col-span-9 relative z-40">
+                        <div class="md:col-span-9 relative">
                             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Search City, Locality, Project or Builder</label>
                             <div class="relative">
                                 <input
@@ -93,46 +93,46 @@
                                         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     </button>
                                 </div>
-                            </div>
 
-                            <!-- Autocomplete Suggestions Dropdown -->
-                            <div
-                                v-if="isSuggestionsOpen && (suggestions.length > 0 || isSuggestionsLoading)"
-                                class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 text-left animate-fadeIn max-h-[360px] overflow-y-auto divide-y divide-slate-100"
-                            >
-                                <div v-if="isSuggestionsLoading" class="p-3 text-xs text-slate-500 flex items-center gap-2 bg-slate-50">
-                                    <svg class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <span>Finding matching cities, apartments &amp; properties...</span>
-                                </div>
-
-                                <button
-                                    v-for="(item, idx) in suggestions"
-                                    :key="idx"
-                                    type="button"
-                                    @mousedown.prevent="handleSelectSuggestion(item)"
-                                    @mouseenter="activeSuggestionIndex = idx"
-                                    class="w-full px-4 py-2.5 flex items-center justify-between text-left transition cursor-pointer"
-                                    :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
+                                <!-- Autocomplete Suggestions Dropdown directly under input -->
+                                <div
+                                    v-if="isSuggestionsOpen && (suggestions.length > 0 || isSuggestionsLoading)"
+                                    class="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-[100] text-left animate-fadeIn max-h-[360px] overflow-y-auto divide-y divide-slate-100"
                                 >
-                                    <div class="flex items-center gap-3 min-w-0">
-                                        <span class="text-base shrink-0">{{ item.icon }}</span>
-                                        <div class="min-w-0">
-                                            <div class="text-xs font-bold truncate flex items-center gap-2">
-                                                <span class="truncate">{{ item.title }}</span>
-                                                <span
-                                                    class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shrink-0"
-                                                    :class="item.type === 'city' ? 'bg-indigo-100 text-indigo-700' : item.type === 'project' ? 'bg-emerald-100 text-emerald-700' : item.type === 'property' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
-                                                >
-                                                    {{ item.category }}
-                                                </span>
-                                            </div>
-                                            <div class="text-[11px] text-slate-500 truncate mt-0.5">
-                                                {{ item.subtitle }}
+                                    <div v-if="isSuggestionsLoading" class="p-3 text-xs text-slate-500 flex items-center gap-2 bg-slate-50">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span>Finding matching cities, apartments &amp; properties...</span>
+                                    </div>
+
+                                    <button
+                                        v-for="(item, idx) in suggestions"
+                                        :key="idx"
+                                        type="button"
+                                        @mousedown.prevent="handleSelectSuggestion(item)"
+                                        @mouseenter="activeSuggestionIndex = idx"
+                                        class="w-full px-4 py-2.5 flex items-center justify-between text-left transition cursor-pointer"
+                                        :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
+                                    >
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                                            <div class="min-w-0">
+                                                <div class="text-xs font-bold truncate flex items-center gap-2">
+                                                    <span class="truncate">{{ item.title }}</span>
+                                                    <span
+                                                        class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shrink-0"
+                                                        :class="item.type === 'city' ? 'bg-indigo-100 text-indigo-700' : item.type === 'project' ? 'bg-emerald-100 text-emerald-700' : item.type === 'property' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
+                                                    >
+                                                        {{ item.category }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] text-slate-500 truncate mt-0.5">
+                                                    {{ item.subtitle }}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <span class="text-[10px] text-blue-600 font-bold shrink-0 ml-2">Select &rarr;</span>
-                                </button>
+                                        <span class="text-[10px] text-blue-600 font-bold shrink-0 ml-2">Select &rarr;</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -150,7 +150,7 @@
                     </div>
 
                     <!-- Granular BHK and Budget Bar -->
-                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs relative z-10">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-slate-400 text-[11px] font-bold uppercase">BHK:</span>
                             <button
