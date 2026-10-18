@@ -9,6 +9,7 @@ use App\Models\City;
 use App\Models\Locality;
 use App\Models\Property;
 use App\Services\GooglePlacesService;
+use App\Services\ImageWatermarkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -314,20 +315,19 @@ class PropertyController extends Controller
     }
 
     /**
-     * Upload property photos to disk and return their public URLs.
-     * Accepts multipart file uploads (jpg, jpeg, webp), max 3 files, max 5 MB each.
+     * Upload property photos to disk, apply brand watermark, and return their public URLs.
+     * Accepts multipart file uploads (jpg, jpeg, webp, png), max 10 files, max 5 MB each.
      */
-    public function uploadPhotos(Request $request): JsonResponse
+    public function uploadPhotos(Request $request, ImageWatermarkService $watermarkService): JsonResponse
     {
         $request->validate([
             'photos' => ['required', 'array', 'min:1', 'max:10'],
-            'photos.*' => ['required', 'file', 'mimes:jpg,jpeg,webp', 'max:5120'],
+            'photos.*' => ['required', 'file', 'mimes:jpg,jpeg,webp,png', 'max:5120'],
         ]);
 
         $urls = [];
         foreach ($request->file('photos') as $file) {
-            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
-            $path = $file->storeAs('properties', $filename, 'public');
+            $path = $watermarkService->applyAndStore($file, 'properties', 'public');
             $urls[] = Storage::url($path);
         }
 

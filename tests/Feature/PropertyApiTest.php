@@ -385,3 +385,27 @@ test('authenticated user can post property with videos', function () {
     $fetchResponse->assertStatus(200);
     expect($fetchResponse->json('property.videos'))->toBe(['/storage/properties/videos/sample-tour.mp4']);
 });
+
+test('authenticated user can upload photos and watermark is applied', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $photo = UploadedFile::fake()->image('living_room.jpg', 800, 600);
+
+    $response = $this->actingAs($user, 'sanctum')
+        ->postJson('/api/properties/upload-photos', [
+            'photos' => [$photo],
+        ]);
+
+    $response->assertStatus(200)
+        ->assertJsonStructure(['status', 'urls']);
+
+    expect($response->json('status'))->toBe('success');
+    expect(count($response->json('urls')))->toBe(1);
+    expect($response->json('urls.0'))->toContain('/storage/properties/');
+
+    // Assert file exists in fake storage
+    $storedFiles = Storage::disk('public')->allFiles('properties');
+    expect(count($storedFiles))->toBe(1);
+});
