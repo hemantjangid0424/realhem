@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\JobPostingController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\UserActivityController;
 use App\Http\Controllers\Api\UserAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/properties/{property}', [PropertyController::class, 'update']);
     Route::patch('/properties/{property}/status', [PropertyController::class, 'updateStatus']);
     Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+
+    // User Activity Logging & History
+    Route::get('/user/activities', [UserActivityController::class, 'index']);
+    Route::post('/user/activities', [UserActivityController::class, 'store']);
+    Route::post('/user/activities/sync', [UserActivityController::class, 'sync']);
 });
 
 // Public Branding, Customization & Careers API

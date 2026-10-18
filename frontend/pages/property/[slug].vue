@@ -525,7 +525,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 
 definePageMeta({
     name: 'client.property-detail',
@@ -570,6 +570,23 @@ const { data: propertyData, status, error } = await useAsyncData(
 const property = computed(() => propertyData.value);
 const isLoading = computed(() => status.value === 'pending');
 const notFound = computed(() => (!property.value || !property.value.title) && status.value !== 'pending');
+
+const { logPropertyView } = useUserActivity();
+
+watch(
+    () => property.value,
+    (val) => {
+        if (val && val.id) {
+            logPropertyView(val);
+        }
+    }
+);
+
+onMounted(() => {
+    if (property.value && property.value.id) {
+        logPropertyView(property.value);
+    }
+});
 
 useSeoMeta({
     title: () => property.value?.title ? `${property.value.title}${property.value.locality ? ' in ' + property.value.locality : ''}${property.value.city ? ', ' + property.value.city : ''}` : 'Property Details',

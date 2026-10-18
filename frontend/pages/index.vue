@@ -208,6 +208,84 @@
             </div>
         </section>
 
+        <!-- Recently Viewed Properties (Shown when user or guest has viewed properties) -->
+        <section v-if="recentActivities.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>👁️ Recently Viewed Properties</span>
+                        <span
+                            class="text-xs font-black px-2 py-0.5 rounded-full text-white"
+                            :style="{ backgroundColor: brandPrimaryColor }"
+                        >
+                            {{ recentActivities.length }}
+                        </span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Pick up where you left off &amp; revisit properties you recently explored</p>
+                </div>
+                <router-link to="/recent-activity" class="text-xs font-bold hover:underline flex items-center gap-1" :style="{ color: brandPrimaryColor }">
+                    <span>View All History</span>
+                    <span>&rarr;</span>
+                </router-link>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <router-link
+                    v-for="act in recentActivities.slice(0, 4)"
+                    :key="act.id || act.property_id"
+                    :to="'/property/' + (act.property?.slug || act.metadata?.slug || act.property_id)"
+                    class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-lg transition flex flex-col overflow-hidden group cursor-pointer"
+                >
+                    <!-- Property Image -->
+                    <div class="h-40 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                        <img
+                            v-if="act.property?.photos?.[0] || act.metadata?.photo"
+                            :src="act.property?.photos?.[0] || act.metadata?.photo"
+                            :alt="act.property?.title || act.metadata?.title || 'Property'"
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <div v-else class="text-3xl">🏠</div>
+
+                        <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold">
+                            For {{ act.property?.property_for || act.metadata?.property_for }}
+                        </span>
+
+                        <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-blue-600/90 backdrop-blur-xs text-white text-[10px] font-bold">
+                            Recently Viewed
+                        </span>
+                    </div>
+
+                    <!-- Property Details -->
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition">
+                                {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mt-1 flex items-center gap-1 truncate">
+                                <span>📍</span>
+                                <span class="truncate">
+                                    {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-sm font-black" :style="{ color: brandPrimaryColor }">
+                                {{ (act.property?.expected_price || act.metadata?.expected_price) ? formatPriceWords(act.property?.expected_price || act.metadata?.expected_price) : 'Price on Request' }}
+                            </span>
+                            <div
+                                class="px-2.5 py-1 rounded-lg font-bold text-xs transition group-hover:opacity-90 flex items-center gap-1"
+                                :style="{ backgroundColor: brandPrimaryColor + '18', color: brandPrimaryColor }"
+                            >
+                                <span>Revisit</span>
+                                <span class="text-xs">&rarr;</span>
+                            </div>
+                        </div>
+                    </div>
+                </router-link>
+            </div>
+        </section>
+
         <!-- Handpicked Recommendations for You (as shown in 99acres) -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="flex items-center justify-between">
@@ -526,11 +604,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import FestiveHeroAnimation from '~/components/FestiveHeroAnimation.vue';
 import { isResidentialType } from '~/utils/propertyConstants';
 
 const router = useRouter();
+const { recentActivities, loadRecentActivities } = useUserActivity();
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
@@ -900,4 +979,21 @@ const trendingLocalities = [
     { name: 'Whitefield', city: 'Bangalore', avgRate: '₹ 9,100 / sq.ft', growth: '+11.8% YoY', properties: '2,800' },
     { name: 'Hinjawadi IT Corridor', city: 'Pune', avgRate: '₹ 7,300 / sq.ft', growth: '+9.4% YoY', properties: '1,950' },
 ];
+
+const handleActivityUpdated = () => {
+    loadRecentActivities();
+};
+
+onMounted(() => {
+    loadRecentActivities();
+    if (import.meta.client) {
+        window.addEventListener('realhem-activity-logged', handleActivityUpdated);
+    }
+});
+
+onUnmounted(() => {
+    if (import.meta.client) {
+        window.removeEventListener('realhem-activity-logged', handleActivityUpdated);
+    }
+});
 </script>

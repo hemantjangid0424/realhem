@@ -509,12 +509,20 @@ const handleCompleteProfile = async () => {
     }
 };
 
-const finishAuth = (user, token) => {
+const { syncGuestActivitiesToServer } = useUserActivity();
+
+const finishAuth = async (user, token) => {
     localStorage.setItem('realhem_user_token', token);
     localStorage.setItem('realhem_user', JSON.stringify(user));
     emit('authenticated', user);
     closeModal();
     step.value = 'mobile';
+
+    try {
+        await syncGuestActivitiesToServer();
+    } catch {
+        // non-blocking
+    }
 };
 </script>
 

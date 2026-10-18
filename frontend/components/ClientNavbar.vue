@@ -238,6 +238,24 @@
 
                 <!-- Right Side Actions: Post Property, User Profile, Hamburger -->
                 <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
+                    <!-- Recently Viewed Indicator Button (Visible for all when count > 0) -->
+                    <router-link
+                        v-if="recentCount > 0"
+                        to="/recent-activity"
+                        class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition cursor-pointer group shadow-2xs"
+                        :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 bg-white'"
+                        title="View Recently Viewed Properties"
+                    >
+                        <span class="text-xs group-hover:scale-110 transition-transform">👁️</span>
+                        <span class="hidden md:inline">Recent</span>
+                        <span
+                            class="px-1.5 py-0.2 rounded-full text-[10px] font-black"
+                            :class="isScrolled ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'"
+                        >
+                            {{ recentCount }}
+                        </span>
+                    </router-link>
+
                     <!-- Post Property FREE CTA -->
                     <router-link
                         to="/post-property"
@@ -318,6 +336,23 @@
                                     </router-link>
 
                                     <router-link
+                                        to="/recent-activity"
+                                        @click="isUserDropdownOpen = false"
+                                        class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                                    >
+                                        <span class="text-base">👁️</span>
+                                        <div class="flex-1 flex items-center justify-between">
+                                            <div>
+                                                <span class="block">Recently Viewed</span>
+                                                <span class="text-[10px] font-normal text-slate-400">Browsing history</span>
+                                            </div>
+                                            <span v-if="recentCount > 0" class="text-[10px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ml-2">
+                                                {{ recentCount }}
+                                            </span>
+                                        </div>
+                                    </router-link>
+
+                                    <router-link
                                         to="/post-property"
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition"
@@ -388,6 +423,7 @@ const {
     bannerLink,
 } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
+const { recentCount, loadRecentActivities } = useUserActivity();
 
 const isAuthModalOpen = ref(false);
 const currentUser = ref(null);
@@ -662,11 +698,17 @@ const closeDropdownOnOutside = () => {
     isUserDropdownOpen.value = false;
 };
 
+const handleActivityUpdated = () => {
+    loadRecentActivities();
+};
+
 onMounted(() => {
     syncCurrentUser();
+    loadRecentActivities();
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('storage', syncCurrentUser);
     window.addEventListener('click', closeDropdownOnOutside);
+    window.addEventListener('realhem-activity-logged', handleActivityUpdated);
 
     // Listen for custom open-auth-modal events dispatched anywhere in the SPA
     window.addEventListener('open-auth-modal', () => {
@@ -678,6 +720,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
     window.removeEventListener('storage', syncCurrentUser);
     window.removeEventListener('click', closeDropdownOnOutside);
+    window.removeEventListener('realhem-activity-logged', handleActivityUpdated);
 });
 </script>
 

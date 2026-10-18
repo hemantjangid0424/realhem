@@ -244,7 +244,7 @@
             <!-- ========================================== -->
             <!-- UNLOGGED STATE GATEKEEPER                  -->
             <!-- ========================================== -->
-            <div v-if="!currentUser" class="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 sm:p-12 text-center max-w-md mx-auto space-y-6">
+            <div v-if="!currentUser && activeTab !== 'activity'" class="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 sm:p-12 text-center max-w-md mx-auto space-y-6">
                 <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
@@ -297,12 +297,29 @@
 
                         <button
                             type="button"
-                            @click="activeTab = 'profile'"
+                            @click="switchTab('profile')"
                             class="py-2 px-4 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-2"
                             :class="activeTab === 'profile' ? 'text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
                             :style="activeTab === 'profile' ? { backgroundColor: brandPrimaryColor } : {}"
                         >
                             <span>👤 Edit Profile</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="switchTab('activity')"
+                            class="py-2 px-4 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-2"
+                            :class="activeTab === 'activity' ? 'text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
+                            :style="activeTab === 'activity' ? { backgroundColor: brandPrimaryColor } : {}"
+                        >
+                            <span>👁️ Recently Viewed</span>
+                            <span
+                                v-if="userActivities.length > 0"
+                                class="px-1.5 py-0.5 rounded-md text-[10px] font-black"
+                                :class="activeTab === 'activity' ? 'bg-black/20 text-white' : 'bg-slate-100 text-slate-600'"
+                            >
+                                {{ userActivities.length }}
+                            </span>
                         </button>
                     </div>
 
@@ -592,16 +609,121 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- ============================================== -->
+                <!-- TAB 3: RECENTLY VIEWED ACTIVITY                -->
+                <!-- ============================================== -->
+                <div v-else-if="activeTab === 'activity'" class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">Recently Viewed Properties</h3>
+                            <p class="text-xs text-slate-500">History of property listings you explored across RealHem.</p>
+                        </div>
+                        <router-link
+                            to="/recent-activity"
+                            class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                            <span>Dedicated Page</span>
+                            <span>&rarr;</span>
+                        </router-link>
+                    </div>
+
+                    <!-- Guest Mode Sync Banner -->
+                    <div v-if="!currentUser" class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl shrink-0">💡</span>
+                            <div>
+                                <span class="font-bold text-slate-900 block">Viewing guest browsing history</span>
+                                <p class="text-slate-600 text-[11px] mt-0.5">These properties are saved locally in your browser. Log in or create an account to sync your history across all your devices.</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="isAuthModalOpen = true"
+                            class="py-2 px-4 rounded-xl text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs hover:opacity-90 transition"
+                            :style="{ backgroundColor: brandPrimaryColor }"
+                        >
+                            Login to Sync &rarr;
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div v-if="isLoadingActivities" class="py-16 text-center space-y-3 bg-white rounded-3xl border border-slate-200">
+                        <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p class="text-xs text-slate-500 font-semibold">Loading your viewed properties...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-else-if="userActivities.length === 0" class="py-16 px-4 text-center bg-white rounded-3xl border border-slate-200 space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-2xl">
+                            👁️
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-base font-bold text-slate-800">No recently viewed properties</h3>
+                            <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                                Properties you view will automatically appear here so you can easily revisit them.
+                            </p>
+                        </div>
+                        <router-link
+                            to="/listings"
+                            class="inline-block py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition"
+                        >
+                            Browse Properties
+                        </router-link>
+                    </div>
+
+                    <!-- Activity Cards List -->
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <router-link
+                            v-for="act in userActivities"
+                            :key="act.id || act.property_id"
+                            :to="'/property/' + (act.property?.slug || act.metadata?.slug || act.property_id)"
+                            class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition overflow-hidden group flex flex-col justify-between"
+                        >
+                            <div>
+                                <div class="h-44 bg-slate-900 relative overflow-hidden">
+                                    <img
+                                        v-if="act.property?.photos?.[0] || act.metadata?.photo"
+                                        :src="act.property?.photos?.[0] || act.metadata?.photo"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                    />
+                                    <div v-else class="w-full h-full flex items-center justify-center text-3xl text-slate-500">
+                                        🏠
+                                    </div>
+                                    <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold">
+                                        For {{ act.property?.property_for || act.metadata?.property_for }}
+                                    </span>
+                                </div>
+                                <div class="p-4 space-y-1.5">
+                                    <div class="text-sm font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition">
+                                        {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
+                                    </div>
+                                    <p class="text-xs text-slate-500 line-clamp-1">
+                                        📍 {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
+                                    </p>
+                                    <div class="text-xs font-black" :style="{ color: brandPrimaryColor }">
+                                        {{ (act.property?.expected_price || act.metadata?.expected_price) ? '₹ ' + Number(act.property?.expected_price || act.metadata?.expected_price).toLocaleString('en-IN') : 'Price on Request' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                                <span>Viewed {{ new Date(act.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }}</span>
+                                <span class="text-blue-600 font-bold group-hover:underline">View Details &rarr;</span>
+                            </div>
+                        </router-link>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AuthModal from '~/components/AuthModal.vue';
 import { isResidentialType, getPropertyIntentLabel } from '~/utils/propertyConstants';
 
+const route = useRoute();
 const { companyName, brandPrimaryColor, brandAccentColor, heroGradient } = useCompanyBranding();
 
 useSeoMeta({
@@ -612,13 +734,17 @@ useSeoMeta({
 
 const currentUser = ref(null);
 const isAuthModalOpen = ref(false);
-const activeTab = ref('properties'); // 'properties' | 'profile'
+const activeTab = ref('properties'); // 'properties' | 'profile' | 'activity'
 const statusFilter = ref('all'); // 'all' | 'active' | 'sold_rented'
 
 const myProperties = ref([]);
 const isLoadingProperties = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+
+const { fetchUserActivities, getGuestActivities } = useUserActivity();
+const userActivities = ref([]);
+const isLoadingActivities = ref(false);
 
 const isSavingProfile = ref(false);
 const profileForm = ref({
@@ -1045,8 +1171,59 @@ const getStatusBadgeClass = (status) => {
     }
 };
 
+const loadActivities = async () => {
+    isLoadingActivities.value = true;
+    try {
+        const token = localStorage.getItem('realhem_user_token');
+        if (token) {
+            const res = await fetchUserActivities('view_property');
+            userActivities.value = res?.data || [];
+        } else {
+            userActivities.value = getGuestActivities();
+        }
+    } catch (err) {
+        console.warn('Failed to load activities:', err);
+        userActivities.value = getGuestActivities();
+    } finally {
+        isLoadingActivities.value = false;
+    }
+};
+
+const switchTab = (tab: string) => {
+    activeTab.value = tab;
+    if (tab === 'activity') {
+        loadActivities();
+    }
+};
+
+const handleActivityUpdated = () => {
+    loadActivities();
+};
+
+watch(() => route.query.tab, (newTab) => {
+    if (newTab) {
+        activeTab.value = String(newTab);
+        if (newTab === 'activity') {
+            loadActivities();
+        }
+    }
+});
+
 onMounted(() => {
     checkAuth();
+    if (route.query.tab) {
+        activeTab.value = String(route.query.tab);
+    }
+    loadActivities();
+    if (import.meta.client) {
+        window.addEventListener('realhem-activity-logged', handleActivityUpdated);
+    }
+});
+
+onUnmounted(() => {
+    if (import.meta.client) {
+        window.removeEventListener('realhem-activity-logged', handleActivityUpdated);
+    }
 });
 </script>
 

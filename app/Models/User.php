@@ -45,6 +45,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the activities performed by the user.
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(UserActivity::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
