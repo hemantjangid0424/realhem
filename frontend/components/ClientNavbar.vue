@@ -725,7 +725,10 @@ const closeDropdownOnOutside = () => {
     isUserDropdownOpen.value = false;
 };
 
-const handleActivityUpdated = () => {
+const handleActivityUpdated = (e) => {
+    if (e?.detail?.type === 'shortlist_added' || e?.detail?.type === 'shortlist_removed') {
+        return;
+    }
     loadAllActivities();
 };
 

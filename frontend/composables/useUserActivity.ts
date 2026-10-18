@@ -28,6 +28,7 @@ const GUEST_SEARCHES_KEY = 'realhem_guest_searches';
 const GUEST_SHORTLIST_KEY = 'realhem_guest_shortlist';
 const GUEST_CONTACTED_KEY = 'realhem_guest_contacted';
 const MAX_GUEST_ITEMS = 50;
+const pendingShortlistToggles = new Set<number>();
 
 export function useUserActivity() {
   const recentActivities = useState<ActivityRecord[]>('realhem_recent_activities', () => []);
@@ -84,10 +85,12 @@ export function useUserActivity() {
   /**
    * Check if a property is in the shortlist
    */
-  const isShortlisted = (propertyId?: number): boolean => {
+  const isShortlisted = (propertyId?: number | string): boolean => {
     if (!propertyId) return false;
+    const numId = Number(propertyId);
+    if (!numId) return false;
     return shortlistedProperties.value.some(
-      (item) => item.property_id === propertyId || item.property?.id === propertyId
+      (item) => Number(item.property_id) === numId || Number(item.property?.id) === numId
     );
   };
 
@@ -220,84 +223,100 @@ export function useUserActivity() {
    * Toggle Shortlist / Favourite
    */
   const toggleShortlist = async (property: any): Promise<boolean> => {
-    if (!import.meta.client || !property || !property.id) return false;
+    if (!import.meta.client || !property) return false;
 
-    const propId = property.id;
-    const currentlyShortlisted = isShortlisted(propId);
+    const propId = Number(property.id || property.property_id);
+    if (!propId) return false;
 
-    if (currentlyShortlisted) {
-      // Remove
-      shortlistedProperties.value = shortlistedProperties.value.filter(
-        (item) => item.property_id !== propId && item.property?.id !== propId
-      );
-      if (!isAuthenticated()) {
+    if (pendingShortlistToggles.has(propId)) {
+      return isShortlisted(propId);
+    }
+    pendingShortlistToggles.add(propId);
+
+    try {
+      const currentlyShortlisted = isShortlisted(propId);
+
+      if (currentlyShortlisted) {
+        // Remove locally from reactive state
+        shortlistedProperties.value = shortlistedProperties.value.filter(
+          (item) => Number(item.property_id) !== propId && Number(item.property?.id) !== propId
+        );
+        // Remove from guest localStorage
         const local = getGuestShortlist().filter(
-          (item) => item.property_id !== propId && item.property?.id !== propId
+          (item) => Number(item.property_id) !== propId && Number(item.property?.id) !== propId
         );
         setLocalList(GUEST_SHORTLIST_KEY, local);
-      } else {
-        try {
-          const { post } = useApi();
-          await post('/api/user/activities/shortlist', { property_id: propId });
-        } catch (err) {
-          console.warn('Failed to toggle shortlist on server:', err);
+
+        if (isAuthenticated()) {
+          try {
+            const { post } = useApi();
+            await post('/api/user/activities/shortlist', { property_id: propId });
+          } catch (err) {
+            console.warn('Failed to toggle shortlist on server:', err);
+          }
         }
+
+        dispatchActivityEvent({ type: 'shortlist_removed', propertyId: propId });
+        return false;
       }
-      dispatchActivityEvent({ type: 'shortlist_removed', propertyId: propId });
-      return false;
-    }
 
-    // Add
-    const activityItem: ActivityRecord = {
-      property_id: propId,
-      activity_type: 'shortlist',
-      property: {
-        id: property.id,
-        slug: property.slug,
-        title: property.title,
-        property_type: property.property_type,
-        property_for: property.property_for,
-        city: property.city,
-        locality: property.locality,
-        expected_price: property.expected_price,
-        carpet_area: property.carpet_area,
-        photos: property.photos || [],
-      },
-      metadata: {
-        slug: property.slug,
-        title: property.title,
-        property_type: property.property_type,
-        property_for: property.property_for,
-        city: property.city,
-        locality: property.locality,
-        expected_price: property.expected_price,
-        carpet_area: property.carpet_area,
-        photo: property.photos && property.photos.length > 0 ? property.photos[0] : null,
-      },
-      created_at: new Date().toISOString(),
-    };
+      // Add
+      const activityItem: ActivityRecord = {
+        property_id: propId,
+        activity_type: 'shortlist',
+        property: {
+          id: propId,
+          slug: property.slug,
+          title: property.title,
+          property_type: property.property_type,
+          property_for: property.property_for,
+          city: property.city,
+          locality: property.locality,
+          expected_price: property.expected_price,
+          carpet_area: property.carpet_area,
+          photos: property.photos || [],
+        },
+        metadata: {
+          slug: property.slug,
+          title: property.title,
+          property_type: property.property_type,
+          property_for: property.property_for,
+          city: property.city,
+          locality: property.locality,
+          expected_price: property.expected_price,
+          carpet_area: property.carpet_area,
+          photo: property.photos && property.photos.length > 0 ? property.photos[0] : null,
+        },
+        created_at: new Date().toISOString(),
+      };
 
-    shortlistedProperties.value = [activityItem, ...shortlistedProperties.value];
-    dispatchActivityEvent({ type: 'shortlist_added', property });
+      const existingWithoutThis = shortlistedProperties.value.filter(
+        (item) => Number(item.property_id) !== propId && Number(item.property?.id) !== propId
+      );
+      shortlistedProperties.value = [activityItem, ...existingWithoutThis];
 
-    if (isAuthenticated()) {
-      try {
-        const { post } = useApi();
-        await post('/api/user/activities/shortlist', {
-          property_id: propId,
-          metadata: activityItem.metadata,
-        });
-      } catch (err) {
-        console.warn('Failed to shortlist on server:', err);
-      }
-    } else {
       const local = getGuestShortlist().filter(
-        (item) => item.property_id !== propId && item.property?.id !== propId
+        (item) => Number(item.property_id) !== propId && Number(item.property?.id) !== propId
       );
       setLocalList(GUEST_SHORTLIST_KEY, [activityItem, ...local]);
-    }
 
-    return true;
+      if (isAuthenticated()) {
+        try {
+          const { post } = useApi();
+          await post('/api/user/activities/shortlist', {
+            property_id: propId,
+            metadata: activityItem.metadata,
+          });
+        } catch (err) {
+          console.warn('Failed to shortlist on server:', err);
+        }
+      }
+
+      dispatchActivityEvent({ type: 'shortlist_added', propertyId: propId, property });
+      return true;
+    } finally {
+      pendingShortlistToggles.delete(propId);
+    }
   };
 
   /**

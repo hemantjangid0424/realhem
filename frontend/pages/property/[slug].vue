@@ -37,15 +37,15 @@
                 </nav>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button
-                        type="button"
-                        @click="toggleShortlist(property)"
-                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                        :class="isShortlisted(property?.id) ? 'bg-rose-50 border-rose-300 text-rose-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
-                    >
-                        <span>{{ isShortlisted(property?.id) ? '❤️' : '🤍' }}</span>
-                        <span>{{ isShortlisted(property?.id) ? 'Shortlisted' : 'Shortlist' }}</span>
-                    </button>
+                    <ShortlistButton
+                        :property="property"
+                        :propertyId="property.id"
+                        variant="button"
+                        size="md"
+                        defaultText="Shortlist"
+                        savedText="Shortlisted"
+                        :showFloatingToast="true"
+                    />
 
                     <button
                         type="button"
@@ -100,12 +100,17 @@
                             </span>
                         </div>
 
-                        <!-- For Sale / Rent badge -->
-                        <div class="absolute top-3 right-3 z-10">
+                        <!-- For Sale / Rent badge & Hero Shortlist Heart -->
+                        <div class="absolute top-3 right-3 z-30 flex items-center gap-2">
                             <span :class="property.property_for === PROPERTY_FOR.SELL ? 'bg-emerald-600/90 text-white' : 'bg-orange-500/90 text-white'"
-                                class="px-2.5 py-1 rounded-xl font-black text-[11px] uppercase tracking-wide backdrop-blur-sm">
+                                class="px-2.5 py-1 rounded-xl font-black text-[11px] uppercase tracking-wide backdrop-blur-sm shadow-sm">
                                 For {{ getPropertyIntentLabel(property.property_for) }}
                             </span>
+                            <ShortlistButton
+                                :property="property"
+                                :propertyId="property.id"
+                                size="md"
+                            />
                         </div>
 
                         <!-- Photo navigation arrows (only when >1 photo) -->
@@ -312,10 +317,11 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button @click="copyLink" class="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-300 transition cursor-pointer" title="Copy link">
+                        <button @click="copyLink" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs" title="Share property link">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <span>Share</span>
                         </button>
-                        <span v-if="copied" class="text-[11px] text-emerald-600 font-bold">Copied!</span>
+                        <span v-if="copied" class="text-[11px] text-emerald-600 font-bold">✓ Copied!</span>
                     </div>
                 </div>
             </div>
@@ -593,7 +599,7 @@ const property = computed(() => propertyData.value);
 const isLoading = computed(() => status.value === 'pending');
 const notFound = computed(() => (!property.value || !property.value.title) && status.value !== 'pending');
 
-const { logPropertyView, toggleShortlist, isShortlisted, logContacted } = useUserActivity();
+const { logPropertyView, logContacted } = useUserActivity();
 
 const handleContactClick = (type = 'phone') => {
     showContactModal.value = true;

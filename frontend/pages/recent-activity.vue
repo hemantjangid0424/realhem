@@ -57,9 +57,8 @@
                 <button
                     type="button"
                     @click="activeModule = 'searches'"
-                    class="py-4 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                    :class="activeModule === 'searches' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900 border-b-2 border-transparent'"
-                    :style="activeModule === 'searches' ? { borderBottomColor: brandPrimaryColor } : {}"
+                    class="py-4 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                    :class="activeModule === 'searches' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-600 hover:text-slate-900 border-b-[3px] border-transparent'"
                 >
                     <span>{{ searchCount }} Recent Searches</span>
                 </button>
@@ -68,20 +67,18 @@
                 <button
                     type="button"
                     @click="activeModule = 'viewed'"
-                    class="py-4 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                    :class="activeModule === 'viewed' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900 border-b-2 border-transparent'"
-                    :style="activeModule === 'viewed' ? { borderBottomColor: brandPrimaryColor } : {}"
+                    class="py-4 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                    :class="activeModule === 'viewed' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-600 hover:text-slate-900 border-b-[3px] border-transparent'"
                 >
                     <span>{{ viewedCount }} Viewed</span>
                 </button>
 
-                <!-- 3. Shortlisted (Favourite) -->
+                <!-- 3. Shortlisted -->
                 <button
                     type="button"
                     @click="activeModule = 'shortlisted'"
-                    class="py-4 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                    :class="activeModule === 'shortlisted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900 border-b-2 border-transparent'"
-                    :style="activeModule === 'shortlisted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                    class="py-4 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                    :class="activeModule === 'shortlisted' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-600 hover:text-slate-900 border-b-[3px] border-transparent'"
                 >
                     <span>{{ shortlistCount }} Shortlisted</span>
                 </button>
@@ -90,9 +87,8 @@
                 <button
                     type="button"
                     @click="activeModule = 'contacted'"
-                    class="py-4 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                    :class="activeModule === 'contacted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900 border-b-2 border-transparent'"
-                    :style="activeModule === 'contacted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                    class="py-4 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                    :class="activeModule === 'contacted' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-600 hover:text-slate-900 border-b-[3px] border-transparent'"
                 >
                     <span>{{ contactedCount }} Contacted</span>
                 </button>
@@ -320,17 +316,12 @@
                                 </div>
 
                                 <!-- Action Buttons: Shortlist Heart & Remove ✕ -->
-                                <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20">
-                                    <button
-                                        type="button"
-                                        @click.prevent.stop="toggleShortlist(act.property || { id: act.property_id, ...act.metadata })"
-                                        class="w-7 h-7 rounded-full bg-white/90 hover:bg-white text-xs flex items-center justify-center shadow-md transition cursor-pointer"
-                                        :title="isShortlisted(act.property_id || act.property?.id) ? 'Remove from Shortlist' : 'Add to Shortlist'"
-                                    >
-                                        <span :class="isShortlisted(act.property_id || act.property?.id) ? 'text-rose-500 text-sm' : 'text-slate-400 text-sm'">
-                                            {{ isShortlisted(act.property_id || act.property?.id) ? '❤️' : '🤍' }}
-                                        </span>
-                                    </button>
+                                <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-30" @click.stop.prevent>
+                                    <ShortlistButton
+                                        :property="act.property || { id: act.property_id, ...act.metadata }"
+                                        :propertyId="act.property_id || act.property?.id"
+                                        size="sm"
+                                    />
 
                                     <button
                                         type="button"
@@ -387,13 +378,13 @@
                     v-if="shortlistedProperties.length === 0"
                     class="py-16 px-4 text-center bg-white rounded-3xl border border-slate-200 space-y-4"
                 >
-                    <div class="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto text-3xl">
-                        ❤️
+                    <div class="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-sm">
+                        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </div>
                     <div class="space-y-1 max-w-md mx-auto">
                         <h3 class="text-base font-black text-slate-900">No Shortlisted Properties</h3>
                         <p class="text-xs text-slate-500">
-                            Click the heart icon on any property listing to save it to your shortlist for fast access and side-by-side comparison.
+                            Click the favourite heart on any property listing to save it to your shortlist for fast access and side-by-side comparison.
                         </p>
                     </div>
                     <router-link
@@ -425,20 +416,20 @@
                                 />
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
-                                    <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                        <span>❤️</span> Shortlisted
+                                    <span class="px-2.5 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        <span>Favourited</span>
                                     </span>
                                 </div>
 
                                 <!-- Un-shortlist Button -->
-                                <button
-                                    type="button"
-                                    @click.prevent.stop="toggleShortlist(item.property || { id: item.property_id, ...item.metadata })"
-                                    class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white text-rose-600 text-sm flex items-center justify-center shadow-md hover:bg-rose-50 transition cursor-pointer z-20"
-                                    title="Remove from Shortlist"
-                                >
-                                    ❤️
-                                </button>
+                                <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
+                                    <ShortlistButton
+                                        :property="item.property || { id: item.property_id, ...item.metadata }"
+                                        :propertyId="item.property_id || item.property?.id"
+                                        size="sm"
+                                    />
+                                </div>
 
                                 <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between z-10">
                                     <span class="text-white font-black text-sm">
@@ -755,7 +746,10 @@ const handleClearCurrentModule = async () => {
     }
 };
 
-const handleActivityUpdated = () => {
+const handleActivityUpdated = (e) => {
+    if (e?.detail?.type === 'shortlist_added' || e?.detail?.type === 'shortlist_removed') {
+        return;
+    }
     loadAllActivities();
 };
 

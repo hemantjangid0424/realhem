@@ -221,9 +221,8 @@
                         <button
                             type="button"
                             @click="homeActivityTab = 'searches'"
-                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                            :class="homeActivityTab === 'searches' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
-                            :style="homeActivityTab === 'searches' ? { borderBottomColor: brandPrimaryColor } : {}"
+                            class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'searches' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-500 hover:text-slate-800 border-b-[3px] border-transparent'"
                         >
                             {{ searchCount }} Recent Searches
                         </button>
@@ -232,9 +231,8 @@
                         <button
                             type="button"
                             @click="homeActivityTab = 'viewed'"
-                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                            :class="homeActivityTab === 'viewed' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
-                            :style="homeActivityTab === 'viewed' ? { borderBottomColor: brandPrimaryColor } : {}"
+                            class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'viewed' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-500 hover:text-slate-800 border-b-[3px] border-transparent'"
                         >
                             {{ viewedCount }} Viewed
                         </button>
@@ -243,21 +241,18 @@
                         <button
                             type="button"
                             @click="homeActivityTab = 'shortlisted'"
-                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                            :class="homeActivityTab === 'shortlisted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
-                            :style="homeActivityTab === 'shortlisted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                            class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'shortlisted' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-500 hover:text-slate-800 border-b-[3px] border-transparent'"
                         >
                             {{ shortlistCount }} Shortlisted
                         </button>
 
-                        <!-- Contacted (if any) -->
+                        <!-- Contacted -->
                         <button
-                            v-if="contactedCount > 0"
                             type="button"
                             @click="homeActivityTab = 'contacted'"
-                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
-                            :class="homeActivityTab === 'contacted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
-                            :style="homeActivityTab === 'contacted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                            class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'contacted' ? 'text-[#091e42] border-b-[3px] border-[#0066cc]' : 'text-slate-500 hover:text-slate-800 border-b-[3px] border-transparent'"
                         >
                             {{ contactedCount }} Contacted
                         </button>
@@ -335,14 +330,13 @@
                                 />
                                 <div v-else class="text-2xl">🏠</div>
 
-                                <button
-                                    type="button"
-                                    @click.prevent.stop="toggleShortlist(act.property || { id: act.property_id, ...act.metadata })"
-                                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-xs flex items-center justify-center shadow-md transition cursor-pointer z-10"
-                                    :title="isShortlisted(act.property_id || act.property?.id) ? 'Remove Shortlist' : 'Add to Shortlist'"
-                                >
-                                    <span>{{ isShortlisted(act.property_id || act.property?.id) ? '❤️' : '🤍' }}</span>
-                                </button>
+                                <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
+                                    <ShortlistButton
+                                        :property="act.property || { id: act.property_id, ...act.metadata }"
+                                        :propertyId="act.property_id || act.property?.id"
+                                        size="sm"
+                                    />
+                                </div>
 
                                 <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold">
                                     For {{ act.property?.property_for || act.metadata?.property_for }}
@@ -372,8 +366,10 @@
                 <!-- 3. Shortlisted (Favourite) Tab Content -->
                 <div v-else-if="homeActivityTab === 'shortlisted'">
                     <div v-if="shortlistedProperties.length === 0" class="py-10 text-center text-xs text-slate-500 font-semibold space-y-2">
-                        <div class="text-2xl">❤️</div>
-                        <p>No shortlisted properties yet. Click the heart icon on any property to save it here.</p>
+                        <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-xs">
+                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        </div>
+                        <p>No favourite properties saved yet. Click the heart icon on any property to save it here.</p>
                     </div>
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <router-link
@@ -389,14 +385,13 @@
                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                 />
 
-                                <button
-                                    type="button"
-                                    @click.prevent.stop="toggleShortlist(item.property || { id: item.property_id, ...item.metadata })"
-                                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white text-rose-600 text-xs flex items-center justify-center shadow-md cursor-pointer z-10"
-                                    title="Remove from Shortlist"
-                                >
-                                    ❤️
-                                </button>
+                                <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
+                                    <ShortlistButton
+                                        :property="item.property || { id: item.property_id, ...item.metadata }"
+                                        :propertyId="item.property_id || item.property?.id"
+                                        size="sm"
+                                    />
+                                </div>
                             </div>
 
                             <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
@@ -505,23 +500,16 @@
                             </span>
                         </div>
 
-                        <!-- Shortlist Heart Button -->
-                        <button
-                            type="button"
-                            @click.prevent.stop="toggleShortlist({ id: prop.id, title: prop.title, slug: prop.slug, property_type: prop.category, expected_price: prop.price, photos: prop.photos, locality: prop.locality, city: prop.city, carpet_area: prop.area })"
-                            class="absolute top-3 right-14 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-xs flex items-center justify-center shadow-md transition cursor-pointer z-20"
-                            :title="isShortlisted(prop.id) ? 'Remove from Shortlist' : 'Add to Shortlist'"
-                        >
-                            <span :class="isShortlisted(prop.id) ? 'text-rose-500 text-sm' : 'text-slate-400 text-sm'">
-                                {{ isShortlisted(prop.id) ? '❤️' : '🤍' }}
-                            </span>
-                        </button>
+                        <!-- Custom Heart Shortlist Button (Top Right Corner) -->
+                        <div class="absolute top-3 right-3 z-30" @click.stop.prevent>
+                            <ShortlistButton
+                                :property="{ id: prop.id, title: prop.title, slug: prop.slug, property_type: prop.category, expected_price: prop.price, photos: prop.photos, locality: prop.locality, city: prop.city, carpet_area: prop.area }"
+                                :propertyId="prop.id"
+                                size="sm"
+                            />
+                        </div>
 
-                        <span class="absolute top-3 right-3 bg-slate-950/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-20">
-                            📷 {{ prop.photosCount }}
-                        </span>
-
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between z-10">
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between z-10">
                             <span class="text-white font-extrabold text-sm">
                                 <template v-if="isResidentialType(prop.category) && prop.bedrooms > 0">
                                     {{ prop.bedrooms }} BHK
@@ -530,7 +518,12 @@
                                     {{ prop.category }}
                                 </template>
                             </span>
-                            <span class="text-slate-300 text-[11px] font-medium">{{ prop.area }} sq.ft</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-300 text-[11px] font-medium">{{ prop.area }} sq.ft</span>
+                                <span class="bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                    📷 {{ prop.photosCount }}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -1202,7 +1195,10 @@ const trendingLocalities = [
     { name: 'Hinjawadi IT Corridor', city: 'Pune', avgRate: '₹ 7,300 / sq.ft', growth: '+9.4% YoY', properties: '1,950' },
 ];
 
-const handleActivityUpdated = () => {
+const handleActivityUpdated = (e) => {
+    if (e?.detail?.type === 'shortlist_added' || e?.detail?.type === 'shortlist_removed') {
+        return;
+    }
     loadAllActivities();
 };
 

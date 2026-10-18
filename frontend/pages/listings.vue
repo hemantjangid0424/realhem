@@ -561,9 +561,18 @@
                             </div>
 
                             <!-- Top Right New Booking Ribbon -->
-                            <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
+                            <span v-if="item.isNewBooking" class="absolute top-2.5 right-11 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
                                 NEW BOOKING
                             </span>
+
+                            <!-- Shortlist Button at Top Right -->
+                            <div class="absolute top-2.5 right-2.5 z-30" @click.stop.prevent>
+                                <ShortlistButton
+                                    :property="item"
+                                    :propertyId="item.id"
+                                    size="sm"
+                                />
+                            </div>
 
                             <!-- Bottom Tag & Image count -->
                             <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">

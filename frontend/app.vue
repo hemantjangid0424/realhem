@@ -1,5 +1,16 @@
 <template>
   <div>
+    <!-- Global SVG Gradient Definitions for Shortlist Heart Icon -->
+    <svg aria-hidden="true" class="absolute w-0 h-0 overflow-hidden pointer-events-none" style="position: absolute; width: 0; height: 0;">
+      <defs>
+        <linearGradient id="realhem-heart-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff3366" />
+          <stop offset="45%" stop-color="#f43f5e" />
+          <stop offset="100%" stop-color="#be123c" />
+        </linearGradient>
+      </defs>
+    </svg>
+
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

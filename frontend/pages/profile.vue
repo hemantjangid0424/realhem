@@ -1196,7 +1196,10 @@ const switchTab = (tab: string) => {
     }
 };
 
-const handleActivityUpdated = () => {
+const handleActivityUpdated = (e: any) => {
+    if (e?.detail?.type === 'shortlist_added' || e?.detail?.type === 'shortlist_removed') {
+        return;
+    }
     loadActivities();
 };
 
