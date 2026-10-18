@@ -208,81 +208,240 @@
             </div>
         </section>
 
-        <!-- Recently Viewed Properties (Shown when user or guest has viewed properties) -->
-        <section v-if="recentActivities.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>👁️ Recently Viewed Properties</span>
-                        <span
-                            class="text-xs font-black px-2 py-0.5 rounded-full text-white"
-                            :style="{ backgroundColor: brandPrimaryColor }"
+        <!-- Recent Activity Modules on Homepage: Recent Searches | Viewed | Shortlisted -->
+        <section
+            v-if="recentSearches.length > 0 || recentActivities.length > 0 || shortlistedProperties.length > 0"
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
+        >
+            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-6 space-y-5">
+                <!-- Tab Bar matching 99acres style from screenshot -->
+                <div class="flex items-center justify-between border-b border-slate-200 pb-0 gap-4 flex-wrap">
+                    <div class="flex items-center gap-6 sm:gap-10 overflow-x-auto scrollbar-none">
+                        <!-- Recent Searches -->
+                        <button
+                            type="button"
+                            @click="homeActivityTab = 'searches'"
+                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'searches' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
+                            :style="homeActivityTab === 'searches' ? { borderBottomColor: brandPrimaryColor } : {}"
                         >
-                            {{ recentActivities.length }}
-                        </span>
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Pick up where you left off &amp; revisit properties you recently explored</p>
-                </div>
-                <router-link to="/recent-activity" class="text-xs font-bold hover:underline flex items-center gap-1" :style="{ color: brandPrimaryColor }">
-                    <span>View All History</span>
-                    <span>&rarr;</span>
-                </router-link>
-            </div>
+                            {{ searchCount }} Recent Searches
+                        </button>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <router-link
-                    v-for="act in recentActivities.slice(0, 4)"
-                    :key="act.id || act.property_id"
-                    :to="'/property/' + (act.property?.slug || act.metadata?.slug || act.property_id)"
-                    class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-lg transition flex flex-col overflow-hidden group cursor-pointer"
-                >
-                    <!-- Property Image -->
-                    <div class="h-40 bg-slate-800 relative flex items-center justify-center overflow-hidden">
-                        <img
-                            v-if="act.property?.photos?.[0] || act.metadata?.photo"
-                            :src="act.property?.photos?.[0] || act.metadata?.photo"
-                            :alt="act.property?.title || act.metadata?.title || 'Property'"
-                            class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
-                        <div v-else class="text-3xl">🏠</div>
+                        <!-- Viewed -->
+                        <button
+                            type="button"
+                            @click="homeActivityTab = 'viewed'"
+                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'viewed' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
+                            :style="homeActivityTab === 'viewed' ? { borderBottomColor: brandPrimaryColor } : {}"
+                        >
+                            {{ viewedCount }} Viewed
+                        </button>
 
-                        <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold">
-                            For {{ act.property?.property_for || act.metadata?.property_for }}
-                        </span>
+                        <!-- Shortlisted -->
+                        <button
+                            type="button"
+                            @click="homeActivityTab = 'shortlisted'"
+                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'shortlisted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
+                            :style="homeActivityTab === 'shortlisted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                        >
+                            {{ shortlistCount }} Shortlisted
+                        </button>
 
-                        <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-blue-600/90 backdrop-blur-xs text-white text-[10px] font-bold">
-                            Recently Viewed
-                        </span>
+                        <!-- Contacted (if any) -->
+                        <button
+                            v-if="contactedCount > 0"
+                            type="button"
+                            @click="homeActivityTab = 'contacted'"
+                            class="pb-3 text-xs sm:text-sm font-extrabold whitespace-nowrap transition cursor-pointer relative"
+                            :class="homeActivityTab === 'contacted' ? 'text-slate-900 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'"
+                            :style="homeActivityTab === 'contacted' ? { borderBottomColor: brandPrimaryColor } : {}"
+                        >
+                            {{ contactedCount }} Contacted
+                        </button>
                     </div>
 
-                    <!-- Property Details -->
-                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                        <div>
-                            <h3 class="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition">
-                                {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
-                            </h3>
-                            <p class="text-[11px] text-slate-500 mt-1 flex items-center gap-1 truncate">
-                                <span>📍</span>
-                                <span class="truncate">
-                                    {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
-                                </span>
-                            </p>
-                        </div>
+                    <router-link
+                        :to="`/recent-activity?tab=${homeActivityTab}`"
+                        class="pb-3 text-xs font-bold hover:underline flex items-center gap-1 shrink-0"
+                        :style="{ color: brandPrimaryColor }"
+                    >
+                        <span>View All &rarr;</span>
+                    </router-link>
+                </div>
 
-                        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <span class="text-sm font-black" :style="{ color: brandPrimaryColor }">
-                                {{ (act.property?.expected_price || act.metadata?.expected_price) ? formatPriceWords(act.property?.expected_price || act.metadata?.expected_price) : 'Price on Request' }}
-                            </span>
-                            <div
-                                class="px-2.5 py-1 rounded-lg font-bold text-xs transition group-hover:opacity-90 flex items-center gap-1"
-                                :style="{ backgroundColor: brandPrimaryColor + '18', color: brandPrimaryColor }"
-                            >
-                                <span>Revisit</span>
-                                <span class="text-xs">&rarr;</span>
+                <!-- 1. Recent Searches Tab Content -->
+                <div v-if="homeActivityTab === 'searches'">
+                    <div v-if="recentSearches.length === 0" class="py-10 text-center text-xs text-slate-500 font-semibold">
+                        No recent searches saved yet. Search any property to see your search history here.
+                    </div>
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div
+                            v-for="(s, sIdx) in recentSearches.slice(0, 4)"
+                            :key="s.id || sIdx"
+                            class="bg-slate-50/80 hover:bg-white rounded-2xl border border-slate-200/90 p-4 transition hover:shadow-md flex flex-col justify-between"
+                        >
+                            <div class="space-y-2">
+                                <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                                    {{ s.metadata?.property_for || 'BUY' }} SEARCH
+                                </span>
+                                <h4 class="text-xs font-black text-slate-900 line-clamp-2">
+                                    {{ s.metadata?.title || s.metadata?.keyword || 'Property Search' }}
+                                </h4>
+                                <div class="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-600">
+                                    <span v-if="s.metadata?.city" class="bg-white px-2 py-0.5 rounded border border-slate-200">
+                                        📍 {{ s.metadata?.city }}
+                                    </span>
+                                    <span v-if="s.metadata?.bhk" class="bg-white px-2 py-0.5 rounded border border-slate-200">
+                                        🛏️ {{ s.metadata?.bhk }} BHK
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-end">
+                                <button
+                                    type="button"
+                                    @click="replaySearch(s)"
+                                    class="text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                                    :style="{ color: brandPrimaryColor }"
+                                >
+                                    <span>Search Again</span>
+                                    <span>&rarr;</span>
+                                </button>
                             </div>
                         </div>
                     </div>
-                </router-link>
+                </div>
+
+                <!-- 2. Viewed Properties Tab Content -->
+                <div v-else-if="homeActivityTab === 'viewed'">
+                    <div v-if="recentActivities.length === 0" class="py-10 text-center text-xs text-slate-500 font-semibold">
+                        No viewed properties yet. Browse properties to see them here.
+                    </div>
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <router-link
+                            v-for="act in recentActivities.slice(0, 4)"
+                            :key="act.id || act.property_id"
+                            :to="'/property/' + (act.property?.slug || act.metadata?.slug || act.property_id)"
+                            class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
+                        >
+                            <div class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                                <img
+                                    v-if="act.property?.photos?.[0] || act.metadata?.photo"
+                                    :src="act.property?.photos?.[0] || act.metadata?.photo"
+                                    :alt="act.property?.title || act.metadata?.title"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                />
+                                <div v-else class="text-2xl">🏠</div>
+
+                                <button
+                                    type="button"
+                                    @click.prevent.stop="toggleShortlist(act.property || { id: act.property_id, ...act.metadata })"
+                                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-xs flex items-center justify-center shadow-md transition cursor-pointer z-10"
+                                    :title="isShortlisted(act.property_id || act.property?.id) ? 'Remove Shortlist' : 'Add to Shortlist'"
+                                >
+                                    <span>{{ isShortlisted(act.property_id || act.property?.id) ? '❤️' : '🤍' }}</span>
+                                </button>
+
+                                <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold">
+                                    For {{ act.property?.property_for || act.metadata?.property_for }}
+                                </span>
+                            </div>
+
+                            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-blue-600 transition">
+                                        {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
+                                    </h4>
+                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate">
+                                        📍 {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
+                                    </p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-xs font-black" :style="{ color: brandPrimaryColor }">
+                                        {{ (act.property?.expected_price || act.metadata?.expected_price) ? formatPriceWords(act.property?.expected_price || act.metadata?.expected_price) : 'Price on Request' }}
+                                    </span>
+                                    <span class="text-[11px] font-bold text-blue-600 group-hover:underline">Revisit &rarr;</span>
+                                </div>
+                            </div>
+                        </router-link>
+                    </div>
+                </div>
+
+                <!-- 3. Shortlisted (Favourite) Tab Content -->
+                <div v-else-if="homeActivityTab === 'shortlisted'">
+                    <div v-if="shortlistedProperties.length === 0" class="py-10 text-center text-xs text-slate-500 font-semibold space-y-2">
+                        <div class="text-2xl">❤️</div>
+                        <p>No shortlisted properties yet. Click the heart icon on any property to save it here.</p>
+                    </div>
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <router-link
+                            v-for="item in shortlistedProperties.slice(0, 4)"
+                            :key="item.id || item.property_id"
+                            :to="'/property/' + (item.property?.slug || item.metadata?.slug || item.property_id)"
+                            class="bg-white rounded-2xl border border-rose-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
+                        >
+                            <div class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                                <img
+                                    :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
+                                    :alt="item.property?.title || item.metadata?.title"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                />
+
+                                <button
+                                    type="button"
+                                    @click.prevent.stop="toggleShortlist(item.property || { id: item.property_id, ...item.metadata })"
+                                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white text-rose-600 text-xs flex items-center justify-center shadow-md cursor-pointer z-10"
+                                    title="Remove from Shortlist"
+                                >
+                                    ❤️
+                                </button>
+                            </div>
+
+                            <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-rose-600 transition">
+                                        {{ item.property?.title || item.metadata?.title || 'Shortlisted Property' }}
+                                    </h4>
+                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate">
+                                        📍 {{ item.property?.locality || item.metadata?.locality || '' }}{{ (item.property?.city || item.metadata?.city) ? ', ' + (item.property?.city || item.metadata?.city) : '' }}
+                                    </p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-xs font-black text-rose-600">
+                                        {{ (item.property?.expected_price || item.metadata?.expected_price) ? formatPriceWords(item.property?.expected_price || item.metadata?.expected_price) : 'Price on Request' }}
+                                    </span>
+                                    <span class="text-[11px] font-bold text-rose-600 group-hover:underline">View &rarr;</span>
+                                </div>
+                            </div>
+                        </router-link>
+                    </div>
+                </div>
+
+                <!-- 4. Contacted Tab Content -->
+                <div v-else-if="homeActivityTab === 'contacted'">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <router-link
+                            v-for="c in contactedProperties.slice(0, 4)"
+                            :key="c.id || c.property_id"
+                            :to="'/property/' + (c.property?.slug || c.metadata?.slug || c.property_id)"
+                            class="bg-white rounded-2xl border border-emerald-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer"
+                        >
+                            <div class="p-4 space-y-2">
+                                <span class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                                    Contacted
+                                </span>
+                                <h4 class="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-emerald-700">
+                                    {{ c.property?.title || c.metadata?.title || 'Contacted Property' }}
+                                </h4>
+                                <span class="text-xs font-black text-emerald-700 block">
+                                    {{ (c.property?.expected_price || c.metadata?.expected_price) ? formatPriceWords(c.property?.expected_price || c.metadata?.expected_price) : 'Price on Request' }}
+                                </span>
+                            </div>
+                        </router-link>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -345,6 +504,19 @@
                                 {{ prop.badge }}
                             </span>
                         </div>
+
+                        <!-- Shortlist Heart Button -->
+                        <button
+                            type="button"
+                            @click.prevent.stop="toggleShortlist({ id: prop.id, title: prop.title, slug: prop.slug, property_type: prop.category, expected_price: prop.price, photos: prop.photos, locality: prop.locality, city: prop.city, carpet_area: prop.area })"
+                            class="absolute top-3 right-14 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-xs flex items-center justify-center shadow-md transition cursor-pointer z-20"
+                            :title="isShortlisted(prop.id) ? 'Remove from Shortlist' : 'Add to Shortlist'"
+                        >
+                            <span :class="isShortlisted(prop.id) ? 'text-rose-500 text-sm' : 'text-slate-400 text-sm'">
+                                {{ isShortlisted(prop.id) ? '❤️' : '🤍' }}
+                            </span>
+                        </button>
+
                         <span class="absolute top-3 right-3 bg-slate-950/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-20">
                             📷 {{ prop.photosCount }}
                         </span>
@@ -609,7 +781,22 @@ import FestiveHeroAnimation from '~/components/FestiveHeroAnimation.vue';
 import { isResidentialType } from '~/utils/propertyConstants';
 
 const router = useRouter();
-const { recentActivities, loadRecentActivities } = useUserActivity();
+const {
+    recentActivities,
+    recentSearches,
+    shortlistedProperties,
+    contactedProperties,
+    searchCount,
+    viewedCount,
+    shortlistCount,
+    contactedCount,
+    isShortlisted,
+    toggleShortlist,
+    logSearch,
+    loadAllActivities,
+} = useUserActivity();
+
+const homeActivityTab = ref('viewed');
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
@@ -696,6 +883,10 @@ const handleSelectSuggestion = (item) => {
         setCity(item.city);
         searchForm.value.city = item.city;
         searchForm.value.keyword = '';
+        logSearch({
+            city: item.city,
+            type: activeTab.value,
+        });
         router.push({
             path: '/listings',
             query: {
@@ -711,6 +902,13 @@ const handleSelectSuggestion = (item) => {
         searchForm.value.city = item.city;
     }
     searchForm.value.keyword = item.keyword || item.title;
+
+    logSearch({
+        keyword: item.keyword || item.title,
+        city: item.city || searchForm.value.city,
+        type: activeTab.value,
+        bhk: selectedBhks.value.length > 0 ? selectedBhks.value.map(b => b.replace(/\D/g, '')).join(',') : undefined,
+    });
 
     router.push({
         path: '/listings',
@@ -838,6 +1036,14 @@ const handleSearch = () => {
         searchForm.value.keyword = parsed.keyword;
     }
 
+    logSearch({
+        keyword: targetKeyword,
+        city: targetCity,
+        type: targetType,
+        bhk: targetBhks.length > 0 ? targetBhks.map(b => b.replace(/\D/g, '')).filter(Boolean).join(',') : undefined,
+        budget: searchForm.value.budget || undefined,
+    });
+
     router.push({
         path: '/listings',
         query: {
@@ -847,6 +1053,22 @@ const handleSearch = () => {
             budget: searchForm.value.budget || undefined,
             bhk: targetBhks.length > 0 ? targetBhks.map(b => b.replace(/\D/g, '')).filter(Boolean).join(',') : undefined,
         },
+    });
+};
+
+const replaySearch = (item) => {
+    const meta = item.metadata || {};
+    const queryParams = {
+        type: meta.property_for || 'buy',
+    };
+    if (meta.city) queryParams.city = meta.city;
+    if (meta.keyword) queryParams.keyword = meta.keyword;
+    if (meta.bhk) queryParams.bhk = meta.bhk;
+    if (meta.budget) queryParams.budget = meta.budget;
+
+    router.push({
+        path: '/listings',
+        query: queryParams,
     });
 };
 
@@ -981,11 +1203,18 @@ const trendingLocalities = [
 ];
 
 const handleActivityUpdated = () => {
-    loadRecentActivities();
+    loadAllActivities();
 };
 
-onMounted(() => {
-    loadRecentActivities();
+onMounted(async () => {
+    await loadAllActivities();
+    if (viewedCount.value === 0 && searchCount.value > 0) {
+        homeActivityTab.value = 'searches';
+    } else if (viewedCount.value > 0) {
+        homeActivityTab.value = 'viewed';
+    } else if (shortlistCount.value > 0) {
+        homeActivityTab.value = 'shortlisted';
+    }
     if (import.meta.client) {
         window.addEventListener('realhem-activity-logged', handleActivityUpdated);
     }

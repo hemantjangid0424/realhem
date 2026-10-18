@@ -68,8 +68,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // User Activity Logging & History
     Route::get('/user/activities', [UserActivityController::class, 'index']);
+    Route::get('/user/activities/counts', [UserActivityController::class, 'counts']);
     Route::post('/user/activities', [UserActivityController::class, 'store']);
+    Route::post('/user/activities/shortlist', [UserActivityController::class, 'toggleShortlist']);
     Route::post('/user/activities/sync', [UserActivityController::class, 'sync']);
+    Route::delete('/user/activities/clear', [UserActivityController::class, 'clear']);
+    Route::delete('/user/activities/{id}', [UserActivityController::class, 'destroy']);
 });
 
 // Public Branding, Customization & Careers API

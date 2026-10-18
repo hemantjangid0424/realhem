@@ -24,16 +24,38 @@
         <!-- Main Content -->
         <div v-else-if="property" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-            <!-- Breadcrumb -->
-            <nav class="flex items-center gap-1.5 text-xs text-slate-500">
-                <button @click="router.push('/')" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">Home</button>
-                <span>›</span>
-                <button @click="router.push('/listings?city=' + property.city)" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">{{ property.city }}</button>
-                <span>›</span>
-                <button @click="router.push('/listings?city=' + property.city + '&keyword=' + property.locality)" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">{{ property.locality }}</button>
-                <span>›</span>
-                <span class="text-slate-800 font-semibold line-clamp-1">{{ property.title }}</span>
-            </nav>
+            <!-- Header Bar with Breadcrumb & Shortlist Action -->
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+                <nav class="flex items-center gap-1.5 text-xs text-slate-500 min-w-0">
+                    <button @click="router.push('/')" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">Home</button>
+                    <span>›</span>
+                    <button @click="router.push('/listings?city=' + property.city)" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">{{ property.city }}</button>
+                    <span>›</span>
+                    <button @click="router.push('/listings?city=' + property.city + '&keyword=' + property.locality)" class="hover:underline font-semibold transition cursor-pointer" :style="{ color: brandPrimaryColor }">{{ property.locality }}</button>
+                    <span>›</span>
+                    <span class="text-slate-800 font-semibold truncate">{{ property.title }}</span>
+                </nav>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        @click="toggleShortlist(property)"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        :class="isShortlisted(property?.id) ? 'bg-rose-50 border-rose-300 text-rose-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'"
+                    >
+                        <span>{{ isShortlisted(property?.id) ? '❤️' : '🤍' }}</span>
+                        <span>{{ isShortlisted(property?.id) ? 'Shortlisted' : 'Shortlist' }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="copyLink"
+                        class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                        <span>{{ copied ? '✓ Copied' : '🔗 Share' }}</span>
+                    </button>
+                </div>
+            </div>
 
             <!-- Hero: Photo Gallery + Quick Info -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -234,7 +256,7 @@
                         <!-- CTA Buttons -->
                         <div class="space-y-2.5">
                             <button
-                                @click="showContactModal = true"
+                                @click="handleContactClick('phone')"
                                 class="w-full py-3 rounded-2xl text-white font-black text-sm shadow-md transition cursor-pointer flex items-center justify-center gap-2 hover:opacity-95"
                                 :style="{ backgroundColor: brandPrimaryColor }"
                             >
@@ -242,7 +264,7 @@
                                 View Contact Number
                             </button>
                             <button
-                                @click="showContactModal = true"
+                                @click="handleContactClick('message')"
                                 class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition cursor-pointer flex items-center justify-center gap-2"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
@@ -571,7 +593,14 @@ const property = computed(() => propertyData.value);
 const isLoading = computed(() => status.value === 'pending');
 const notFound = computed(() => (!property.value || !property.value.title) && status.value !== 'pending');
 
-const { logPropertyView } = useUserActivity();
+const { logPropertyView, toggleShortlist, isShortlisted, logContacted } = useUserActivity();
+
+const handleContactClick = (type = 'phone') => {
+    showContactModal.value = true;
+    if (property.value) {
+        logContacted(property.value, type);
+    }
+};
 
 watch(
     () => property.value,

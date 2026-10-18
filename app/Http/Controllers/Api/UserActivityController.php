@@ -81,12 +81,110 @@ class UserActivityController extends Controller
     }
 
     /**
+     * Get counts for each activity type (Recent Searches, Viewed, Shortlisted, Contacted).
+     */
+    public function counts(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'recent_searches' => $user->activities()->where('activity_type', 'recent_search')->count(),
+            'viewed' => $user->activities()->where('activity_type', 'view_property')->count(),
+            'shortlisted' => $user->activities()->where('activity_type', 'shortlist')->count(),
+            'contacted' => $user->activities()->where('activity_type', 'contacted')->count(),
+        ]);
+    }
+
+    /**
+     * Toggle shortlist for a property.
+     */
+    public function toggleShortlist(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'property_id' => ['required', 'integer', 'exists:properties,id'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $user = $request->user();
+        $propId = $validated['property_id'];
+
+        $existing = UserActivity::where('user_id', $user->id)
+            ->where('activity_type', 'shortlist')
+            ->where('property_id', $propId)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'action' => 'removed',
+                'shortlisted' => false,
+                'message' => 'Removed from shortlisted properties.',
+            ]);
+        }
+
+        $activity = UserActivity::create([
+            'user_id' => $user->id,
+            'activity_type' => 'shortlist',
+            'property_id' => $propId,
+            'metadata' => $validated['metadata'] ?? null,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'action' => 'added',
+            'shortlisted' => true,
+            'message' => 'Property added to shortlisted.',
+            'activity' => $activity,
+        ], 201);
+    }
+
+    /**
+     * Delete an activity record.
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $activity = $user->activities()->findOrFail($id);
+        $activity->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Activity deleted.',
+        ]);
+    }
+
+    /**
+     * Clear all activities for a specific type or all types.
+     */
+    public function clear(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $query = $user->activities();
+
+        if ($request->filled('type')) {
+            $query->where('activity_type', $request->query('type'));
+        }
+
+        $deletedCount = $query->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'deleted' => $deletedCount,
+            'message' => 'Activities cleared.',
+        ]);
+    }
+
+    /**
      * Sync guest activities stored in local browser upon login.
      */
     public function sync(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'activities' => ['required', 'array', 'max:50'],
+            'activities' => ['required', 'array', 'max:100'],
             'activities.*.property_id' => ['nullable', 'integer'],
             'activities.*.activity_type' => ['nullable', 'string', 'max:50'],
             'activities.*.metadata' => ['nullable', 'array'],
@@ -104,11 +202,22 @@ class UserActivityController extends Controller
                 continue;
             }
 
-            // Avoid duplicating existing record
-            $exists = UserActivity::where('user_id', $user->id)
-                ->where('activity_type', $type)
-                ->where('property_id', $propId)
-                ->exists();
+            // Deduplication logic
+            if ($propId) {
+                $exists = UserActivity::where('user_id', $user->id)
+                    ->where('activity_type', $type)
+                    ->where('property_id', $propId)
+                    ->exists();
+            } else {
+                // Non-property activities like recent_search
+                $keyword = $item['metadata']['keyword'] ?? null;
+                $city = $item['metadata']['city'] ?? null;
+                $exists = UserActivity::where('user_id', $user->id)
+                    ->where('activity_type', $type)
+                    ->where('metadata->keyword', $keyword)
+                    ->where('metadata->city', $city)
+                    ->exists();
+            }
 
             if (! $exists) {
                 UserActivity::create([

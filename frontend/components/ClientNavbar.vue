@@ -240,19 +240,19 @@
                 <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
                     <!-- Recently Viewed Indicator Button (Visible for all when count > 0) -->
                     <router-link
-                        v-if="recentCount > 0"
+                        v-if="totalActivityCount > 0"
                         to="/recent-activity"
                         class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition cursor-pointer group shadow-2xs"
                         :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 bg-white'"
-                        title="View Recently Viewed Properties"
+                        title="View Recent Activity (Searches, Viewed, Shortlist)"
                     >
-                        <span class="text-xs group-hover:scale-110 transition-transform">👁️</span>
-                        <span class="hidden md:inline">Recent</span>
+                        <span class="text-xs group-hover:scale-110 transition-transform">📊</span>
+                        <span class="hidden md:inline">Activity</span>
                         <span
                             class="px-1.5 py-0.2 rounded-full text-[10px] font-black"
                             :class="isScrolled ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'"
                         >
-                            {{ recentCount }}
+                            {{ totalActivityCount }}
                         </span>
                     </router-link>
 
@@ -340,14 +340,14 @@
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
                                     >
-                                        <span class="text-base">👁️</span>
+                                        <span class="text-base">📊</span>
                                         <div class="flex-1 flex items-center justify-between">
                                             <div>
-                                                <span class="block">Recently Viewed</span>
-                                                <span class="text-[10px] font-normal text-slate-400">Browsing history</span>
+                                                <span class="block">Activity &amp; Shortlist</span>
+                                                <span class="text-[10px] font-normal text-slate-400">Searches, viewed &amp; favourites</span>
                                             </div>
-                                            <span v-if="recentCount > 0" class="text-[10px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ml-2">
-                                                {{ recentCount }}
+                                            <span v-if="totalActivityCount > 0" class="text-[10px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ml-2">
+                                                {{ totalActivityCount }}
                                             </span>
                                         </div>
                                     </router-link>
@@ -423,7 +423,17 @@ const {
     bannerLink,
 } = useCompanyBranding();
 const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
-const { recentCount, loadRecentActivities } = useUserActivity();
+const {
+    recentCount,
+    searchCount,
+    viewedCount,
+    shortlistCount,
+    contactedCount,
+    logSearch,
+    loadAllActivities,
+} = useUserActivity();
+
+const totalActivityCount = computed(() => searchCount.value + viewedCount.value + shortlistCount.value + contactedCount.value);
 
 const isAuthModalOpen = ref(false);
 const currentUser = ref(null);
@@ -485,6 +495,10 @@ const handleSelectSuggestion = (item) => {
     if (item.type === 'city') {
         setCity(item.city);
         stickyKeyword.value = '';
+        logSearch({
+            city: item.city,
+            type: stickySearchType.value,
+        });
         router.push({
             path: '/listings',
             query: {
@@ -499,6 +513,12 @@ const handleSelectSuggestion = (item) => {
         setCity(item.city);
     }
     stickyKeyword.value = item.keyword || item.title;
+
+    logSearch({
+        keyword: item.keyword || item.title,
+        city: item.city || selectedCity.value,
+        type: stickySearchType.value,
+    });
 
     router.push({
         path: '/listings',
@@ -624,6 +644,13 @@ const handleStickySearch = () => {
         stickyKeyword.value = parsed.keyword;
     }
 
+    logSearch({
+        keyword: targetKeyword || undefined,
+        city: targetCity,
+        type: targetType,
+        bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
+    });
+
     router.push({
         path: '/listings',
         query: {
@@ -699,12 +726,12 @@ const closeDropdownOnOutside = () => {
 };
 
 const handleActivityUpdated = () => {
-    loadRecentActivities();
+    loadAllActivities();
 };
 
 onMounted(() => {
     syncCurrentUser();
-    loadRecentActivities();
+    loadAllActivities();
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('storage', syncCurrentUser);
     window.addEventListener('click', closeDropdownOnOutside);
