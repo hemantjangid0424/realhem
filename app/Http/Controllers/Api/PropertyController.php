@@ -259,17 +259,18 @@ class PropertyController extends Controller
             );
         }
 
-        // Attach photos from a separate lightweight query only for the requested page items
+        // Attach photos and videos from a separate lightweight query only for the requested page items
         $ids = $properties->pluck('id');
         if ($ids->isNotEmpty()) {
-            $photoMap = Property::query()
+            $mediaMap = Property::query()
                 ->whereIn('id', $ids)
-                ->select('id', 'photos')
+                ->select('id', 'photos', 'videos')
                 ->get()
                 ->keyBy('id');
 
-            $properties->getCollection()->transform(function ($property) use ($photoMap) {
-                $property->photos = $photoMap[$property->id]->photos ?? [];
+            $properties->getCollection()->transform(function ($property) use ($mediaMap) {
+                $property->photos = $mediaMap[$property->id]->photos ?? [];
+                $property->videos = $mediaMap[$property->id]->videos ?? [];
 
                 return $property;
             });
@@ -337,6 +338,30 @@ class PropertyController extends Controller
     }
 
     /**
+     * Upload property videos to disk and return their public URLs.
+     * Accepts multipart video file uploads (mp4, webm, mov, m4v), max 3 files, max 50 MB each.
+     */
+    public function uploadVideos(Request $request): JsonResponse
+    {
+        $request->validate([
+            'videos' => ['required', 'array', 'min:1', 'max:3'],
+            'videos.*' => ['required', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime,video/x-m4v', 'max:51200'],
+        ]);
+
+        $urls = [];
+        foreach ($request->file('videos') as $file) {
+            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+            $path = $file->storeAs('properties/videos', $filename, 'public');
+            $urls[] = Storage::url($path);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'urls' => $urls,
+        ]);
+    }
+
+    /**
      * Store a newly created property in storage.
      * Requires authenticated user.
      */
@@ -370,11 +395,13 @@ class PropertyController extends Controller
             'facing' => ['nullable', 'string', 'max:50'],
             'construction_status' => ['nullable', 'string', 'max:100'],
 
-            // Step 3: Photos & Amenities
+            // Step 3: Photos, Videos & Amenities
             'amenities' => ['nullable', 'array'],
             'amenities.*' => ['string', 'max:100'],
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => ['string', 'max:512'],
+            'videos' => ['nullable', 'array', 'max:5'],
+            'videos.*' => ['string', 'max:512'],
 
             // Step 4: Pricing & Finalize
             'expected_price' => ['required', 'numeric', 'min:1000'],
@@ -461,6 +488,7 @@ class PropertyController extends Controller
             'price_negotiable' => (bool) ($validated['price_negotiable'] ?? false),
             'amenities' => $validated['amenities'] ?? [],
             'photos' => $validated['photos'] ?? [],
+            'videos' => $validated['videos'] ?? [],
             'status' => 'active',
             'is_verified' => true,
             'is_featured' => false,
@@ -525,6 +553,7 @@ class PropertyController extends Controller
             'description' => ['nullable', 'string'],
             'amenities' => ['nullable', 'array'],
             'photos' => ['nullable', 'array'],
+            'videos' => ['nullable', 'array'],
             'status' => ['nullable', 'string', 'in:active,pending_approval,sold,rented'],
         ]);
 

@@ -69,6 +69,7 @@ class PropertyFactory extends Factory
                 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60',
                 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=60',
             ],
+            'videos' => [],
             'status' => 'active',
             'is_verified' => true,
             'is_featured' => fake()->boolean(30),

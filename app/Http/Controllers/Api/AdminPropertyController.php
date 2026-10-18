@@ -23,7 +23,7 @@ class AdminPropertyController extends Controller
         'carpet_area', 'super_builtup_area', 'furnishing_status', 'floor_no',
         'total_floors', 'facing', 'construction_status', 'expected_price',
         'price_per_sqft', 'maintenance_charge', 'price_negotiable',
-        'amenities', 'status', 'is_verified', 'is_featured', 'created_at', 'updated_at',
+        'amenities', 'photos', 'videos', 'status', 'is_verified', 'is_featured', 'created_at', 'updated_at',
     ];
 
     /**

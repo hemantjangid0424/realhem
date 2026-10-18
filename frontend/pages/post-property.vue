@@ -1494,6 +1494,93 @@
                                 </div>
                             </div>
 
+                            <!-- Video Uploader (Video Tour / Walkthrough) -->
+                            <div class="pt-4 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Property Video Tour</label>
+                                        <span class="text-[10px] bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full uppercase">3x More Enquiries</span>
+                                    </div>
+                                    <span class="text-[11px] font-semibold" :class="form.videos.length >= 2 ? 'text-emerald-600' : 'text-slate-400'">{{ form.videos.length }}/2 uploaded</span>
+                                </div>
+
+                                <input
+                                    ref="videoFileInputRef"
+                                    type="file"
+                                    accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+                                    multiple
+                                    class="hidden"
+                                    @change="handleVideoFileSelect"
+                                />
+
+                                <!-- Video Drop Zone -->
+                                <div
+                                    v-if="form.videos.length === 0"
+                                    @click="triggerVideoFileInput"
+                                    @dragover.prevent="isDraggingVideo = true"
+                                    @dragleave.prevent="isDraggingVideo = false"
+                                    @drop.prevent="handleVideoFileDrop"
+                                    :class="[
+                                        'rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition',
+                                        isDraggingVideo ? 'border-purple-500 bg-purple-50' : 'border-slate-200 hover:border-purple-400 hover:bg-slate-50'
+                                    ]"
+                                >
+                                    <div class="space-y-2">
+                                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-2xl">🎥</div>
+                                        <p class="text-sm font-bold text-slate-700">
+                                            {{ isDraggingVideo ? 'Drop video here' : 'Click to upload property walkthrough video or drag & drop' }}
+                                        </p>
+                                        <p class="text-xs text-slate-400">MP4, WEBM, MOV &bull; Max 2 videos &bull; Up to 50 MB each</p>
+                                    </div>
+                                </div>
+
+                                <p v-if="videoUploadError" class="text-xs text-rose-600 font-semibold mt-2">{{ videoUploadError }}</p>
+
+                                <!-- Video preview cards -->
+                                <div v-if="form.videos.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div
+                                        v-for="(vid, vidx) in form.videos"
+                                        :key="vidx"
+                                        class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-sm flex flex-col"
+                                    >
+                                        <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                                            <video
+                                                :src="vid.preview || vid"
+                                                controls
+                                                playsinline
+                                                class="w-full h-full object-contain"
+                                            ></video>
+                                            <button
+                                                type="button"
+                                                @click="removeVideo(vidx)"
+                                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition cursor-pointer z-10 shadow-md"
+                                                title="Remove video"
+                                            >✕</button>
+                                        </div>
+                                        <div class="p-3 bg-white flex items-center justify-between border-t border-slate-100">
+                                            <div class="min-w-0 pr-2">
+                                                <p class="text-xs font-bold text-slate-800 truncate">{{ vid.name || `Video ${vidx + 1}` }}</p>
+                                                <p v-if="vid.size" class="text-[10px] text-slate-400">{{ vid.size }}</p>
+                                            </div>
+                                            <span class="text-[10px] font-black uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md shrink-0">
+                                                Walkthrough
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        v-if="form.videos.length < 2"
+                                        type="button"
+                                        @click="triggerVideoFileInput"
+                                        class="aspect-video rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer gap-1.5"
+                                    >
+                                        <span class="text-3xl leading-none">🎥</span>
+                                        <span class="text-xs font-bold">+ Add Another Video</span>
+                                        <span class="text-[10px] text-slate-400">Up to 50 MB</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="pt-4 flex justify-between items-center">
                                 <button
                                     type="button"
@@ -1696,6 +1783,10 @@ const fileInputRef = ref(null);
 const isDragging = ref(false);
 const photoUploadError = ref('');
 const photoFiles = ref([]);
+const videoFileInputRef = ref(null);
+const isDraggingVideo = ref(false);
+const videoUploadError = ref('');
+const videoFiles = ref([]);
 
 // Toggles for extra areas and custom inputs
 const isOtherBhkSelected = ref(false);
@@ -1803,7 +1894,7 @@ const steps = computed(() => [
     {
         id: 4,
         title: 'Photos, Videos & Voice-over',
-        subtitle: `${form.value.photos.length} photos uploaded`
+        subtitle: `${form.value.photos.length} photos${form.value.videos?.length ? ', ' + form.value.videos.length + ' video' + (form.value.videos.length > 1 ? 's' : '') : ''} uploaded`
     },
     {
         id: 5,
@@ -1899,6 +1990,7 @@ const form = ref({
     description: '',
     amenities: ['Lift', '24x7 Security', 'Reserved Parking', 'Power Backup', 'Gym'],
     photos: [],
+    videos: [],
     // Commercial fields
     cabins: 2,
     workstations: 20,
@@ -2275,6 +2367,7 @@ const propertyScore = computed(() => {
         if (form.value.floor_no && form.value.total_floors) score += 10;
     }
     if (form.value.photos.length > 0) score += 15;
+    if (form.value.videos && form.value.videos.length > 0) score += 10;
     if (form.value.amenities.length > 0) score += 10;
     if (form.value.title || form.value.description) score += 5;
     return Math.min(score, 100);
@@ -2417,6 +2510,76 @@ const removePhoto = (idx) => {
     photoFiles.value.splice(idx, 1);
 };
 
+const ALLOWED_VIDEO_TYPES = [
+    'video/mp4',
+    'video/webm',
+    'video/quicktime',
+    'video/x-m4v',
+];
+const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_VIDEOS = 2;
+
+const triggerVideoFileInput = () => {
+    if (videoFileInputRef.value) {
+        videoFileInputRef.value.value = '';
+        videoFileInputRef.value.click();
+    }
+};
+
+const processVideoFiles = async (files) => {
+    videoUploadError.value = '';
+    const fileArr = Array.from(files);
+    const remaining = MAX_VIDEOS - form.value.videos.length;
+    if (remaining <= 0) {
+        videoUploadError.value = 'You can only upload up to 2 videos.';
+        return;
+    }
+
+    const toProcess = fileArr.slice(0, remaining);
+    const errors = [];
+
+    for (const file of toProcess) {
+        if (form.value.videos.length >= MAX_VIDEOS) break;
+        if (!ALLOWED_VIDEO_TYPES.includes(file.type) && !file.name.match(/\.(mp4|webm|mov|m4v)$/i)) {
+            errors.push(`"${file.name}" is not a supported video file (MP4, WEBM, MOV).`);
+            continue;
+        }
+        if (file.size > MAX_VIDEO_SIZE_BYTES) {
+            errors.push(`"${file.name}" exceeds the 50 MB limit.`);
+            continue;
+        }
+        try {
+            const dataUrl = await readFileAsDataUrl(file);
+            form.value.videos.push({
+                preview: dataUrl,
+                name: file.name,
+                size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+            });
+            videoFiles.value.push(file);
+        } catch {
+            errors.push(`Failed to read "${file.name}".`);
+        }
+    }
+
+    if (errors.length > 0) {
+        videoUploadError.value = errors.join(' ');
+    }
+};
+
+const handleVideoFileSelect = (event) => {
+    processVideoFiles(event.target.files);
+};
+
+const handleVideoFileDrop = (event) => {
+    isDraggingVideo.value = false;
+    processVideoFiles(event.dataTransfer.files);
+};
+
+const removeVideo = (idx) => {
+    form.value.videos.splice(idx, 1);
+    videoFiles.value.splice(idx, 1);
+};
+
 const formatPriceWords = (val) => {
     if (!val || val <= 0) return '₹ 0';
     const num = Number(val);
@@ -2498,6 +2661,30 @@ const submitProperty = async () => {
             photoUrls = uploadData.urls ?? [];
         }
 
+        let videoUrls = [];
+        if (videoFiles.value.length > 0) {
+            const videoFormData = new FormData();
+            videoFiles.value.forEach((file) => {
+                videoFormData.append('videos[]', file);
+            });
+
+            const uploadVideoRes = await fetch('/api/properties/upload-videos', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: videoFormData,
+            });
+
+            const uploadVideoData = await uploadVideoRes.json();
+            if (!uploadVideoRes.ok) {
+                errorMessage.value = uploadVideoData.message || 'Video upload failed. Please try again.';
+                return;
+            }
+            videoUrls = uploadVideoData.urls ?? [];
+        }
+
         const payload = {
             user_type: form.value.user_type,
             property_for: form.value.property_for,
@@ -2529,6 +2716,7 @@ const submitProperty = async () => {
             longitude: form.value.longitude ? Number(form.value.longitude) : undefined,
             amenities: form.value.amenities,
             photos: photoUrls,
+            videos: videoUrls,
         };
 
         const response = await fetch('/api/properties', {
@@ -2578,6 +2766,10 @@ const resetFormForAnother = () => {
     form.value.address = '';
     form.value.landmark = '';
     form.value.expected_price = 7500000;
+    form.value.photos = [];
+    photoFiles.value = [];
+    form.value.videos = [];
+    videoFiles.value = [];
 };
 
 onMounted(() => {

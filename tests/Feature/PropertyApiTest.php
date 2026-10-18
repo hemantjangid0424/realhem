@@ -3,6 +3,8 @@
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -334,4 +336,52 @@ test('property can be fetched by slug starting with a number without resolving t
     $responseById->assertStatus(200);
     expect($responseById->json('property.id'))->toBe($prop1->id);
     expect($responseById->json('property.title'))->toBe('Property One in Ahmedabad');
+});
+
+test('authenticated user can upload videos for property listing', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $video = UploadedFile::fake()->create('walkthrough.mp4', 5000, 'video/mp4');
+
+    $response = $this->actingAs($user, 'sanctum')
+        ->postJson('/api/properties/upload-videos', [
+            'videos' => [$video],
+        ]);
+
+    $response->assertStatus(200)
+        ->assertJsonStructure(['status', 'urls']);
+
+    expect($response->json('status'))->toBe('success');
+    expect(count($response->json('urls')))->toBe(1);
+    expect($response->json('urls.0'))->toContain('/storage/properties/videos/');
+});
+
+test('authenticated user can post property with videos', function () {
+    $user = User::factory()->create();
+
+    $payload = [
+        'user_type' => 'Owner',
+        'property_for' => 'Sell',
+        'property_type' => 'Residential Apartment',
+        'city' => 'Ahmedabad',
+        'locality' => 'Satellite',
+        'bedrooms' => 3,
+        'bathrooms' => 3,
+        'carpet_area' => 1800,
+        'expected_price' => 15000000,
+        'photos' => ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800'],
+        'videos' => ['/storage/properties/videos/sample-tour.mp4'],
+    ];
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/properties', $payload);
+
+    $response->assertStatus(201);
+    expect($response->json('property.videos'))->toBe(['/storage/properties/videos/sample-tour.mp4']);
+
+    $propertyId = $response->json('property.id');
+    $fetchResponse = $this->getJson("/api/property/{$propertyId}");
+    $fetchResponse->assertStatus(200);
+    expect($fetchResponse->json('property.videos'))->toBe(['/storage/properties/videos/sample-tour.mp4']);
 });

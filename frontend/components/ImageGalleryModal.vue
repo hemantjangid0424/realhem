@@ -9,7 +9,7 @@
             leave-to-class="opacity-0"
         >
             <div
-                v-if="isOpen && photosList.length > 0"
+                v-if="isOpen && mediaList.length > 0"
                 class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col justify-between overflow-hidden select-none font-sans"
                 tabindex="-1"
                 @keydown.esc="close"
@@ -36,11 +36,35 @@
                         </div>
                     </div>
 
-                    <!-- Right Controls: Counter, View Details CTA, Close -->
+                    <!-- Center Badges: Combined Photos + Videos summary -->
+                    <div class="hidden md:flex items-center gap-2 text-xs shrink-0">
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/80 font-semibold flex items-center gap-1.5">
+                            <span>📸</span>
+                            <span>{{ photosList.length }} {{ photosList.length === 1 ? 'Photo' : 'Photos' }}</span>
+                        </span>
+                        <span
+                            v-if="videosList.length > 0"
+                            class="px-2.5 py-1 rounded-lg bg-purple-950/70 text-purple-300 border border-purple-700/60 font-semibold flex items-center gap-1.5"
+                        >
+                            <span>🎥</span>
+                            <span>{{ videosList.length }} {{ videosList.length === 1 ? 'Video' : 'Videos' }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Right Controls: Active Item Badge, Counter, View Details CTA, Close -->
                     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                        <!-- Photo Counter Pill -->
+                        <!-- Current Item Type Badge -->
+                        <span
+                            v-if="currentItem?.type === 'video'"
+                            class="hidden xs:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-600 text-white text-[11px] font-bold shadow-xs animate-pulse"
+                        >
+                            <span>🎥</span>
+                            <span>Video Tour</span>
+                        </span>
+
+                        <!-- Unified Media Counter Pill -->
                         <div class="px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-bold font-mono">
-                            {{ activeIndex + 1 }} / {{ photosList.length }}
+                            {{ activeIndex + 1 }} / {{ mediaList.length }}
                         </div>
 
                         <!-- View Property Details Link -->
@@ -68,48 +92,62 @@
                     </div>
                 </div>
 
-                <!-- 2. Main Stage (Active Photo + Next/Prev Navigation Arrows) -->
+                <!-- 2. Main Stage (Active Media + Next/Prev Navigation Arrows) -->
                 <div class="flex-1 relative flex items-center justify-center px-4 py-3 sm:px-12 sm:py-6 overflow-hidden">
                     <!-- Left Arrow Button -->
                     <button
-                        v-if="photosList.length > 1"
+                        v-if="mediaList.length > 1"
                         type="button"
                         @click.stop="prev"
                         class="absolute left-3 sm:left-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
-                        title="Previous photo (←)"
+                        title="Previous item (←)"
                     >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
 
-                    <!-- Active Image with Fade/Scale Transition -->
+                    <!-- Active Image / Video Viewport -->
                     <div class="relative max-w-full max-h-full flex items-center justify-center">
-                        <Transition
-                            mode="out-in"
-                            enter-active-class="transition duration-200 ease-out"
-                            enter-from-class="opacity-0 scale-98"
-                            enter-to-class="opacity-100 scale-100"
-                            leave-active-class="transition duration-150 ease-in"
-                            leave-from-class="opacity-100 scale-100"
-                            leave-to-class="opacity-0 scale-98"
-                        >
-                            <img
-                                :key="currentPhoto"
-                                :src="currentPhoto"
-                                :alt="`${propertyTitle} - Photo ${activeIndex + 1}`"
-                                class="max-h-[66vh] sm:max-h-[72vh] max-w-[94vw] sm:max-w-[85vw] object-contain rounded-2xl shadow-2xl border border-slate-800/80"
-                            />
-                        </Transition>
+                        <template v-if="currentItem?.type === 'video'">
+                            <div class="relative max-h-[66vh] sm:max-h-[72vh] max-w-[94vw] sm:max-w-[85vw] rounded-2xl overflow-hidden shadow-2xl bg-black border border-slate-800/80 flex items-center justify-center">
+                                <video
+                                    :key="currentItem.url"
+                                    :src="currentItem.url"
+                                    controls
+                                    autoplay
+                                    playsinline
+                                    class="max-h-[66vh] sm:max-h-[72vh] max-w-[94vw] sm:max-w-[85vw] object-contain"
+                                ></video>
+                            </div>
+                        </template>
+                        <template v-else-if="currentItem?.type === 'photo'">
+                            <Transition
+                                mode="out-in"
+                                enter-active-class="transition duration-200 ease-out"
+                                enter-from-class="opacity-0 scale-98"
+                                enter-to-class="opacity-100 scale-100"
+                                leave-active-class="transition duration-150 ease-in"
+                                leave-from-class="opacity-100 scale-100"
+                                leave-to-class="opacity-0 scale-98"
+                            >
+                                <img
+                                    :key="currentItem.url"
+                                    :src="currentItem.url"
+                                    :alt="`${propertyTitle} - ${currentItem.label}`"
+                                    class="max-h-[66vh] sm:max-h-[72vh] max-w-[94vw] sm:max-w-[85vw] object-contain rounded-2xl shadow-2xl border border-slate-800/80"
+                                />
+                            </Transition>
+                        </template>
                     </div>
 
                     <!-- Right Arrow Button -->
                     <button
-                        v-if="photosList.length > 1"
+                        v-if="mediaList.length > 1"
                         type="button"
                         @click.stop="next"
                         class="absolute right-3 sm:right-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
-                        title="Next photo (→)"
+                        title="Next item (→)"
                     >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
@@ -117,42 +155,68 @@
                     </button>
                 </div>
 
-                <!-- 3. Bottom Filmstrip Thumbnail Carousel -->
+                <!-- 3. Bottom Filmstrip Thumbnail Carousel (Combined Photos + Videos) -->
                 <div class="p-3 sm:p-4 bg-slate-900/90 backdrop-blur-md border-t border-slate-800/80 z-20">
                     <div class="max-w-6xl mx-auto flex items-center justify-center gap-2 overflow-x-auto py-1 scrollbar-thin">
                         <button
-                            v-for="(photo, idx) in photosList"
+                            v-for="(item, idx) in mediaList"
                             :key="idx"
                             type="button"
                             @click="setActiveIndex(idx)"
                             class="relative rounded-xl overflow-hidden shrink-0 transition-all duration-200 cursor-pointer"
-                            :class="activeIndex === idx
-                                ? 'w-16 h-12 sm:w-20 sm:h-14 ring-2 ring-blue-500 scale-105 shadow-md border border-white'
-                                : 'w-14 h-10 sm:w-16 sm:h-12 opacity-50 hover:opacity-90 border border-slate-700'"
-                            :title="`Photo ${idx + 1}`"
+                            :class="[
+                                activeIndex === idx
+                                    ? (item.type === 'video' ? 'ring-2 ring-purple-500 border-purple-400 scale-105 shadow-md' : 'ring-2 ring-blue-500 border-white scale-105 shadow-md')
+                                    : 'opacity-60 hover:opacity-100 border-slate-700',
+                                item.type === 'video'
+                                    ? 'w-18 h-12 sm:w-22 sm:h-14 bg-slate-950 border'
+                                    : 'w-16 h-12 sm:w-20 sm:h-14 bg-slate-900 border'
+                            ]"
+                            :title="item.label"
                         >
-                            <img
-                                :src="photo"
-                                :alt="`Thumbnail ${idx + 1}`"
-                                class="w-full h-full object-cover"
-                            />
-                            <div
-                                v-if="activeIndex === idx"
-                                class="absolute inset-0 bg-blue-500/10 pointer-events-none"
-                            ></div>
+                            <!-- Photo Thumbnail -->
+                            <template v-if="item.type === 'photo'">
+                                <img
+                                    :src="item.url"
+                                    :alt="item.label"
+                                    class="w-full h-full object-cover"
+                                />
+                                <div
+                                    v-if="activeIndex === idx"
+                                    class="absolute inset-0 bg-blue-500/10 pointer-events-none"
+                                ></div>
+                            </template>
+
+                            <!-- Video Thumbnail with Play Badge -->
+                            <template v-else>
+                                <video
+                                    :src="item.url"
+                                    preload="metadata"
+                                    muted
+                                    class="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
+                                ></video>
+                                <div class="relative z-10 w-full h-full flex flex-col items-center justify-center bg-black/40 gap-0.5 text-white">
+                                    <div class="w-5 h-5 rounded-full bg-purple-600/90 flex items-center justify-center shadow-xs">
+                                        <svg class="w-2.5 h-2.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </div>
+                                    <span class="text-[9px] font-black uppercase tracking-tight text-white drop-shadow-xs">Video</span>
+                                </div>
+                            </template>
                         </button>
                     </div>
 
                     <!-- Mobile Bottom Bar with View Listing CTA -->
                     <div class="sm:hidden flex items-center justify-between pt-2 mt-1 border-t border-slate-800 text-xs">
-                        <span class="text-slate-400 font-semibold">{{ activeIndex + 1 }} of {{ photosList.length }} photos</span>
+                        <span class="text-slate-400 font-semibold">
+                            {{ activeIndex + 1 }} of {{ mediaList.length }} · {{ currentItem?.type === 'video' ? 'Video' : 'Photo' }}
+                        </span>
                         <NuxtLink
                             v-if="propertyLink"
                             :to="propertyLink"
                             @click="close"
                             class="text-blue-400 font-bold hover:underline"
                         >
-                            View Listing &rarr;
+                            View Details &rarr;
                         </NuxtLink>
                     </div>
                 </div>
@@ -164,12 +228,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
-interface GalleryProperty {
+export interface GalleryProperty {
     id?: number | string;
     property_id?: number | string;
     slug?: string;
     title?: string;
     photos?: string[];
+    videos?: string[];
     locality?: string;
     city?: string;
     price?: string;
@@ -180,6 +245,7 @@ interface GalleryProperty {
         slug?: string;
         title?: string;
         photo?: string;
+        videos?: string[];
         locality?: string;
         city?: string;
         expected_price?: number | string;
@@ -189,6 +255,7 @@ interface GalleryProperty {
         slug?: string;
         title?: string;
         photos?: string[];
+        videos?: string[];
         locality?: string;
         city?: string;
         expected_price?: number | string;
@@ -196,16 +263,24 @@ interface GalleryProperty {
     };
 }
 
+export interface MediaItem {
+    type: 'photo' | 'video';
+    url: string;
+    label: string;
+}
+
 const props = withDefaults(
     defineProps<{
         isOpen?: boolean;
         property?: GalleryProperty | null;
         initialIndex?: number;
+        initialMediaType?: 'photos' | 'videos';
     }>(),
     {
         isOpen: false,
         property: null,
         initialIndex: 0,
+        initialMediaType: 'photos',
     }
 );
 
@@ -237,17 +312,64 @@ const photosList = computed<string[]>(() => {
         return [singlePhoto];
     }
 
-    // 4. Default unsplash property fallback
-    return ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80'];
+    // 4. Default unsplash property fallback if no videos exist
+    if (videosList.value.length === 0) {
+        return ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80'];
+    }
+
+    return [];
 });
 
-const currentPhoto = computed<string>(() => {
-    if (!photosList.value.length) return '';
-    return photosList.value[activeIndex.value] || photosList.value[0];
+// Normalize all videos into a clean string array
+const videosList = computed<string[]>(() => {
+    const p = props.property;
+    if (!p) return [];
+
+    if (Array.isArray(p.videos) && p.videos.length > 0) {
+        return p.videos.filter(Boolean);
+    }
+
+    if (p.property?.videos && Array.isArray(p.property.videos) && p.property.videos.length > 0) {
+        return p.property.videos.filter(Boolean);
+    }
+
+    if (p.metadata?.videos && Array.isArray(p.metadata.videos) && p.metadata.videos.length > 0) {
+        return p.metadata.videos.filter(Boolean);
+    }
+
+    return [];
+});
+
+// Combined unified media list (photos followed by videos)
+const mediaList = computed<MediaItem[]>(() => {
+    const list: MediaItem[] = [];
+
+    photosList.value.forEach((url, i) => {
+        list.push({
+            type: 'photo',
+            url,
+            label: `Photo ${i + 1}`,
+        });
+    });
+
+    videosList.value.forEach((url, i) => {
+        list.push({
+            type: 'video',
+            url,
+            label: `Video Tour ${i + 1}`,
+        });
+    });
+
+    return list;
+});
+
+const currentItem = computed<MediaItem | null>(() => {
+    if (!mediaList.value.length) return null;
+    return mediaList.value[activeIndex.value] || mediaList.value[0];
 });
 
 const propertyTitle = computed(() => {
-    return props.property?.title || props.property?.property?.title || props.property?.metadata?.title || 'Property Photos';
+    return props.property?.title || props.property?.property?.title || props.property?.metadata?.title || 'Property Media';
 });
 
 const propertyLocation = computed(() => {
@@ -286,13 +408,13 @@ const close = () => {
 };
 
 const next = () => {
-    if (photosList.value.length <= 1) return;
-    activeIndex.value = (activeIndex.value + 1) % photosList.value.length;
+    if (mediaList.value.length <= 1) return;
+    activeIndex.value = (activeIndex.value + 1) % mediaList.value.length;
 };
 
 const prev = () => {
-    if (photosList.value.length <= 1) return;
-    activeIndex.value = (activeIndex.value - 1 + photosList.value.length) % photosList.value.length;
+    if (mediaList.value.length <= 1) return;
+    activeIndex.value = (activeIndex.value - 1 + mediaList.value.length) % mediaList.value.length;
 };
 
 const setActiveIndex = (idx: number) => {
@@ -304,7 +426,19 @@ watch(
     () => props.isOpen,
     (val) => {
         if (val) {
-            activeIndex.value = props.initialIndex || 0;
+            if (props.initialMediaType === 'videos') {
+                const firstVideoIdx = mediaList.value.findIndex((m) => m.type === 'video');
+                if (firstVideoIdx !== -1) {
+                    activeIndex.value = firstVideoIdx;
+                } else {
+                    activeIndex.value = 0;
+                }
+            } else if (typeof props.initialIndex === 'number' && props.initialIndex >= 0) {
+                activeIndex.value = Math.min(props.initialIndex, Math.max(0, mediaList.value.length - 1));
+            } else {
+                activeIndex.value = 0;
+            }
+
             // Prevent background scrolling while modal is open
             if (typeof document !== 'undefined') {
                 document.body.style.overflow = 'hidden';
@@ -340,4 +474,3 @@ onUnmounted(() => {
     }
 });
 </script>
-

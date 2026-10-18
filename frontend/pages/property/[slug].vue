@@ -69,7 +69,7 @@
                     <!-- Main Photo -->
                     <div
                         class="relative group rounded-2xl overflow-hidden bg-slate-900 aspect-video cursor-pointer"
-                        @click="isGalleryOpen = true"
+                        @click="openPhotoGallery(activePhotoIdx)"
                         title="Click to view full photo gallery"
                     >
                         <img
@@ -139,16 +139,31 @@
                             </button>
                         </template>
 
-                        <!-- Photo count badge (opens gallery) -->
-                        <button
-                            type="button"
-                            @click.stop="isGalleryOpen = true"
-                            class="absolute bottom-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur-sm z-10 flex items-center gap-1.5 transition cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
-                            title="View all photos in gallery"
-                        >
-                            <svg class="w-3.5 h-3.5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span>{{ activePhotoIdx + 1 }} / {{ property.photos?.length || 1 }}</span>
-                        </button>
+                        <!-- Media Badges (Photos + Video Tour) -->
+                        <div class="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+                            <!-- Video tour badge/button if property has videos -->
+                            <button
+                                v-if="property.videos && property.videos.length > 0"
+                                type="button"
+                                @click.stop="openVideoGallery(0)"
+                                class="bg-purple-600/90 hover:bg-purple-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur-sm flex items-center gap-1.5 transition cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                                title="Watch property video tour"
+                            >
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span>Video Tour ({{ property.videos.length }})</span>
+                            </button>
+
+                            <!-- Photo count badge (opens gallery) -->
+                            <button
+                                type="button"
+                                @click.stop="openPhotoGallery(activePhotoIdx)"
+                                class="bg-slate-900/80 hover:bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur-sm flex items-center gap-1.5 transition cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                                title="View all photos in gallery"
+                            >
+                                <svg class="w-3.5 h-3.5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ activePhotoIdx + 1 }} / {{ property.photos?.length || 1 }}</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Thumbnail Strip -->
@@ -379,6 +394,55 @@
                         </button>
                     </div>
 
+                    <!-- Video Tour & Walkthrough Section -->
+                    <div v-if="property.videos && property.videos.length > 0" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">🎥</span>
+                                <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Property Video Tour</h2>
+                                <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                    {{ property.videos.length }} {{ property.videos.length === 1 ? 'Video' : 'Videos' }}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                @click="openVideoGallery(0)"
+                                class="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                                <span>Watch Fullscreen</span>
+                                <span>&rarr;</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                v-for="(videoUrl, vIdx) in property.videos"
+                                :key="vIdx"
+                                class="bg-slate-900 rounded-xl overflow-hidden shadow-sm relative group border border-slate-800"
+                            >
+                                <video
+                                    :src="videoUrl"
+                                    controls
+                                    playsinline
+                                    preload="metadata"
+                                    class="w-full aspect-video object-contain bg-black"
+                                ></video>
+                                <div class="px-3 py-2 bg-slate-800/95 text-white flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-200 truncate flex items-center gap-1.5">
+                                        <span>Tour {{ vIdx + 1 }}</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        @click="openVideoGallery(vIdx)"
+                                        class="text-purple-300 hover:text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition"
+                                    >
+                                        <span>Expand</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Amenities -->
                     <div v-if="property.amenities && property.amenities.length > 0" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
                         <h2 class="text-sm font-black uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2.5">Society & Amenities</h2>
@@ -578,6 +642,7 @@
             :is-open="isGalleryOpen"
             :property="property"
             :initial-index="activePhotoIdx"
+            :initial-media-type="galleryMediaType"
             @close="isGalleryOpen = false"
             @update:is-open="isGalleryOpen = $event"
         />
@@ -666,6 +731,21 @@ useSeoMeta({
 
 const activePhotoIdx = ref(0);
 const isGalleryOpen = ref(false);
+const galleryMediaType = ref<'photos' | 'videos'>('photos');
+
+const openPhotoGallery = (idx = 0) => {
+    galleryMediaType.value = 'photos';
+    activePhotoIdx.value = idx;
+    isGalleryOpen.value = true;
+};
+
+const openVideoGallery = (vIdx = 0) => {
+    galleryMediaType.value = 'videos';
+    const photoCount = Array.isArray(property.value?.photos) ? property.value.photos.length : 0;
+    activePhotoIdx.value = photoCount + vIdx;
+    isGalleryOpen.value = true;
+};
+
 const showContactModal = ref(false);
 const isEmiModalOpen = ref(false);
 const descExpanded = ref(false);

@@ -61,6 +61,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/user/profile', [UserAuthController::class, 'updateProfile']);
     Route::post('/properties', [PropertyController::class, 'store']);
     Route::post('/properties/upload-photos', [PropertyController::class, 'uploadPhotos']);
+    Route::post('/properties/upload-videos', [PropertyController::class, 'uploadVideos']);
     Route::get('/user/properties', [PropertyController::class, 'myProperties']);
     Route::put('/properties/{property}', [PropertyController::class, 'update']);
     Route::patch('/properties/{property}/status', [PropertyController::class, 'updateStatus']);
