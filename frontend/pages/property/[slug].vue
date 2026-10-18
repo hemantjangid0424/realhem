@@ -63,7 +63,7 @@
                 <!-- Photo Gallery -->
                 <div class="lg:col-span-2 space-y-2">
                     <!-- Main Photo -->
-                    <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video">
+                    <div class="relative group rounded-2xl overflow-hidden bg-slate-900 aspect-video">
                         <img
                             v-if="property.photos && property.photos.length > 0"
                             :src="property.photos[activePhotoIdx]"
@@ -80,23 +80,35 @@
                             <!-- Featured Badge -->
                             <span
                                 v-if="property.is_featured"
-                                class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center gap-1 backdrop-blur-sm"
+                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
+                                title="Featured Listing"
                             >
-                                <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                <span>FEATURED LISTING</span>
+                                <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-36 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    FEATURED LISTING
+                                </span>
                             </span>
 
                             <!-- Verified Badge -->
                             <span
                                 v-if="property.is_verified"
-                                class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center gap-1 backdrop-blur-sm"
+                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
+                                title="Verified Partner"
                             >
-                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                <span>VERIFIED BY REALHEM</span>
+                                <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-40 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    VERIFIED BY REALHEM
+                                </span>
                             </span>
 
-                            <span class="px-2 py-1 rounded-lg bg-slate-900/80 text-amber-300 font-bold text-[10px] uppercase tracking-wide backdrop-blur-sm">
-                                ZERO BROKERAGE
+                            <span
+                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-slate-900/80 text-amber-300 font-bold text-[10px] uppercase tracking-wide flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
+                                title="Zero Brokerage"
+                            >
+                                <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-36 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    ZERO BROKERAGE
+                                </span>
                             </span>
                         </div>
 

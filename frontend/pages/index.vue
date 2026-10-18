@@ -479,24 +479,37 @@
                         <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-20">
                             <span
                                 v-if="prop.is_featured"
-                                class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                title="Featured Property"
+                                @click.stop.prevent
                             >
-                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                <span>FEATURED</span>
+                                <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    FEATURED
+                                </span>
                             </span>
                             <span
                                 v-if="prop.is_verified"
-                                class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                title="Verified Property"
+                                @click.stop.prevent
                             >
-                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                <span>VERIFIED</span>
+                                <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    VERIFIED
+                                </span>
                             </span>
                             <span
-                                v-if="!prop.is_featured && !prop.is_verified"
-                                class="px-2.5 py-0.5 rounded-full text-white font-extrabold text-[10px] uppercase shadow-xs"
+                                v-if="!prop.is_featured && !prop.is_verified && prop.badge"
+                                class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full text-white font-extrabold text-[9px] uppercase shadow-xs flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
                                 :style="{ backgroundColor: brandPrimaryColor }"
+                                :title="prop.badge"
+                                @click.stop.prevent
                             >
-                                {{ prop.badge }}
+                                <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000-16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                    {{ prop.badge }}
+                                </span>
                             </span>
                         </div>
 

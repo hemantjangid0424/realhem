@@ -526,37 +526,63 @@
                                 <!-- Featured Badge -->
                                 <span
                                     v-if="item.is_featured"
-                                    class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    title="Featured Property"
+                                    @click.stop.prevent
                                 >
-                                    <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                    <span>FEATURED</span>
+                                    <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                        FEATURED
+                                    </span>
                                 </span>
 
                                 <!-- Verified Badge -->
                                 <span
                                     v-if="item.is_verified || item.isRera"
-                                    class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    title="Verified Property"
+                                    @click.stop.prevent
                                 >
-                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                    <span>VERIFIED</span>
+                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                        VERIFIED
+                                    </span>
                                 </span>
 
                                 <!-- Poster Type Badge (By Owner / Agent / Builder) -->
                                 <span
                                     v-if="item.sellerLabel === 'Owner'"
-                                    class="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    title="Posted by Owner"
+                                    @click.stop.prevent
                                 >
-                                    <span>BY OWNER</span>
+                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                        BY OWNER
+                                    </span>
                                 </span>
                                 <span
                                     v-else-if="item.sellerLabel === 'Agent'"
-                                    class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    title="Agent Listing"
+                                    @click.stop.prevent
                                 >
-                                    <span>AGENT</span>
+                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                        AGENT
+                                    </span>
                                 </span>
 
-                                <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
-                                    ZERO BROKERAGE
+                                <span
+                                    v-if="item.zeroBrokerage"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    title="Zero Brokerage"
+                                    @click.stop.prevent
+                                >
+                                    <svg class="w-3 h-3 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="max-w-0 opacity-0 group-hover/badge:max-w-28 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                        ZERO BROKERAGE
+                                    </span>
                                 </span>
                             </div>
 
