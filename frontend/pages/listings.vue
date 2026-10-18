@@ -126,12 +126,22 @@
 
             <!-- Quick Stats & City Title -->
             <div class="text-right hidden md:block">
-                <span class="text-xs font-black text-slate-900 block">
-                    {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} verified {{ (totalCount || displayedListings.length) === 1 ? 'property' : 'properties' }} found
-                </span>
-                <span class="text-[11px] text-slate-500">
-                    {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : ''}` }}
-                </span>
+                <template v-if="isLoadingProperties">
+                    <span class="text-xs font-bold text-slate-400 block animate-pulse">
+                        Searching properties...
+                    </span>
+                    <span class="text-[11px] text-slate-400">
+                        {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}...` }}
+                    </span>
+                </template>
+                <template v-else>
+                    <span class="text-xs font-black text-slate-900 block">
+                        {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} verified {{ (totalCount || displayedListings.length) === 1 ? 'property' : 'properties' }} found
+                    </span>
+                    <span class="text-[11px] text-slate-500">
+                        {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : ''}` }}
+                    </span>
+                </template>
             </div>
         </div>
 
@@ -140,7 +150,14 @@
             <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 flex-wrap gap-3">
                 <div>
                     <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                        <span v-if="isNearMe">
+                        <span v-if="isLoadingProperties" class="inline-flex items-center gap-2 text-slate-800">
+                            <svg class="w-4 h-4 text-blue-600 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Finding properties in {{ activeCity }}...</span>
+                        </span>
+                        <span v-else-if="isNearMe">
                             {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} results | Properties in 3 Km Near Me
                         </span>
                         <span v-else>
@@ -408,7 +425,57 @@
 
             <!-- Listings Stream (matching cards from 99acres screenshot) -->
             <div class="lg:col-span-3 space-y-5">
-                <div v-if="displayedListings.length === 0" class="bg-white rounded-2xl border border-slate-200/80 p-12 text-center space-y-3">
+                <!-- Loading State Skeleton Loader (shown until loading completes) -->
+                <div v-if="isLoadingProperties" class="space-y-4">
+                    <div
+                        v-for="n in 4"
+                        :key="n"
+                        class="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col md:flex-row gap-5 animate-pulse"
+                    >
+                        <!-- Thumbnail Skeleton -->
+                        <div class="w-full md:w-64 h-52 bg-slate-200 rounded-xl flex-shrink-0 flex flex-col items-center justify-center gap-2">
+                            <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            </svg>
+                            <span class="text-[11px] font-bold text-slate-400">Loading listings...</span>
+                        </div>
+
+                        <!-- Details Skeleton -->
+                        <div class="flex-1 flex flex-col justify-between py-1 space-y-4">
+                            <div>
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="space-y-2 flex-1">
+                                        <div class="h-5 bg-slate-200 rounded-lg w-3/4"></div>
+                                        <div class="h-3.5 bg-slate-200 rounded-md w-1/2"></div>
+                                    </div>
+                                    <div class="h-6 bg-slate-200 rounded-lg w-28"></div>
+                                </div>
+                                <div class="mt-4 flex gap-2">
+                                    <div class="h-6 bg-slate-100 rounded-lg w-16"></div>
+                                    <div class="h-6 bg-slate-100 rounded-lg w-20"></div>
+                                    <div class="h-6 bg-slate-100 rounded-lg w-24"></div>
+                                </div>
+                                <div class="mt-4 space-y-2">
+                                    <div class="h-3 bg-slate-100 rounded w-full"></div>
+                                    <div class="h-3 bg-slate-100 rounded w-4/5"></div>
+                                </div>
+                            </div>
+                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-full bg-slate-200"></div>
+                                    <div class="h-3.5 bg-slate-200 rounded w-28"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div class="h-8 bg-slate-100 rounded-xl w-24"></div>
+                                    <div class="h-8 bg-slate-200 rounded-xl w-28"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State (Only when NOT loading and 0 results) -->
+                <div v-else-if="displayedListings.length === 0" class="bg-white rounded-2xl border border-slate-200/80 p-12 text-center space-y-3">
                     <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-xl font-bold">
                         🔍
                     </div>
@@ -427,191 +494,193 @@
                 </div>
 
                 <!-- 99acres Property Card Template -->
-                <div
-                    v-for="item in displayedListings"
-                    :key="item.id"
-                    @click="goToDetail(item)"
-                    class="bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg p-5 flex flex-col md:flex-row gap-5 group cursor-pointer relative"
-                    :class="item.is_featured
-                        ? 'border-amber-300 ring-1 ring-amber-400/30 shadow-xs bg-gradient-to-r from-amber-50/20 via-white to-white'
-                        : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
-                >
-                    <!-- Property Thumbnail / Gallery Carousel View -->
-                    <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
-                        <img
-                            v-if="item.photos && item.photos.length > 0"
-                            :src="item.photos[0]"
-                            :alt="item.title"
-                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div v-if="item.photos && item.photos.length > 0" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
-                        <div class="text-center p-4 relative z-20">
-                            <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
-                                {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
+                <template v-else>
+                    <div
+                        v-for="item in displayedListings"
+                        :key="item.id"
+                        @click="goToDetail(item)"
+                        class="bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg p-5 flex flex-col md:flex-row gap-5 group cursor-pointer relative"
+                        :class="item.is_featured
+                            ? 'border-amber-300 ring-1 ring-amber-400/30 shadow-xs bg-gradient-to-r from-amber-50/20 via-white to-white'
+                            : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
+                    >
+                        <!-- Property Thumbnail / Gallery Carousel View -->
+                        <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
+                            <img
+                                v-if="item.photos && item.photos.length > 0"
+                                :src="item.photos[0]"
+                                :alt="item.title"
+                                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div v-if="item.photos && item.photos.length > 0" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
+                            <div class="text-center p-4 relative z-20">
+                                <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
+                                    {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
+                                </span>
+                                <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
+                                <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
+                            </div>
+
+                            <!-- 99acres Badge Overlay -->
+                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30">
+                                <!-- Featured Badge -->
+                                <span
+                                    v-if="item.is_featured"
+                                    class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                >
+                                    <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <span>FEATURED</span>
+                                </span>
+
+                                <!-- Verified Badge -->
+                                <span
+                                    v-if="item.is_verified || item.isRera"
+                                    class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                >
+                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    <span>VERIFIED</span>
+                                </span>
+
+                                <!-- Poster Type Badge (By Owner / Agent / Builder) -->
+                                <span
+                                    v-if="item.sellerLabel === 'Owner'"
+                                    class="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                >
+                                    <span>BY OWNER</span>
+                                </span>
+                                <span
+                                    v-else-if="item.sellerLabel === 'Agent'"
+                                    class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                                >
+                                    <span>AGENT</span>
+                                </span>
+
+                                <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
+                                    ZERO BROKERAGE
+                                </span>
+                            </div>
+
+                            <!-- Top Right New Booking Ribbon -->
+                            <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
+                                NEW BOOKING
                             </span>
-                            <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
-                            <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
+
+                            <!-- Bottom Tag & Image count -->
+                            <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
+                                <span class="bg-black/60 px-2 py-0.5 rounded">{{ item.status }}</span>
+                                <span class="bg-black/60 px-2 py-0.5 rounded">1/{{ item.photosCount || 6 }}</span>
+                            </div>
                         </div>
 
-                        <!-- 99acres Badge Overlay -->
-                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30">
-                            <!-- Featured Badge -->
-                            <span
-                                v-if="item.is_featured"
-                                class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
-                            >
-                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                <span>FEATURED</span>
-                            </span>
+                        <!-- Property Details Content -->
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <!-- Header Title and Pricing -->
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h3 class="font-black text-lg text-slate-900 group-hover:text-blue-600 cursor-pointer transition">
+                                                {{ item.title }}
+                                            </h3>
+                                            <span v-if="item.is_featured" class="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                                                ★ Featured
+                                            </span>
+                                        </div>
+                                        <p class="text-xs font-bold text-slate-600 mt-0.5">
+                                            <template v-if="isResidentialType(item.type) && item.bedrooms > 0">
+                                                {{ item.bedrooms }} BHK {{ item.type }}
+                                            </template>
+                                            <template v-else-if="item.area">
+                                                {{ item.area }} {{ item.type }}
+                                            </template>
+                                            <template v-else>
+                                                {{ item.type }}
+                                            </template>
+                                            in <span class="font-extrabold" :style="{ color: brandPrimaryColor }">{{ item.locality }}</span>, {{ item.city }}
+                                        </p>
+                                    </div>
+                                    <div class="text-right flex-shrink-0">
+                                        <span class="text-lg font-black block" :style="{ color: brandPrimaryColor }">{{ item.price }}</span>
+                                        <span v-if="item.rate" class="text-[10px] text-slate-400 font-semibold block">{{ item.rate }}</span>
+                                        <!-- EMI Quick Trigger Pill -->
+                                        <button
+                                            v-if="item.rawPrice > 0"
+                                            type="button"
+                                            @click.stop.prevent="openEmiCalculator(item)"
+                                            class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/90 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200/70 transition cursor-pointer shadow-2xs hover:shadow-xs"
+                                            title="Calculate EMI for this property"
+                                        >
+                                            <span>🏦</span>
+                                            <span>EMI {{ getEstimatedEmi(item.rawPrice) }}/mo</span>
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <!-- Verified Badge -->
-                            <span
-                                v-if="item.is_verified || item.isRera"
-                                class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
-                            >
-                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                <span>VERIFIED</span>
-                            </span>
+                                <!-- Pricing Variants if multi-BHK -->
+                                <div v-if="item.variants" class="mt-3 flex items-center gap-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                    <div v-for="v in item.variants" :key="v.bhk" class="border-r last:border-none border-slate-200 pr-3">
+                                        <span class="text-[10px] text-slate-500 font-bold block">{{ v.bhk }}</span>
+                                        <span class="font-extrabold text-slate-800 text-xs">{{ v.price }}</span>
+                                    </div>
+                                </div>
 
-                            <!-- Poster Type Badge (By Owner / Agent / Builder) -->
-                            <span
-                                v-if="item.sellerLabel === 'Owner'"
-                                class="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
-                            >
-                                <span>BY OWNER</span>
-                            </span>
-                            <span
-                                v-else-if="item.sellerLabel === 'Agent'"
-                                class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
-                            >
-                                <span>AGENT</span>
-                            </span>
+                                <!-- Nearby Landmark & Metro tags -->
+                                <div v-if="item.nearbyLandmarks && item.nearbyLandmarks.length > 0" class="mt-3 text-xs flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[11px] font-bold text-slate-500">Nearby :</span>
+                                    <span
+                                        v-for="(lm, idx) in item.nearbyLandmarks"
+                                        :key="idx"
+                                        class="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md"
+                                    >
+                                        {{ lm }}
+                                    </span>
+                                    <span class="text-[10px] font-bold cursor-pointer hover:underline" :style="{ color: brandPrimaryColor }">+3</span>
+                                </div>
 
-                            <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
-                                ZERO BROKERAGE
-                            </span>
-                        </div>
+                                <!-- Description Snippet -->
+                                <p class="text-xs text-slate-500 mt-2 line-clamp-1">
+                                    {{ item.description }}
+                                </p>
+                            </div>
 
-                        <!-- Top Right New Booking Ribbon -->
-                        <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
-                            NEW BOOKING
-                        </span>
-
-                        <!-- Bottom Tag & Image count -->
-                        <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
-                            <span class="bg-black/60 px-2 py-0.5 rounded">{{ item.status }}</span>
-                            <span class="bg-black/60 px-2 py-0.5 rounded">1/{{ item.photosCount || 6 }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Property Details Content -->
-                    <div class="flex-1 flex flex-col justify-between">
-                        <div>
-                            <!-- Header Title and Pricing -->
-                            <div class="flex items-start justify-between gap-3">
+                            <!-- Footer: Seller Info & Action Buttons -->
+                            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                                 <div>
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <h3 class="font-black text-lg text-slate-900 group-hover:text-blue-600 cursor-pointer transition">
-                                            {{ item.title }}
-                                        </h3>
-                                        <span v-if="item.is_featured" class="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
-                                            ★ Featured
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">{{ item.sellerLabel || 'Owner' }}</span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-xs font-bold text-slate-800">{{ item.sellerName || item.postedBy }}</span>
+                                        <span v-if="item.sellerLabel === 'Owner' && item.project_name" class="text-[11px] text-slate-400 font-medium">({{ item.project_name }})</span>
+                                        <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                            Verified
                                         </span>
                                     </div>
-                                    <p class="text-xs font-bold text-slate-600 mt-0.5">
-                                        <template v-if="isResidentialType(item.type) && item.bedrooms > 0">
-                                            {{ item.bedrooms }} BHK {{ item.type }}
-                                        </template>
-                                        <template v-else-if="item.area">
-                                            {{ item.area }} {{ item.type }}
-                                        </template>
-                                        <template v-else>
-                                            {{ item.type }}
-                                        </template>
-                                        in <span class="font-extrabold" :style="{ color: brandPrimaryColor }">{{ item.locality }}</span>, {{ item.city }}
-                                    </p>
                                 </div>
-                                <div class="text-right flex-shrink-0">
-                                    <span class="text-lg font-black block" :style="{ color: brandPrimaryColor }">{{ item.price }}</span>
-                                    <span v-if="item.rate" class="text-[10px] text-slate-400 font-semibold block">{{ item.rate }}</span>
-                                    <!-- EMI Quick Trigger Pill -->
+
+                                <div class="flex items-center gap-2">
                                     <button
-                                        v-if="item.rawPrice > 0"
                                         type="button"
-                                        @click.stop.prevent="openEmiCalculator(item)"
-                                        class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/90 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200/70 transition cursor-pointer shadow-2xs hover:shadow-xs"
-                                        title="Calculate EMI for this property"
+                                        @click.stop.prevent="downloadBrochure(item)"
+                                        class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
                                     >
-                                        <span>🏦</span>
-                                        <span>EMI {{ getEstimatedEmi(item.rawPrice) }}/mo</span>
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        <span>Brochure</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        @click.stop.prevent="contactSeller(item)"
+                                        class="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 hover:opacity-90"
+                                        :style="{ backgroundColor: brandPrimaryColor }"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                        <span>View Number</span>
                                     </button>
                                 </div>
                             </div>
-
-                            <!-- Pricing Variants if multi-BHK -->
-                            <div v-if="item.variants" class="mt-3 flex items-center gap-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <div v-for="v in item.variants" :key="v.bhk" class="border-r last:border-none border-slate-200 pr-3">
-                                    <span class="text-[10px] text-slate-500 font-bold block">{{ v.bhk }}</span>
-                                    <span class="font-extrabold text-slate-800 text-xs">{{ v.price }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Nearby Landmark & Metro tags -->
-                            <div v-if="item.nearbyLandmarks && item.nearbyLandmarks.length > 0" class="mt-3 text-xs flex items-center gap-1.5 flex-wrap">
-                                <span class="text-[11px] font-bold text-slate-500">Nearby :</span>
-                                <span
-                                    v-for="(lm, idx) in item.nearbyLandmarks"
-                                    :key="idx"
-                                    class="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md"
-                                >
-                                    {{ lm }}
-                                </span>
-                                <span class="text-[10px] font-bold cursor-pointer hover:underline" :style="{ color: brandPrimaryColor }">+3</span>
-                            </div>
-
-                            <!-- Description Snippet -->
-                            <p class="text-xs text-slate-500 mt-2 line-clamp-1">
-                                {{ item.description }}
-                            </p>
-                        </div>
-
-                        <!-- Footer: Seller Info & Action Buttons -->
-                        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                            <div>
-                                <span class="text-[10px] uppercase font-bold text-slate-400 block">{{ item.sellerLabel || 'Owner' }}</span>
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-xs font-bold text-slate-800">{{ item.sellerName || item.postedBy }}</span>
-                                    <span v-if="item.sellerLabel === 'Owner' && item.project_name" class="text-[11px] text-slate-400 font-medium">({{ item.project_name }})</span>
-                                    <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
-                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                        Verified
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    @click.stop.prevent="downloadBrochure(item)"
-                                    class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-                                >
-                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                    <span>Brochure</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    @click.stop.prevent="contactSeller(item)"
-                                    class="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 hover:opacity-90"
-                                    :style="{ backgroundColor: brandPrimaryColor }"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                    <span>View Number</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
-                </div>
+                </template>
 
                 <!-- Load More / Pagination Stream for Crores of Records -->
                 <div v-if="hasNextPage" class="pt-4 pb-8 flex flex-col items-center justify-center gap-2">
@@ -1114,7 +1183,7 @@ const downloadBrochure = (item) => {
 };
 
 const apiProperties = ref([]);
-const isLoadingProperties = ref(false);
+const isLoadingProperties = ref(true);
 
 const defaultFallbackListings = [
     {
