@@ -22,10 +22,17 @@ Route::prefix('auth')->group(function () {
     Route::post('/verify-otp', [UserAuthController::class, 'verifyOtp']);
     Route::post('/complete-profile', [UserAuthController::class, 'completeProfile']);
 
+    // Email Verification
+    Route::get('/email/verify/{id}/{hash}', [UserAuthController::class, 'verifyEmail'])
+        ->middleware(['signed'])
+        ->name('verification.verify');
+
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserAuthController::class, 'me']);
         Route::put('/profile', [UserAuthController::class, 'updateProfile']);
         Route::post('/logout', [UserAuthController::class, 'logout']);
+        Route::post('/email/resend', [UserAuthController::class, 'resendVerificationEmail']);
+        Route::get('/email/status', [UserAuthController::class, 'emailVerificationStatus']);
     });
 });
 

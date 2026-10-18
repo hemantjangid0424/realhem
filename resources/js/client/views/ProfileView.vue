@@ -195,6 +195,18 @@
                                 <span class="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full capitalize">
                                     {{ currentUser.role || 'Owner' }}
                                 </span>
+                                <span v-if="currentUser.email_verified || currentUser.email_verified_at" class="text-[10px] font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    ✓ Verified Email
+                                </span>
+                                <button
+                                    v-else
+                                    type="button"
+                                    @click="resendVerification"
+                                    :disabled="isResendingEmail"
+                                    class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full flex items-center gap-1 hover:bg-amber-300 transition cursor-pointer disabled:opacity-50"
+                                >
+                                    <span>⚠️ {{ resendFeedback || 'Verify Email (Resend)' }}</span>
+                                </button>
                             </div>
                             <div class="text-xs text-blue-100/90 flex items-center gap-2 mt-1">
                                 <span>📧 {{ currentUser.email }}</span>
@@ -767,6 +779,33 @@ const handleSaveProfile = async () => {
         errorMessage.value = 'Network error while updating profile.';
     } finally {
         isSavingProfile.value = false;
+    }
+};
+
+const isResendingEmail = ref(false);
+const resendFeedback = ref('');
+
+const resendVerification = async () => {
+    const token = localStorage.getItem('realhem_user_token');
+    if (!token) return;
+    isResendingEmail.value = true;
+    resendFeedback.value = '';
+    try {
+        const res = await fetch('/api/auth/email/resend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await res.json();
+        resendFeedback.value = data.message || 'Verification email sent!';
+        setTimeout(() => { resendFeedback.value = ''; }, 5000);
+    } catch {
+        resendFeedback.value = 'Failed to send. Try again.';
+    } finally {
+        isResendingEmail.value = false;
     }
 };
 

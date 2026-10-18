@@ -1,0 +1,1523 @@
+<template>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <!-- Top Search Bar (99acres style with Voice Search & Category Switcher) -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 relative z-30">
+            <div class="w-full md:max-w-2xl flex-1 relative z-40">
+                <form @submit.prevent="selectActiveSuggestionOrSubmit" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-1.5 flex items-center gap-2 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
+                    <!-- Buy/Rent Type Dropdown -->
+                    <div class="relative flex-shrink-0 pl-2">
+                        <select
+                            v-model="activeType"
+                            @change="runSearch"
+                            class="bg-transparent border-none text-xs font-bold text-slate-800 outline-none cursor-pointer pr-4 appearance-none capitalize"
+                        >
+                            <option value="all">All</option>
+                            <option value="buy">Buy</option>
+                            <option value="rent">Rent</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="plots">Plots</option>
+                        </select>
+                        <svg class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+
+                    <div class="h-5 w-px bg-slate-200"></div>
+
+                    <!-- Selected City Chip (matching 99acres screenshot: Buy | Ahmedabad x | Add more) -->
+                    <div v-if="activeCity && activeCity !== 'All' && !isNearMe" class="flex items-center gap-1.5 bg-slate-200/90 text-slate-800 text-xs font-bold px-2.5 py-1 rounded-xl flex-shrink-0">
+                        <span>{{ activeCity }}</span>
+                        <button type="button" @click="clearCity" class="hover:text-red-600 text-slate-500 font-bold cursor-pointer transition text-xs" title="Clear city filter">✕</button>
+                    </div>
+
+                    <!-- Selected Keyword or Near Me Pill (matching 99acres) -->
+                    <div v-if="searchKeyword" class="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-xl flex-shrink-0 border border-blue-200/60">
+                        <span>{{ searchKeyword }}</span>
+                        <button type="button" @click="clearKeyword" class="hover:text-blue-900 cursor-pointer">✕</button>
+                    </div>
+
+                    <!-- Input for Locality / Project -->
+                    <input
+                        v-model="searchInput"
+                        type="text"
+                        :placeholder="(activeCity && !isNearMe) || searchKeyword ? 'Add more / Search Project, Locality...' : 'Search Locality, Landmark, Project or Title...'"
+                        @input="onSearchInput"
+                        @focus="onSearchFocus"
+                        @blur="closeSuggestionsWithDelay"
+                        @keydown.down.prevent="navigateSuggestions(1)"
+                        @keydown.up.prevent="navigateSuggestions(-1)"
+                        @keydown.esc="isSuggestionsOpen = false"
+                        class="w-full text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none bg-transparent px-2 min-w-0"
+                    />
+
+                    <!-- Voice Mic, GPS & Search Buttons -->
+                    <div class="flex items-center gap-1.5 pr-1 flex-shrink-0">
+                        <!-- GPS Detect Location Button -->
+                        <button
+                            type="button"
+                            @click="detectLocationListings"
+                            :disabled="isDetectingLocation"
+                            :title="isDetectingLocation ? 'Detecting location...' : 'Detect My Location & Nearby Areas'"
+                            class="w-8 h-8 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
+                        >
+                            <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </button>
+
+                        <!-- Mic Button -->
+                        <button
+                            type="button"
+                            @click="openVoiceSearchListings"
+                            title="Search by Voice"
+                            class="w-8 h-8 rounded-xl text-slate-500 hover:text-[#005ca8] hover:bg-blue-50 flex items-center justify-center cursor-pointer transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                        </button>
+
+                        <!-- Search Button -->
+                        <button
+                            type="submit"
+                            class="w-8 h-8 rounded-xl text-white flex items-center justify-center shadow-xs cursor-pointer transition hover:opacity-90"
+                            :style="{ backgroundColor: brandPrimaryColor }"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Autocomplete Suggestions Dropdown -->
+                <div
+                    v-if="isSuggestionsOpen && (suggestions.length > 0 || isSuggestionsLoading)"
+                    class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 text-left animate-fadeIn max-h-[360px] overflow-y-auto divide-y divide-slate-100"
+                >
+                    <div v-if="isSuggestionsLoading" class="p-3 text-xs text-slate-500 flex items-center gap-2 bg-slate-50">
+                        <svg class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Finding matching cities, apartments &amp; properties...</span>
+                    </div>
+
+                    <button
+                        v-for="(item, idx) in suggestions"
+                        :key="idx"
+                        type="button"
+                        @mousedown.prevent="handleSelectSuggestion(item)"
+                        @mouseenter="activeSuggestionIndex = idx"
+                        class="w-full px-4 py-2.5 flex items-center justify-between text-left transition cursor-pointer"
+                        :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
+                    >
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold truncate flex items-center gap-2">
+                                    <span class="truncate">{{ item.title }}</span>
+                                    <span
+                                        class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md shrink-0"
+                                        :class="item.type === 'city' ? 'bg-indigo-100 text-indigo-700' : item.type === 'project' ? 'bg-emerald-100 text-emerald-700' : item.type === 'property' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-700'"
+                                    >
+                                        {{ item.category }}
+                                    </span>
+                                </div>
+                                <div class="text-[11px] text-slate-500 truncate mt-0.5">
+                                    {{ item.subtitle }}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-blue-600 font-bold shrink-0 ml-2">Select &rarr;</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats & City Title -->
+            <div class="text-right hidden md:block">
+                <span class="text-xs font-black text-slate-900 block">
+                    {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} verified {{ (totalCount || displayedListings.length) === 1 ? 'property' : 'properties' }} found
+                </span>
+                <span class="text-[11px] text-slate-500">
+                    {{ isNearMe ? 'within 3 Km Near Me' : `in ${activeCity}${activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : ''}` }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Result Headline & Quick Filter Bar (99acres layout) -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 flex-wrap gap-3">
+                <div>
+                    <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                        <span v-if="isNearMe">
+                            {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} results | Properties in 3 Km Near Me
+                        </span>
+                        <span v-else>
+                            {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} results | {{ selectedBhks.length > 0 ? selectedBhks.join(', ') + ' ' : '' }}Property in {{ searchKeyword ? searchKeyword + ', ' : '' }}{{ activeCity }}{{ activeType !== 'all' ? ` for ${activeType === 'rent' ? 'Rent' : (activeType === 'commercial' ? 'Commercial' : (activeType === 'plots' ? 'Plots' : 'Sale'))}` : '' }}
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        <span v-if="isNearMe">
+                            📍 Automatically detected your location &middot; Showing nearby properties in {{ activeCity }}
+                        </span>
+                        <span v-else>
+                            Showing verified listings matching your preferences
+                        </span>
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-500 hidden sm:inline">Sort By:</span>
+                    <select v-model="sortBy" class="bg-white border border-slate-200 rounded-xl text-xs font-semibold py-1.5 px-3 outline-none cursor-pointer">
+                        <option value="relevance">Relevance</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="newest">Newest First</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Horizontal Quick Tags Bar (Matching 99acres: New Launch, Owner, Verified, Under Construction, Ready to Move) -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+                <button
+                    @click="toggleTag('new_launch')"
+                    class="px-3.5 py-1.5 rounded-full font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap border"
+                    :class="selectedTags.includes('new_launch') ? 'bg-amber-50 text-amber-900 border-amber-300 font-extrabold shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                >
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>NEW LAUNCH</span>
+                </button>
+
+                <button
+                    v-for="tag in quickTags"
+                    :key="tag.id"
+                    @click="toggleTag(tag.id)"
+                    class="px-3 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap border"
+                    :class="selectedTags.includes(tag.id) ? 'bg-blue-50 text-blue-700 border-blue-300 font-bold shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                >
+                    {{ tag.label }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Layout Grid: Applied Filters Left Sidebar, Listings Right -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar: Applied Filters (matching screenshot with red box) -->
+            <div class="space-y-6">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-xs font-black uppercase tracking-wider text-slate-800">Applied Filters</span>
+                        <button
+                            v-if="hasActiveFilters"
+                            @click="resetFilters"
+                            class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                        >
+                            Clear All
+                        </button>
+                    </div>
+
+                    <!-- Active Filter Chips (BHK, Property Type, Keywords) -->
+                    <div v-if="selectedBhks.length > 0 || (searchKeyword && !isNearMe) || selectedPropTypes.length > 0" class="flex flex-wrap gap-1.5 pb-3 border-b border-slate-100">
+                        <!-- BHK Chips (Matching 99acres 3 BHK x badge) -->
+                        <span
+                            v-for="bhk in selectedBhks"
+                            :key="bhk"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ bhk }}</span>
+                            <button
+                                type="button"
+                                @click="toggleBhk(bhk)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove BHK filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Property Type Chips -->
+                        <span
+                            v-for="pt in selectedPropTypes"
+                            :key="pt"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ pt }}</span>
+                            <button
+                                type="button"
+                                @click="togglePropertyType(pt)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove property type filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Keyword Chip -->
+                        <span
+                            v-if="searchKeyword && !isNearMe"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ searchKeyword }}</span>
+                            <button
+                                type="button"
+                                @click="clearKeyword"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove keyword filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+                    </div>
+
+                    <!-- Nearby Localities Chips (Exact 99acres style from screenshot) -->
+                    <div v-if="activeNearbyAreas.length > 0" class="space-y-2 pb-3 border-b border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nearby Areas ({{ activeNearbyAreas.length }})</span>
+                            <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded">Within 3 Km</span>
+                        </div>
+
+                        <!-- Scrollable / Wrapped Chips Grid -->
+                        <div class="flex flex-wrap gap-1.5 max-h-80 overflow-y-auto pr-1">
+                            <span
+                                v-for="area in activeNearbyAreas"
+                                :key="area"
+                                class="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-white text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs hover:border-slate-300 transition group"
+                            >
+                                <span>{{ area }}</span>
+                                <button
+                                    type="button"
+                                    @click="removeNearbyArea(area)"
+                                    class="text-slate-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                    title="Remove this nearby area"
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Verified Properties Toggle (from screenshot) -->
+                    <div class="flex items-center justify-between py-1 border-b border-slate-100">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 block">Verified properties</span>
+                            <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                by 99acres verification team
+                            </span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="verifiedOnly" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Budget Range -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Budget</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select v-model="budgetMin" class="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2 text-[11px] font-semibold outline-none">
+                                <option value="">No min</option>
+                                <option value="40">₹40 L</option>
+                                <option value="60">₹60 L</option>
+                                <option value="80">₹80 L</option>
+                                <option value="100">₹1 Cr</option>
+                            </select>
+                            <select v-model="budgetMax" class="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2 text-[11px] font-semibold outline-none">
+                                <option value="">No max</option>
+                                <option value="80">₹80 L</option>
+                                <option value="120">₹1.2 Cr</option>
+                                <option value="150">₹1.5 Cr</option>
+                                <option value="250">₹2.5 Cr</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Type of Property -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Type of property</label>
+                        <div class="space-y-1.5">
+                            <button
+                                v-for="propType in propertyTypeOptions"
+                                :key="propType"
+                                @click="togglePropertyType(propType)"
+                                class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer flex items-center justify-between"
+                                :class="selectedPropTypes.includes(propType) ? 'bg-blue-50 border-blue-400 text-blue-700 font-bold' : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'"
+                            >
+                                <span>+ {{ propType }}</span>
+                                <span v-if="selectedPropTypes.includes(propType)">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- No. of Bedrooms (BHK) - Residential Only -->
+                    <div v-if="activeType !== 'commercial' && activeType !== 'plots' && activeType !== 'plots_land'">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">No. of Bedrooms</label>
+                            <button
+                                v-if="selectedBhks.length > 0"
+                                type="button"
+                                @click="selectedBhks = []; runSearch()"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                v-for="bhk in ['1 RK/ 1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK']"
+                                :key="bhk"
+                                @click="toggleBhk(bhk)"
+                                class="py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition cursor-pointer flex items-center justify-center gap-1"
+                                :class="isBhkActive(bhk) ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            >
+                                <span v-if="isBhkActive(bhk)">✓</span>
+                                <span v-else>+</span>
+                                <span>{{ bhk }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Possession Status -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Possession Status</label>
+                        <div class="space-y-2 text-xs text-slate-600">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="readyToMove" class="rounded text-blue-600 focus:ring-blue-500">
+                                <span>Ready to Move</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="underConstruction" class="rounded text-blue-600 focus:ring-blue-500">
+                                <span>Under Construction</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Trust & Badges -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Trust & Highlights</label>
+                        <div class="space-y-2 text-xs text-slate-600">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="verifiedOnly" class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="inline-flex items-center gap-1 font-semibold text-blue-700">
+                                    <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    Verified Properties
+                                </span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="featuredOnly" class="rounded text-amber-500 focus:ring-amber-500">
+                                <span class="inline-flex items-center gap-1 font-semibold text-amber-700">
+                                    <span>★</span>
+                                    Featured Only
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listings Stream (matching cards from 99acres screenshot) -->
+            <div class="lg:col-span-3 space-y-5">
+                <div v-if="displayedListings.length === 0" class="bg-white rounded-2xl border border-slate-200/80 p-12 text-center space-y-3">
+                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-xl font-bold">
+                        🔍
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">No properties matching selected nearby filters</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                        Try adding more nearby areas or resetting filters to view all available listings.
+                    </p>
+                    <button
+                        type="button"
+                        @click="resetFilters"
+                        class="px-4 py-2 text-white rounded-xl text-xs font-bold transition cursor-pointer hover:opacity-90 shadow-xs"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        Reset All Filters
+                    </button>
+                </div>
+
+                <!-- 99acres Property Card Template -->
+                <div
+                    v-for="item in displayedListings"
+                    :key="item.id"
+                    @click="goToDetail(item)"
+                    class="bg-white rounded-2xl border transition-all duration-300 hover:shadow-lg p-5 flex flex-col md:flex-row gap-5 group cursor-pointer relative"
+                    :class="item.is_featured
+                        ? 'border-amber-300 ring-1 ring-amber-400/30 shadow-xs bg-gradient-to-r from-amber-50/20 via-white to-white'
+                        : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
+                >
+                    <!-- Property Thumbnail / Gallery Carousel View -->
+                    <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
+                        <img
+                            v-if="item.photos && item.photos.length > 0"
+                            :src="item.photos[0]"
+                            :alt="item.title"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div v-if="item.photos && item.photos.length > 0" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
+                        <div class="text-center p-4 relative z-20">
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
+                                {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
+                            </span>
+                            <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
+                            <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
+                        </div>
+
+                        <!-- 99acres Badge Overlay -->
+                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30">
+                            <!-- Featured Badge -->
+                            <span
+                                v-if="item.is_featured"
+                                class="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <span>FEATURED</span>
+                            </span>
+
+                            <!-- Verified Badge -->
+                            <span
+                                v-if="item.is_verified || item.isRera"
+                                class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <span>VERIFIED</span>
+                            </span>
+
+                            <!-- Poster Type Badge (By Owner / Agent / Builder) -->
+                            <span
+                                v-if="item.sellerLabel === 'Owner'"
+                                class="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <span>BY OWNER</span>
+                            </span>
+                            <span
+                                v-else-if="item.sellerLabel === 'Agent'"
+                                class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center gap-1"
+                            >
+                                <span>AGENT</span>
+                            </span>
+
+                            <span v-if="item.zeroBrokerage" class="px-1.5 py-0.5 rounded bg-slate-900/90 text-amber-300 font-bold text-[9px] uppercase tracking-wide">
+                                ZERO BROKERAGE
+                            </span>
+                        </div>
+
+                        <!-- Top Right New Booking Ribbon -->
+                        <span v-if="item.isNewBooking" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-black text-[9px] uppercase tracking-wide border border-indigo-200 shadow-2xs z-30">
+                            NEW BOOKING
+                        </span>
+
+                        <!-- Bottom Tag & Image count -->
+                        <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
+                            <span class="bg-black/60 px-2 py-0.5 rounded">{{ item.status }}</span>
+                            <span class="bg-black/60 px-2 py-0.5 rounded">1/{{ item.photosCount || 6 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Property Details Content -->
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div>
+                            <!-- Header Title and Pricing -->
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="font-black text-lg text-slate-900 group-hover:text-blue-600 cursor-pointer transition">
+                                            {{ item.title }}
+                                        </h3>
+                                        <span v-if="item.is_featured" class="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                                            ★ Featured
+                                        </span>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-600 mt-0.5">
+                                        <template v-if="isResidentialType(item.type) && item.bedrooms > 0">
+                                            {{ item.bedrooms }} BHK {{ item.type }}
+                                        </template>
+                                        <template v-else-if="item.area">
+                                            {{ item.area }} {{ item.type }}
+                                        </template>
+                                        <template v-else>
+                                            {{ item.type }}
+                                        </template>
+                                        in <span class="font-extrabold" :style="{ color: brandPrimaryColor }">{{ item.locality }}</span>, {{ item.city }}
+                                    </p>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <span class="text-lg font-black block" :style="{ color: brandPrimaryColor }">{{ item.price }}</span>
+                                    <span v-if="item.rate" class="text-[10px] text-slate-400 font-semibold block">{{ item.rate }}</span>
+                                    <!-- EMI Quick Trigger Pill -->
+                                    <button
+                                        v-if="item.rawPrice > 0"
+                                        type="button"
+                                        @click.stop.prevent="openEmiCalculator(item)"
+                                        class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/90 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200/70 transition cursor-pointer shadow-2xs hover:shadow-xs"
+                                        title="Calculate EMI for this property"
+                                    >
+                                        <span>🏦</span>
+                                        <span>EMI {{ getEstimatedEmi(item.rawPrice) }}/mo</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Pricing Variants if multi-BHK -->
+                            <div v-if="item.variants" class="mt-3 flex items-center gap-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <div v-for="v in item.variants" :key="v.bhk" class="border-r last:border-none border-slate-200 pr-3">
+                                    <span class="text-[10px] text-slate-500 font-bold block">{{ v.bhk }}</span>
+                                    <span class="font-extrabold text-slate-800 text-xs">{{ v.price }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Nearby Landmark & Metro tags -->
+                            <div v-if="item.nearbyLandmarks && item.nearbyLandmarks.length > 0" class="mt-3 text-xs flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[11px] font-bold text-slate-500">Nearby :</span>
+                                <span
+                                    v-for="(lm, idx) in item.nearbyLandmarks"
+                                    :key="idx"
+                                    class="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md"
+                                >
+                                    {{ lm }}
+                                </span>
+                                <span class="text-[10px] font-bold cursor-pointer hover:underline" :style="{ color: brandPrimaryColor }">+3</span>
+                            </div>
+
+                            <!-- Description Snippet -->
+                            <p class="text-xs text-slate-500 mt-2 line-clamp-1">
+                                {{ item.description }}
+                            </p>
+                        </div>
+
+                        <!-- Footer: Seller Info & Action Buttons -->
+                        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">{{ item.sellerLabel || 'Owner' }}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-bold text-slate-800">{{ item.sellerName || item.postedBy }}</span>
+                                    <span v-if="item.sellerLabel === 'Owner' && item.project_name" class="text-[11px] text-slate-400 font-medium">({{ item.project_name }})</span>
+                                    <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
+                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        Verified
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="downloadBrochure(item)"
+                                    class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <span>Brochure</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="contactSeller(item)"
+                                    class="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 hover:opacity-90"
+                                    :style="{ backgroundColor: brandPrimaryColor }"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    <span>View Number</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load More / Pagination Stream for Crores of Records -->
+                <div v-if="hasNextPage" class="pt-4 pb-8 flex flex-col items-center justify-center gap-2">
+                    <button
+                        type="button"
+                        @click="loadNextPage"
+                        :disabled="isLoadingMore"
+                        class="px-6 py-3 rounded-2xl text-sm font-extrabold text-white shadow-md transition-all cursor-pointer hover:shadow-lg disabled:opacity-60 flex items-center gap-2"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        <span v-if="isLoadingMore" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>{{ isLoadingMore ? 'Loading More Properties...' : 'Load More Properties' }}</span>
+                    </button>
+                    <span class="text-xs text-slate-400 font-semibold">
+                        Showing {{ apiProperties.length }} of {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : apiProperties.length }} listings
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Modal -->
+        <div v-if="showContactModal && selectedContactProperty" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showContactModal = false"></div>
+            <div class="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-5 z-10 animate-fadeIn">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-black text-slate-900">Contact Seller</h3>
+                    <button @click="showContactModal = false" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer text-sm">✕</button>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-base flex-shrink-0 shadow-md" :style="{ backgroundColor: brandPrimaryColor }">
+                        {{ (selectedContactProperty.sellerName || selectedContactProperty.postedBy || 'V').slice(0, 2).toUpperCase() }}
+                    </div>
+                    <div>
+                        <div class="text-sm font-black text-slate-900">{{ selectedContactProperty.sellerName || selectedContactProperty.postedBy }}</div>
+                        <div class="text-[11px] text-emerald-600 font-bold">✓ Verified {{ selectedContactProperty.sellerLabel || 'Owner' }}</div>
+                    </div>
+                </div>
+                <div v-if="selectedContactProperty.sellerPhone" class="space-y-2.5">
+                    <a
+                        :href="'tel:' + selectedContactProperty.sellerPhone"
+                        class="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl text-white font-bold text-sm transition cursor-pointer shadow-md hover:opacity-95"
+                        :style="{ backgroundColor: brandPrimaryColor }"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        Call {{ selectedContactProperty.sellerPhone }}
+                    </a>
+                </div>
+                <div v-else class="text-xs text-slate-600 bg-amber-50 border border-amber-200 p-3 rounded-xl text-center">
+                    Phone number will be shared via SMS / Email for verified inquiries.
+                </div>
+                <button
+                    type="button"
+                    @click="goToDetail(selectedContactProperty); showContactModal = false"
+                    class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+                >
+                    View Full Property Details &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- EMI Calculator Modal -->
+        <EmiCalculatorModal
+            :is-open="isEmiModalOpen"
+            :property-price="selectedEmiProperty?.rawPrice || 5000000"
+            :property-title="selectedEmiProperty?.title || ''"
+            :property-city="selectedEmiProperty?.city || ''"
+            @close="isEmiModalOpen = false"
+        />
+    </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
+import { isResidentialType } from '~/utils/propertyConstants';
+import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
+
+const route = useRoute();
+const router = useRouter();
+const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
+const { currentCity, currentLocality, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
+const { brandPrimaryColor } = useCompanyBranding();
+const { suggestions, isLoading: isSuggestionsLoading, fetchSuggestions, clearSuggestions } = useSearchSuggestions();
+const { fetchWithCache, get: getFromCache, invalidate: invalidateCache } = useFrontendCache();
+
+useSeoMeta({
+    title: () => `Verified Properties for Sale & Rent in ${route.query.city || currentCity.value || 'India'}`,
+    description: () => `Browse verified apartments, villas, plots and commercial real estate properties in ${route.query.city || currentCity.value || 'India'} with direct seller contact.`,
+    ogTitle: () => `Verified Properties for Sale & Rent in ${route.query.city || currentCity.value || 'India'}`,
+    ogDescription: () => `Browse verified apartments, villas, plots and commercial real estate properties in ${route.query.city || currentCity.value || 'India'} with direct seller contact.`,
+});
+
+const activeType = ref(route.query.type || 'all');
+const activeCity = ref(route.query.city || currentCity.value || 'Ahmedabad');
+const searchKeyword = ref(route.query.keyword || (route.query.near_me === 'true' ? 'Near me' : ''));
+const searchInput = ref('');
+const isNearMe = ref(route.query.near_me === 'true');
+const selectedBhks = ref(route.query.bhk ? route.query.bhk.split(',') : []);
+const selectedTags = ref([]);
+const selectedPropTypes = ref([]);
+const verifiedOnly = ref(false);
+const featuredOnly = ref(false);
+const readyToMove = ref(true);
+const underConstruction = ref(false);
+const budgetMin = ref('');
+const budgetMax = ref('');
+const sortBy = ref('relevance');
+
+const currentPage = ref(1);
+const totalCount = ref(0);
+const hasNextPage = ref(false);
+const isLoadingMore = ref(false);
+
+const isEmiModalOpen = ref(false);
+const selectedEmiProperty = ref(null);
+const showContactModal = ref(false);
+const selectedContactProperty = ref(null);
+
+const openEmiCalculator = (item) => {
+    selectedEmiProperty.value = item;
+    isEmiModalOpen.value = true;
+};
+
+const getEstimatedEmi = (rawPrice) => {
+    const price = Number(rawPrice);
+    if (!price || price <= 0) return '₹ 0';
+    const P = price * 0.8;
+    const r = 0.085 / 12;
+    const n = 240;
+    const factor = Math.pow(1 + r, n);
+    const emi = Math.round((P * r * factor) / (factor - 1));
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(emi);
+};
+
+const goToDetail = (item) => {
+    const slugOrId = item.slug || item.id;
+    router.push(`/property/${slugOrId}`);
+};
+
+const isSuggestionsOpen = ref(false);
+const activeSuggestionIndex = ref(-1);
+
+const onSearchInput = () => {
+    activeSuggestionIndex.value = -1;
+    if (searchInput.value.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(searchInput.value, activeCity.value !== 'All' ? activeCity.value : '');
+    } else {
+        isSuggestionsOpen.value = false;
+        clearSuggestions();
+    }
+};
+
+const onSearchFocus = () => {
+    if (searchInput.value.trim().length > 0) {
+        isSuggestionsOpen.value = true;
+        fetchSuggestions(searchInput.value, activeCity.value !== 'All' ? activeCity.value : '');
+    }
+};
+
+const closeSuggestionsWithDelay = () => {
+    setTimeout(() => {
+        isSuggestionsOpen.value = false;
+    }, 200);
+};
+
+const navigateSuggestions = (dir) => {
+    if (!suggestions.value.length) return;
+    activeSuggestionIndex.value = (activeSuggestionIndex.value + dir + suggestions.value.length) % suggestions.value.length;
+};
+
+const selectActiveSuggestionOrSubmit = () => {
+    if (isSuggestionsOpen.value && activeSuggestionIndex.value >= 0 && suggestions.value[activeSuggestionIndex.value]) {
+        handleSelectSuggestion(suggestions.value[activeSuggestionIndex.value]);
+    } else {
+        runSearch();
+    }
+};
+
+const handleSelectSuggestion = (item) => {
+    isSuggestionsOpen.value = false;
+    clearSuggestions();
+    searchInput.value = '';
+
+    if (item.type === 'property' && item.slug) {
+        router.push(`/property/${item.slug}`);
+        return;
+    }
+
+    if (item.type === 'city') {
+        setCity(item.city);
+        activeCity.value = item.city;
+        searchKeyword.value = '';
+        isNearMe.value = false;
+        activeNearbyAreas.value = [];
+        runSearch();
+        return;
+    }
+
+    if (item.city) {
+        setCity(item.city);
+        activeCity.value = item.city;
+    }
+    searchKeyword.value = item.keyword || item.title;
+    isNearMe.value = false;
+    activeNearbyAreas.value = [];
+    runSearch();
+};
+
+// Active Nearby Areas Chips in Applied Filters (Exact from user's 99acres screenshot)
+const activeNearbyAreas = ref([]);
+
+const quickTags = [
+    { id: 'owner', label: 'Owner' },
+    { id: 'verified', label: 'Verified' },
+    { id: 'under_construction', label: 'Under construction' },
+    { id: 'ready_to_move', label: 'Ready To Move' },
+    { id: 'with_photos', label: 'With Photos' },
+];
+
+const propertyTypeOptions = computed(() => {
+    if (activeType.value === 'commercial') {
+        return [
+            'Commercial Shop',
+            'Commercial Office',
+            'Commercial Showroom',
+            'Commercial Land',
+        ];
+    }
+    if (activeType.value === 'plots' || activeType.value === 'plots_land') {
+        return [
+            'Residential Plot',
+            'Commercial Land',
+            'Agricultural Land',
+        ];
+    }
+    return [
+        'Residential Apartment',
+        'Independent House/Villa',
+        'Builder Floor',
+        'Residential Land',
+        '1 RK/ Studio Apartment',
+    ];
+});
+
+const hasActiveFilters = computed(() => {
+    return (
+        activeNearbyAreas.value.length > 0 ||
+        !!searchKeyword.value ||
+        selectedBhks.value.length > 0 ||
+        selectedPropTypes.value.length > 0 ||
+        selectedTags.value.length > 0 ||
+        !!budgetMin.value ||
+        !!budgetMax.value ||
+        verifiedOnly.value ||
+        featuredOnly.value ||
+        !readyToMove.value ||
+        underConstruction.value
+    );
+});
+
+const isBhkActive = (bhk) => {
+    if (bhk === '1 RK/ 1 BHK') {
+        return selectedBhks.value.includes('1 BHK') || selectedBhks.value.includes('1 RK/ 1 BHK');
+    }
+    if (bhk === '4 BHK') {
+        return selectedBhks.value.includes('4 BHK') || selectedBhks.value.includes('4+ BHK');
+    }
+    if (bhk === '5 BHK') {
+        return selectedBhks.value.includes('5 BHK') || selectedBhks.value.includes('4+ BHK');
+    }
+    return selectedBhks.value.includes(bhk);
+};
+
+const initNearbyAreas = async () => {
+    if (isNearMe.value) {
+        const lat = route.query.lat ? parseFloat(route.query.lat) : null;
+        const lng = route.query.lng ? parseFloat(route.query.lng) : null;
+        const locality = route.query.locality || currentLocality?.value || '';
+
+        try {
+            const fetched = await fetchNearbyLocalities(activeCity.value, locality, lat, lng);
+            activeNearbyAreas.value = fetched && fetched.length > 0 ? [...fetched] : (locality ? [locality] : []);
+        } catch {
+            activeNearbyAreas.value = locality ? [locality] : [];
+        }
+    } else {
+        activeNearbyAreas.value = [];
+    }
+};
+
+// Sync state if route query changes
+watch(
+    () => route.query,
+    async (newQ) => {
+        activeType.value = newQ.type || 'all';
+        if (newQ.city) {
+            activeCity.value = newQ.city;
+        } else if (!activeCity.value || activeCity.value === 'All') {
+            activeCity.value = currentCity.value || 'Ahmedabad';
+        }
+
+        if (newQ.near_me === 'true') {
+            isNearMe.value = true;
+            searchKeyword.value = 'Near me';
+            await initNearbyAreas();
+        } else if (newQ.keyword !== undefined) {
+            searchKeyword.value = newQ.keyword;
+            isNearMe.value = false;
+        } else {
+            searchKeyword.value = '';
+            isNearMe.value = false;
+        }
+        if (newQ.bhk) {
+            selectedBhks.value = newQ.bhk.split(',');
+        } else {
+            selectedBhks.value = [];
+        }
+        fetchApiProperties(1, false);
+    }
+);
+
+const removeNearbyArea = (areaName) => {
+    activeNearbyAreas.value = activeNearbyAreas.value.filter((item) => item !== areaName);
+};
+
+const toggleTag = (tagId) => {
+    const idx = selectedTags.value.indexOf(tagId);
+    if (idx === -1) selectedTags.value.push(tagId);
+    else selectedTags.value.splice(idx, 1);
+};
+
+const togglePropertyType = (type) => {
+    const idx = selectedPropTypes.value.indexOf(type);
+    if (idx === -1) selectedPropTypes.value.push(type);
+    else selectedPropTypes.value.splice(idx, 1);
+};
+
+const toggleBhk = (bhk) => {
+    let normalized = bhk;
+    if (bhk === '1 RK/ 1 BHK') normalized = '1 BHK';
+    else if (bhk === '4 BHK' || bhk === '5 BHK') normalized = bhk;
+
+    const idx = selectedBhks.value.indexOf(normalized);
+    if (idx === -1) {
+        if ((normalized === '4 BHK' || normalized === '5 BHK') && selectedBhks.value.includes('4+ BHK')) {
+            selectedBhks.value = selectedBhks.value.filter(b => b !== '4+ BHK');
+        }
+        selectedBhks.value.push(normalized);
+    } else {
+        selectedBhks.value.splice(idx, 1);
+    }
+    runSearch();
+};
+
+const clearCity = () => {
+    activeCity.value = 'All';
+    runSearch();
+};
+
+const detectLocationListings = () => {
+    detectLocation((data) => {
+        activeCity.value = data.city;
+        isNearMe.value = true;
+        searchKeyword.value = 'Near me';
+        activeNearbyAreas.value = data.nearby_localities && data.nearby_localities.length > 0
+            ? [...data.nearby_localities]
+            : (data.locality ? [data.locality] : []);
+
+        router.replace({
+            query: {
+                ...route.query,
+                type: activeType.value,
+                city: data.city,
+                near_me: 'true',
+                lat: data.lat || undefined,
+                lng: data.lng || undefined,
+                locality: data.locality || undefined,
+                keyword: undefined,
+            },
+        });
+    });
+};
+
+const openVoiceSearchListings = () => {
+    openVoiceModal((transcript, parsed) => {
+        const queryParsed = parsed || parseVoiceQuery(transcript, {
+            defaultType: activeType.value,
+            defaultCity: activeCity.value,
+        });
+
+        if (queryParsed.hasCity && queryParsed.city) {
+            setCity(queryParsed.city);
+            activeCity.value = queryParsed.city;
+        }
+
+        if (queryParsed.hasType && queryParsed.type) {
+            activeType.value = queryParsed.type;
+        }
+
+        if (queryParsed.hasBhk && queryParsed.bhks.length > 0) {
+            selectedBhks.value = [...queryParsed.bhks];
+        }
+
+        if (queryParsed.propertyTypes && queryParsed.propertyTypes.length > 0) {
+            selectedPropTypes.value = [...queryParsed.propertyTypes];
+        }
+
+        searchKeyword.value = queryParsed.keyword;
+        isNearMe.value = false;
+        activeNearbyAreas.value = [];
+        runSearch();
+    }, {
+        type: activeType.value,
+        city: activeCity.value,
+    });
+};
+
+const runSearch = () => {
+    if (searchInput.value.trim()) {
+        const raw = searchInput.value.trim();
+        const parsed = parseVoiceQuery(raw, {
+            defaultType: activeType.value,
+            defaultCity: activeCity.value,
+        });
+
+        if (parsed.hasCity && parsed.city) {
+            setCity(parsed.city);
+            activeCity.value = parsed.city;
+        }
+
+        if (parsed.hasType && parsed.type) {
+            activeType.value = parsed.type;
+        }
+
+        if (parsed.hasBhk && parsed.bhks.length > 0) {
+            selectedBhks.value = [...parsed.bhks];
+        }
+
+        if (parsed.propertyTypes && parsed.propertyTypes.length > 0) {
+            selectedPropTypes.value = [...parsed.propertyTypes];
+        }
+
+        if (parsed.hasCity || parsed.hasBhk || parsed.hasType) {
+            searchKeyword.value = parsed.keyword;
+        } else {
+            searchKeyword.value = raw;
+        }
+
+        isNearMe.value = false;
+        activeNearbyAreas.value = [];
+        searchInput.value = '';
+    }
+
+    router.replace({
+        query: {
+            ...route.query,
+            type: activeType.value,
+            city: activeCity.value !== 'All' ? activeCity.value : undefined,
+            keyword: isNearMe.value ? undefined : (searchKeyword.value || undefined),
+            near_me: isNearMe.value ? 'true' : undefined,
+            bhk: selectedBhks.value.length ? selectedBhks.value.join(',') : undefined,
+        },
+    });
+};
+
+const clearKeyword = () => {
+    searchKeyword.value = '';
+    isNearMe.value = false;
+    activeNearbyAreas.value = [];
+    runSearch();
+};
+
+const resetFilters = () => {
+    searchKeyword.value = '';
+    isNearMe.value = false;
+    activeNearbyAreas.value = [];
+    selectedBhks.value = [];
+    selectedPropTypes.value = [];
+    selectedTags.value = [];
+    readyToMove.value = true;
+    underConstruction.value = false;
+    verifiedOnly.value = false;
+    featuredOnly.value = false;
+    budgetMin.value = '';
+    budgetMax.value = '';
+    runSearch();
+};
+
+const contactSeller = (item) => {
+    selectedContactProperty.value = item;
+    showContactModal.value = true;
+};
+
+const downloadBrochure = (item) => {
+    alert(`Downloading brochure and floor plan for "${item.title}" (${item.locality}, ${item.city}).`);
+};
+
+const apiProperties = ref([]);
+const isLoadingProperties = ref(false);
+
+const defaultFallbackListings = [
+    {
+        id: 101,
+        slug: 'the-metropark-3-bhk-flat-vastral-ahmedabad',
+        title: 'The Metropark',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 77.4 L',
+        rawPrice: 7740000,
+        rate: '₹ 4,000 / sq.ft',
+        locality: 'Vastral',
+        city: 'Ahmedabad',
+        area: '1,935 sqft (180 sqm)',
+        status: 'Under Construction',
+        builder: 'SUNWOODS-SHREENATH BUILDCON',
+        project_name: 'The Metropark',
+        postedBy: 'SUNWOODS-SHREENATH BUILDCON',
+        sellerLabel: 'Builder',
+        sellerName: 'SUNWOODS-SHREENATH BUILDCON',
+        sellerPhone: '+91 98250 12345',
+        isNewBooking: true,
+        is_featured: true,
+        is_verified: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 8,
+        photos: [
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Near Vastral Ring Road', 'Metro Station'],
+        description: 'Experience a new style of living with The Metropark. 3 BHK flats in Vastral, Ahmedabad with 1st out of 14 Floors, modern clubhouse and amenities.',
+        property_for: 'Sell',
+    },
+    {
+        id: 102,
+        slug: 'trinay-anagh-3-bhk-flat-jodhpur-ahmedabad',
+        title: 'Trinay Anagh',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 2 Cr',
+        rawPrice: 20000000,
+        rate: '₹ 7,238 / sq.ft',
+        locality: 'Jodhpur',
+        city: 'Ahmedabad',
+        area: '2,763 sqft (257 sqm)',
+        status: 'Under Construction',
+        builder: 'Trinay Group',
+        project_name: 'Trinay Anagh',
+        postedBy: 'Trinay Group',
+        sellerLabel: 'Builder',
+        sellerName: 'Trinay Group',
+        sellerPhone: '+91 98251 54321',
+        isNewBooking: true,
+        is_featured: false,
+        is_verified: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 12,
+        photos: [
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60',
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['132 Ft Ring Road', 'Opposite Star Bazaar'],
+        description: 'Trinay Anagh offers 3 BHK flats in Jodhpur, Ahmedabad West. 1st out of 10 floors with Italian marble flooring, 3 balconies and 2 car parkings.',
+        property_for: 'Sell',
+    },
+    {
+        id: 103,
+        slug: 'godrej-garden-city-3-bhk-sg-highway-ahmedabad',
+        title: '3 BHK Luxurious High-Rise Apartment in SG Highway',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 1.15 Cr',
+        rawPrice: 11500000,
+        rate: '₹ 6,969 / sq.ft',
+        locality: 'SG Highway',
+        city: 'Ahmedabad',
+        area: '2,150 sqft (200 sqm)',
+        status: 'Ready to Move',
+        builder: 'Rajesh Patel',
+        project_name: 'Godrej Garden City',
+        postedBy: 'Rajesh Patel',
+        sellerLabel: 'Owner',
+        sellerName: 'Rajesh Patel',
+        sellerPhone: '+91 98980 11223',
+        isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 6,
+        photos: [
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Godrej Garden City', 'Near Nirma University'],
+        description: 'Spacious 3 BHK apartment with marble flooring, modular kitchen, cross ventilation, 3 covered balconies, and scenic views in SG Highway Ahmedabad.',
+        property_for: 'Sell',
+    },
+    {
+        id: 104,
+        slug: 'shaligram-lakeview-3-bhk-science-city-ahmedabad',
+        title: '3 BHK Premium Lakeview Flat in Science City',
+        type: 'Residential Apartment',
+        bhk: '3 BHK',
+        bedrooms: 3,
+        price: '₹ 95 L',
+        rawPrice: 9500000,
+        rate: '₹ 6,333 / sq.ft',
+        locality: 'Science City',
+        city: 'Ahmedabad',
+        area: '2,050 sqft (190 sqm)',
+        status: 'Ready to Move',
+        builder: 'Mukesh Shah',
+        project_name: 'Shaligram Lakeview',
+        postedBy: 'Mukesh Shah',
+        sellerLabel: 'Owner',
+        sellerName: 'Mukesh Shah',
+        sellerPhone: '+91 97270 33445',
+        isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 9,
+        photos: [
+            'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['Science City Road', 'Near CIMS Hospital'],
+        description: 'Stunning 3 BHK ready-to-move apartment near Science City Ahmedabad with 100% Vastu compliance and 2 designated car parkings.',
+        property_for: 'Sell',
+    },
+    {
+        id: 105,
+        slug: 'aarohi-elysium-2-bhk-bopal-ahmedabad',
+        title: '2 BHK Fully Furnished Flat in Bopal',
+        type: 'Residential Apartment',
+        bhk: '2 BHK',
+        bedrooms: 2,
+        price: '₹ 28,000 / mo',
+        rawPrice: 28000,
+        rate: '₹ 27 / sq.ft',
+        locality: 'Bopal',
+        city: 'Ahmedabad',
+        area: '1,350 sqft (125 sqm)',
+        status: 'Ready to Move',
+        builder: 'Aarohi Real Estate',
+        project_name: 'Aarohi Elysium',
+        postedBy: 'Aarohi Real Estate',
+        sellerLabel: 'Agent',
+        sellerName: 'Aarohi Real Estate',
+        sellerPhone: '+91 98240 55667',
+        isNewBooking: false,
+        is_featured: false,
+        is_verified: true,
+        isRera: true,
+        zeroBrokerage: true,
+        photosCount: 5,
+        photos: [
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&auto=format&fit=crop&q=60',
+        ],
+        nearbyLandmarks: ['South Bopal', 'Near Sobha City'],
+        description: 'Ready to move 2 BHK modern flat with split ACs, sofa, beds, refrigerator, and smart TV in South Bopal Ahmedabad.',
+        property_for: 'Rent',
+    }
+];
+
+const formatPriceWords = (val) => {
+    if (!val || val <= 0) return 'Price on Request';
+    const num = Number(val);
+    if (num >= 10000000) {
+        const cr = (num / 10000000).toFixed(2);
+        return `₹ ${cr.replace(/\.00$/, '')} Cr`;
+    }
+    if (num >= 100000) {
+        const lk = (num / 100000).toFixed(2);
+        return `₹ ${lk.replace(/\.00$/, '')} L`;
+    }
+    return `₹ ${num.toLocaleString('en-IN')}`;
+};
+
+const mapPropertyItem = (p) => {
+    const isRes = isResidentialType(p.property_type);
+    const bedrooms = p.bedrooms !== null && p.bedrooms !== undefined ? Number(p.bedrooms) : 0;
+
+    const rawRole = String(p.user_type || p.user?.role || '').toLowerCase();
+    let sellerLabel = 'Owner';
+    if (rawRole.includes('builder') || rawRole.includes('developer')) {
+        sellerLabel = 'Builder';
+    } else if (rawRole.includes('agent') || rawRole.includes('broker') || rawRole.includes('dealer')) {
+        sellerLabel = 'Agent';
+    } else {
+        sellerLabel = 'Owner';
+    }
+
+    let sellerName = '';
+    if (sellerLabel === 'Owner') {
+        sellerName = p.user?.name || 'Verified Owner';
+    } else if (sellerLabel === 'Agent') {
+        sellerName = p.user?.name || 'Authorized Agent';
+    } else {
+        sellerName = p.project_name || p.user?.name || 'Verified Builder';
+    }
+
+    return {
+        id: p.id,
+        slug: p.slug || String(p.id),
+        title: p.title,
+        type: p.property_type || 'Apartment',
+        bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
+        bedrooms: bedrooms,
+        price: formatPriceWords(p.expected_price),
+        rawPrice: p.expected_price || 0,
+        rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')} / sq.ft` : '',
+        locality: p.locality || '',
+        city: p.city || '',
+        area: p.carpet_area ? `${p.carpet_area} sqft` : (p.super_builtup_area ? `${p.super_builtup_area} sqft` : '1,200 sqft'),
+        status: p.construction_status || 'Ready to Move',
+        builder: p.project_name || sellerName,
+        project_name: p.project_name || '',
+        postedBy: sellerName,
+        user_type: sellerLabel,
+        sellerLabel: sellerLabel,
+        sellerName: sellerName,
+        sellerPhone: p.user ? `${p.user.country_code || '+91'} ${p.user.mobile}` : '',
+        isNewBooking: false,
+        is_verified: !!p.is_verified,
+        is_featured: !!p.is_featured,
+        isRera: !!p.is_verified,
+        zeroBrokerage: true,
+        photosCount: p.photos && Array.isArray(p.photos) ? p.photos.length : 1,
+        photos: p.photos || [],
+        nearbyLandmarks: [p.landmark, p.sub_locality].filter(Boolean),
+        description: p.description || '',
+        property_for: p.property_for || 'Sell',
+    };
+};
+
+const applyPropertiesData = (data, append = false, page = 1) => {
+    if (!data) return;
+    const list = data.data || (Array.isArray(data) ? data : []);
+    totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
+    hasNextPage.value = !!data.next_page_url;
+    currentPage.value = data.current_page || page;
+
+    const mapped = list.map(mapPropertyItem);
+    if (append) {
+        apiProperties.value = [...apiProperties.value, ...mapped];
+    } else {
+        apiProperties.value = mapped;
+    }
+};
+
+const fetchApiProperties = async (page = 1, append = false) => {
+    try {
+        let url = '/api/properties';
+        const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('per_page', '15');
+
+        if (activeCity.value && activeCity.value !== 'All') {
+            params.set('city', activeCity.value);
+        }
+        if (activeType.value && activeType.value !== 'all') {
+            params.set('type', activeType.value);
+        }
+        if (isNearMe.value && activeNearbyAreas.value.length > 0) {
+            params.set('localities', activeNearbyAreas.value.join(','));
+        } else if (searchKeyword.value && !isNearMe.value) {
+            params.set('search', searchKeyword.value);
+        }
+        if (selectedBhks.value.length > 0) {
+            const nums = selectedBhks.value.map(b => parseInt(b, 10)).filter(n => !isNaN(n));
+            if (nums.length > 0) {
+                params.set('bhk', nums.join(','));
+            }
+        }
+        if (selectedPropTypes.value.length > 0) {
+            params.set('property_type', selectedPropTypes.value.join(','));
+        }
+        if (budgetMin.value) {
+            params.set('budget_min', String(Number(budgetMin.value) * 100000));
+        }
+        if (budgetMax.value) {
+            params.set('budget_max', String(Number(budgetMax.value) * 100000));
+        }
+        if (verifiedOnly.value) {
+            params.set('verified_only', '1');
+        }
+        if (featuredOnly.value) {
+            params.set('featured_only', '1');
+        }
+        if (selectedTags.value.length > 0) {
+            params.set('tags', selectedTags.value.join(','));
+        }
+        if (sortBy.value) {
+            params.set('sort', sortBy.value);
+        }
+        if (readyToMove.value && !underConstruction.value) {
+            params.set('construction_status', 'ready');
+        } else if (!readyToMove.value && underConstruction.value) {
+            params.set('construction_status', 'under');
+        }
+
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        // 1. Instant Cache Display (0ms latency if cached and not appending)
+        if (!append) {
+            const cached = getFromCache(url);
+            if (cached) {
+                applyPropertiesData(cached, false, page);
+                isLoadingProperties.value = false;
+            } else {
+                isLoadingProperties.value = true;
+            }
+        } else {
+            isLoadingMore.value = true;
+        }
+
+        const data = await fetchWithCache(url, {
+            ttlMs: 3 * 60 * 1000, // 3 minutes cache
+            swr: true,
+            onBackgroundUpdate: (freshData) => {
+                applyPropertiesData(freshData, append, page);
+            },
+        });
+
+        applyPropertiesData(data, append, page);
+    } catch (err) {
+        console.warn('Could not fetch API properties:', err);
+        if (!append && !getFromCache(url)) apiProperties.value = [];
+    } finally {
+        isLoadingProperties.value = false;
+        isLoadingMore.value = false;
+    }
+};
+
+const loadNextPage = () => {
+    if (!hasNextPage.value || isLoadingMore.value) return;
+    fetchApiProperties(currentPage.value + 1, true);
+};
+
+onMounted(async () => {
+    if (isNearMe.value) {
+        await initNearbyAreas();
+    }
+    fetchApiProperties(1, false);
+
+    const onInvalidate = () => {
+        invalidateCache('api/properties');
+        fetchApiProperties(1, false);
+    };
+    window.addEventListener('realhem-property-invalidated', onInvalidate);
+});
+
+watch(
+    () => [
+        activeCity.value,
+        activeType.value,
+        searchKeyword.value,
+        selectedPropTypes.value,
+        selectedBhks.value,
+        selectedTags.value,
+        sortBy.value,
+        readyToMove.value,
+        underConstruction.value,
+        budgetMin.value,
+        budgetMax.value,
+        verifiedOnly.value,
+        featuredOnly.value,
+    ],
+    () => {
+        fetchApiProperties(1, false);
+    },
+    { deep: true }
+);
+
+const displayedListings = computed(() => {
+    if (apiProperties.value.length > 0) {
+        if (isNearMe.value && activeNearbyAreas.value.length > 0) {
+            return apiProperties.value.filter((item) =>
+                activeNearbyAreas.value.some((area) =>
+                    (item.locality && item.locality.toLowerCase().includes(area.toLowerCase())) ||
+                    (item.locality && area.toLowerCase().includes(item.locality.toLowerCase()))
+                )
+            );
+        }
+        return apiProperties.value;
+    }
+
+    if (hasActiveFilters.value || (activeType.value && activeType.value !== 'all')) {
+        return [];
+    }
+
+    return defaultFallbackListings;
+});
+
+const filteredListings = computed(() => displayedListings.value || []);
+</script>
+

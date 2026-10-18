@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inquiry;
+use App\Notifications\InquiryConfirmationNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class InquiryController extends Controller
 {
@@ -46,6 +49,13 @@ class InquiryController extends Controller
             'career' => 'Thank you for applying to RealHem! Our recruitment team will review your application.',
             default => 'Thank you for contacting us! Our team will respond to your inquiry promptly.',
         };
+
+        try {
+            Notification::route('mail', $inquiry->email)
+                ->notify(new InquiryConfirmationNotification($inquiry));
+        } catch (\Throwable $e) {
+            Log::warning('Could not send inquiry confirmation email: '.$e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

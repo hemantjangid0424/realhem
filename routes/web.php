@@ -2,12 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Admin SPA (matches /admin and /admin/*)
-Route::get('/admin/{any?}', function () {
-    return view('admin-spa');
-})->where('any', '.*')->name('admin.spa');
-
-// Client SPA (matches / and any route that is not admin, api, etc.)
-Route::get('/{any?}', function () {
-    return view('client-spa');
-})->where('any', '^(?!api|admin|storage|up|_boost).*$')->name('client.spa');
+Route::get('/', function () {
+    return response()->json([
+        'name' => config('app.name', 'RealHem API'),
+        'status' => 'operational',
+        'api_version' => '1.0',
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    ]);
+});

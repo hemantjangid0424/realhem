@@ -6,18 +6,13 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
-test('client spa renders successfully at root route', function () {
-    $response = $this->get('/');
+test('api root returns operational status', function () {
+    $response = $this->getJson('/');
 
-    $response->assertStatus(200);
-    $response->assertSee('client-app');
-});
-
-test('admin spa renders successfully at admin route', function () {
-    $response = $this->get('/admin/login');
-
-    $response->assertStatus(200);
-    $response->assertSee('admin-app');
+    $response->assertStatus(200)
+        ->assertJson([
+            'status' => 'operational',
+        ]);
 });
 
 test('admin can login via api with valid credentials', function () {

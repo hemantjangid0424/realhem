@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -226,17 +228,23 @@ class UserAuthController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'role' => $validated['role'] ?? 'user',
-                'email_verified_at' => now(),
+                'email_verified_at' => null,
             ]
         );
 
         Cache::forget("verified_mobile_{$sessionToken}");
 
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            Log::warning('Could not send verification email notification: '.$e->getMessage());
+        }
+
         $token = $user->createToken('client-token')->plainTextToken;
 
         return response()->json([
             'status' => 'logged_in',
-            'message' => 'Registration complete! Welcome to RealHem.',
+            'message' => 'Registration complete! A verification link has been sent to your email address.',
             'token' => $token,
             'user' => [
                 'id' => $user->id,
@@ -245,6 +253,7 @@ class UserAuthController extends Controller
                 'country_code' => $user->country_code,
                 'mobile' => $user->mobile,
                 'role' => $user->role,
+                'email_verified' => $user->hasVerifiedEmail(),
             ],
         ]);
     }
@@ -314,6 +323,99 @@ class UserAuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out successfully.',
+        ]);
+    }
+
+    /**
+     * Mark the user's email address as verified from signed verification URL.
+     */
+    public function verifyEmail(Request $request, int|string $id, string $hash): JsonResponse|RedirectResponse
+    {
+        $user = User::findOrFail($id);
+
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid email verification link or security hash.',
+                ], 403);
+            }
+            $frontendUrl = env('NUXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+
+            return redirect("{$frontendUrl}/verify-email?status=invalid");
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'already_verified',
+                    'message' => 'Email address is already verified.',
+                ]);
+            }
+            $frontendUrl = env('NUXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+
+            return redirect("{$frontendUrl}/verify-email?status=already_verified");
+        }
+
+        $user->markEmailAsVerified();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'verified',
+                'message' => 'Email verified successfully! Your account is now fully verified.',
+                'email_verified_at' => $user->email_verified_at,
+            ]);
+        }
+
+        $frontendUrl = env('NUXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+
+        return redirect("{$frontendUrl}/verify-email?status=success");
+    }
+
+    /**
+     * Resend verification email to authenticated user.
+     */
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'unauthenticated',
+                'message' => 'You must be logged in to resend email verification.',
+            ], 401);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'status' => 'already_verified',
+                'message' => 'Your email address is already verified.',
+            ]);
+        }
+
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            Log::warning('Could not resend verification email: '.$e->getMessage());
+        }
+
+        return response()->json([
+            'status' => 'sent',
+            'message' => 'Verification email sent successfully! Please check your inbox.',
+        ]);
+    }
+
+    /**
+     * Check email verification status for authenticated user.
+     */
+    public function emailVerificationStatus(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'email' => $user->email,
+            'is_verified' => $user->hasVerifiedEmail(),
+            'email_verified_at' => $user->email_verified_at,
         ]);
     }
 }
