@@ -281,30 +281,32 @@ class PropertyController extends Controller
     /**
      * Display a specific property by ID or slug.
      */
-    public function show(string|Property $property): JsonResponse
+    public function show(string $slugOrId): JsonResponse
     {
-        if ($property instanceof Property) {
-            $id = $property->id;
-        } else {
-            $foundId = Property::where('slug', $property)
-                ->orWhere('id', $property)
-                ->value('id');
+        $query = Property::with('user:id,name,email,mobile,country_code,role');
 
-            if (! $foundId) {
-                return response()->json(['message' => 'Property not found.'], 404);
+        if (ctype_digit($slugOrId)) {
+            $property = $query->where('id', (int) $slugOrId)->first();
+            if (! $property) {
+                $property = Property::with('user:id,name,email,mobile,country_code,role')->where('slug', $slugOrId)->first();
             }
-            $id = $foundId;
+        } else {
+            $property = $query->where('slug', $slugOrId)->first();
         }
 
-        $cacheKey = "prop_show_{$id}";
-        $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($id) {
-            $model = Property::with('user:id,name,email,mobile,country_code,role')->find($id);
+        if (! $property) {
+            return response()->json(['message' => 'Property not found.'], 404);
+        }
 
-            return $model ? ['property' => $model] : null;
+        $id = $property->id;
+        $cacheKey = "prop_show_{$id}";
+        $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($property) {
+            return ['property' => $property->toArray()];
         });
 
-        if (! $data) {
-            return response()->json(['message' => 'Property not found.'], 404);
+        if (! is_array($data) || empty($data['property']) || ! is_array($data['property'])) {
+            Cache::forget($cacheKey);
+            $data = ['property' => $property->toArray()];
         }
 
         return response()->json($data)->header('Cache-Control', 'public, max-age=120');

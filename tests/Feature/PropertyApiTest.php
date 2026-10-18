@@ -302,3 +302,36 @@ test('properties support simple pagination without full count overhead', functio
 
     expect(count($response->json('data')))->toBe(2);
 });
+
+test('property can be fetched by slug starting with a number without resolving to id 1', function () {
+    $user = User::factory()->create();
+
+    $prop1 = Property::factory()->create([
+        'user_id' => $user->id,
+        'title' => 'Property One in Ahmedabad',
+        'city' => 'Ahmedabad',
+        'slug' => 'property-one-ahmedabad',
+    ]);
+
+    $propTarget = Property::factory()->create([
+        'user_id' => $user->id,
+        'title' => '1 BHK Apartment in Wakad Pune',
+        'city' => 'Pune',
+        'locality' => 'Wakad',
+        'slug' => '1-bhk-residential-apartment-for-sell-in-wakad-pune-spld-5inw-499967',
+    ]);
+
+    // Query by slug that begins with '1-'
+    $response = $this->getJson("/api/property/{$propTarget->slug}");
+
+    $response->assertStatus(200);
+    expect($response->json('property.id'))->toBe($propTarget->id);
+    expect($response->json('property.title'))->toBe('1 BHK Apartment in Wakad Pune');
+    expect($response->json('property.city'))->toBe('Pune');
+
+    // Query by numeric ID
+    $responseById = $this->getJson("/api/property/{$prop1->id}");
+    $responseById->assertStatus(200);
+    expect($responseById->json('property.id'))->toBe($prop1->id);
+    expect($responseById->json('property.title'))->toBe('Property One in Ahmedabad');
+});

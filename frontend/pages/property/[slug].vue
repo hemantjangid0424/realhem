@@ -543,27 +543,39 @@ const { companyName, brandPrimaryColor, brandAccentColor } = useCompanyBranding(
 const route = useRoute();
 const router = useRouter();
 
-const slug = computed(() => route.params.slug as string);
+const slug = computed(() => (route.params.slug as string) || '');
 
-const { data: propertyData, status, error } = await useAsyncData(`property_detail_${slug.value}`, async () => {
-    const { get } = useApi();
-    try {
-        const res: any = await get(`/api/property/${slug.value}`);
-        return res?.property ?? res;
-    } catch (e) {
-        return null;
+const { data: propertyData, status, error } = await useAsyncData(
+    `property_detail_${route.params.slug}`,
+    async () => {
+        const s = route.params.slug;
+        if (!s) return null;
+        const { get } = useApi();
+        try {
+            const res: any = await get(`/api/property/${s}`);
+            const prop = res?.property ?? res;
+            if (prop && (prop.title || prop.id)) {
+                return prop;
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    },
+    {
+        watch: [() => route.params.slug],
     }
-});
+);
 
 const property = computed(() => propertyData.value);
 const isLoading = computed(() => status.value === 'pending');
-const notFound = computed(() => !property.value && status.value !== 'pending');
+const notFound = computed(() => (!property.value || !property.value.title) && status.value !== 'pending');
 
 useSeoMeta({
-    title: () => property.value ? `${property.value.title} in ${property.value.locality}, ${property.value.city}` : 'Property Details',
-    description: () => property.value ? `${property.value.description || property.value.title}. Expected price: ₹ ${property.value.expected_price}. Verified listing on RealHem.` : 'Explore verified real estate listing on RealHem.',
-    ogTitle: () => property.value ? `${property.value.title} in ${property.value.locality}, ${property.value.city}` : 'Property Details',
-    ogDescription: () => property.value ? `${property.value.description || property.value.title}. Expected price: ₹ ${property.value.expected_price}. Verified listing on RealHem.` : 'Explore verified real estate listing on RealHem.',
+    title: () => property.value?.title ? `${property.value.title}${property.value.locality ? ' in ' + property.value.locality : ''}${property.value.city ? ', ' + property.value.city : ''}` : 'Property Details',
+    description: () => property.value?.title ? `${property.value.description || property.value.title}. Expected price: ₹ ${property.value.expected_price || 'On Request'}. Verified listing on RealHem.` : 'Explore verified real estate listing on RealHem.',
+    ogTitle: () => property.value?.title ? `${property.value.title}${property.value.locality ? ' in ' + property.value.locality : ''}${property.value.city ? ', ' + property.value.city : ''}` : 'Property Details',
+    ogDescription: () => property.value?.title ? `${property.value.description || property.value.title}. Expected price: ₹ ${property.value.expected_price || 'On Request'}. Verified listing on RealHem.` : 'Explore verified real estate listing on RealHem.',
     ogImage: () => property.value?.photos?.[0] || undefined,
 });
 

@@ -52,9 +52,9 @@ Route::prefix('locations')->group(function () {
 // Property Marketplace APIs
 Route::get('/properties', [PropertyController::class, 'index']);
 Route::get('/search/suggestions', [PropertyController::class, 'suggestions']);
-Route::get('/properties/{property}', [PropertyController::class, 'show']);
+Route::get('/properties/{slugOrId}', [PropertyController::class, 'show']);
 // Slug or ID-based single property lookup
-Route::get('/property/{property}', [PropertyController::class, 'show']);
+Route::get('/property/{slugOrId}', [PropertyController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/user/profile', [UserAuthController::class, 'updateProfile']);

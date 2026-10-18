@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   srcDir: '.',
   devtools: { enabled: false },
+  telemetry: false,
 
   css: ['~/assets/css/main.css'],
 
