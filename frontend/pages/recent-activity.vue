@@ -298,7 +298,11 @@
                             class="block flex-1 flex flex-col justify-between"
                         >
                             <!-- Cover Photo -->
-                            <div class="h-48 bg-slate-900 relative overflow-hidden">
+                            <div
+                                class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
+                                @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                title="Click to view photos"
+                            >
                                 <img
                                     v-if="act.property?.photos?.[0] || act.metadata?.photo"
                                     :src="act.property?.photos?.[0] || act.metadata?.photo"
@@ -337,9 +341,20 @@
                                     <span class="text-white font-black text-sm">
                                         {{ formatPrice(act.property?.expected_price || act.metadata?.expected_price) }}
                                     </span>
-                                    <span v-if="act.property?.carpet_area || act.metadata?.carpet_area" class="text-slate-300 text-[11px] font-semibold">
-                                        {{ act.property?.carpet_area || act.metadata?.carpet_area }} sq.ft
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="act.property?.carpet_area || act.metadata?.carpet_area" class="text-slate-300 text-[11px] font-semibold">
+                                            {{ act.property?.carpet_area || act.metadata?.carpet_area }} sq.ft
+                                        </span>
+                                        <button
+                                            type="button"
+                                            @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                            class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                            title="View photo gallery"
+                                        >
+                                            <span>📷</span>
+                                            <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -408,7 +423,11 @@
                             class="block flex-1 flex flex-col justify-between"
                         >
                             <!-- Cover Photo -->
-                            <div class="h-48 bg-slate-900 relative overflow-hidden">
+                            <div
+                                class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
+                                @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                title="Click to view photos"
+                            >
                                 <img
                                     :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
                                     :alt="item.property?.title || item.metadata?.title"
@@ -435,9 +454,20 @@
                                     <span class="text-white font-black text-sm">
                                         {{ formatPrice(item.property?.expected_price || item.metadata?.expected_price) }}
                                     </span>
-                                    <span v-if="item.property?.carpet_area || item.metadata?.carpet_area" class="text-slate-300 text-[11px] font-semibold">
-                                        {{ item.property?.carpet_area || item.metadata?.carpet_area }} sq.ft
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="item.property?.carpet_area || item.metadata?.carpet_area" class="text-slate-300 text-[11px] font-semibold">
+                                            {{ item.property?.carpet_area || item.metadata?.carpet_area }} sq.ft
+                                        </span>
+                                        <button
+                                            type="button"
+                                            @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                            class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                            title="View photo gallery"
+                                        >
+                                            <span>📷</span>
+                                            <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -500,7 +530,11 @@
                             class="block flex-1 flex flex-col justify-between"
                         >
                             <!-- Cover Photo -->
-                            <div class="h-48 bg-slate-900 relative overflow-hidden">
+                            <div
+                                class="h-48 bg-slate-900 relative overflow-hidden cursor-pointer"
+                                @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                title="Click to view photos"
+                            >
                                 <img
                                     :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
                                     :alt="item.property?.title || item.metadata?.title"
@@ -526,6 +560,15 @@
                                     <span class="text-white font-black text-sm">
                                         {{ formatPrice(item.property?.expected_price || item.metadata?.expected_price) }}
                                     </span>
+                                    <button
+                                        type="button"
+                                        @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                        class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                        title="View photo gallery"
+                                    >
+                                        <span>📷</span>
+                                        <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -554,12 +597,22 @@
                 </div>
             </div>
         </main>
+
+        <!-- Image Library Lightbox Modal -->
+        <ImageGalleryModal
+            :is-open="isGalleryOpen"
+            :property="activeGalleryProperty"
+            :initial-index="activeGalleryIndex"
+            @close="isGalleryOpen = false"
+            @update:is-open="isGalleryOpen = $event"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AuthModal from '~/components/AuthModal.vue';
+import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -592,6 +645,17 @@ const activeModule = ref<'searches' | 'viewed' | 'shortlisted' | 'contacted'>('s
 const isAuthModalOpen = ref(false);
 const isLoading = ref(false);
 const isLoggedIn = ref(false);
+
+const isGalleryOpen = ref(false);
+const activeGalleryProperty = ref<any>(null);
+const activeGalleryIndex = ref(0);
+
+const openImageGallery = (property: any, index = 0) => {
+    if (!property) return;
+    activeGalleryProperty.value = property;
+    activeGalleryIndex.value = index;
+    isGalleryOpen.value = true;
+};
 
 const searchFilterQuery = ref('');
 const propertyFilterQuery = ref('');

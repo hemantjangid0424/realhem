@@ -681,7 +681,11 @@
                             class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition overflow-hidden group flex flex-col justify-between"
                         >
                             <div>
-                                <div class="h-44 bg-slate-900 relative overflow-hidden">
+                                <div
+                                    class="h-44 bg-slate-900 relative overflow-hidden cursor-pointer"
+                                    @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                    title="Click to view photos"
+                                >
                                     <img
                                         v-if="act.property?.photos?.[0] || act.metadata?.photo"
                                         :src="act.property?.photos?.[0] || act.metadata?.photo"
@@ -693,6 +697,16 @@
                                     <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold">
                                         For {{ act.property?.property_for || act.metadata?.property_for }}
                                     </span>
+                                    <!-- Photo Count Badge -->
+                                    <button
+                                        type="button"
+                                        @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                        class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                        title="View photo gallery"
+                                    >
+                                        <span>📷</span>
+                                        <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                    </button>
                                 </div>
                                 <div class="p-4 space-y-1.5">
                                     <div class="text-sm font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition">
@@ -715,12 +729,22 @@
                 </div>
             </div>
         </div>
+
+        <!-- Image Library Lightbox Modal -->
+        <ImageGalleryModal
+            :is-open="isGalleryOpen"
+            :property="activeGalleryProperty"
+            :initial-index="activeGalleryIndex"
+            @close="isGalleryOpen = false"
+            @update:is-open="isGalleryOpen = $event"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AuthModal from '~/components/AuthModal.vue';
+import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 import { isResidentialType, getPropertyIntentLabel } from '~/utils/propertyConstants';
 
 const route = useRoute();
@@ -736,6 +760,17 @@ const currentUser = ref(null);
 const isAuthModalOpen = ref(false);
 const activeTab = ref('properties'); // 'properties' | 'profile' | 'activity'
 const statusFilter = ref('all'); // 'all' | 'active' | 'sold_rented'
+
+const isGalleryOpen = ref(false);
+const activeGalleryProperty = ref<any>(null);
+const activeGalleryIndex = ref(0);
+
+const openImageGallery = (property: any, index = 0) => {
+    if (!property) return;
+    activeGalleryProperty.value = property;
+    activeGalleryIndex.value = index;
+    isGalleryOpen.value = true;
+};
 
 const myProperties = ref([]);
 const isLoadingProperties = ref(false);

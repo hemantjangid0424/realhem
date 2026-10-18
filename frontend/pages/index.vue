@@ -321,7 +321,11 @@
                             :to="'/property/' + (act.property?.slug || act.metadata?.slug || act.property_id)"
                             class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
                         >
-                            <div class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                            <div
+                                class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                                @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                title="Click to view photos"
+                            >
                                 <img
                                     v-if="act.property?.photos?.[0] || act.metadata?.photo"
                                     :src="act.property?.photos?.[0] || act.metadata?.photo"
@@ -341,6 +345,17 @@
                                 <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold">
                                     For {{ act.property?.property_for || act.metadata?.property_for }}
                                 </span>
+
+                                <!-- Photo Count Badge (Bottom Right) -->
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(act.property || act.metadata)"
+                                    class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                    title="View photo gallery"
+                                >
+                                    <span>📷</span>
+                                    <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                </button>
                             </div>
 
                             <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
@@ -378,7 +393,11 @@
                             :to="'/property/' + (item.property?.slug || item.metadata?.slug || item.property_id)"
                             class="bg-white rounded-2xl border border-rose-200/90 shadow-2xs hover:shadow-md transition flex flex-col overflow-hidden group cursor-pointer relative"
                         >
-                            <div class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                            <div
+                                class="h-36 bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                                @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                title="Click to view photos"
+                            >
                                 <img
                                     :src="item.property?.photos?.[0] || item.metadata?.photo || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=60'"
                                     :alt="item.property?.title || item.metadata?.title"
@@ -392,6 +411,17 @@
                                         size="sm"
                                     />
                                 </div>
+
+                                <!-- Photo Count Badge (Bottom Right) -->
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(item.property || item.metadata)"
+                                    class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
+                                    title="View photo gallery"
+                                >
+                                    <span>📷</span>
+                                    <span>{{ (item.property?.photos?.length || (item.metadata?.photo ? 1 : 0)) || 1 }}</span>
+                                </button>
                             </div>
 
                             <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
@@ -466,7 +496,11 @@
                         : 'border-slate-200/80'"
                 >
                     <!-- Property Image / Header -->
-                    <div class="h-44 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                    <div
+                        class="h-44 bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                        @click.stop.prevent="openImageGallery(prop)"
+                        title="Click to view photos"
+                    >
                         <img
                             v-if="prop.photos && prop.photos.length"
                             :src="prop.photos[0]"
@@ -533,9 +567,15 @@
                             </span>
                             <div class="flex items-center gap-2">
                                 <span class="text-slate-300 text-[11px] font-medium">{{ prop.area }} sq.ft</span>
-                                <span class="bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                    📷 {{ prop.photosCount }}
-                                </span>
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(prop)"
+                                    class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer shadow-xs"
+                                    title="View photo gallery"
+                                >
+                                    <span>📷</span>
+                                    <span>{{ prop.photosCount }}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -778,6 +818,14 @@
                 </div>
             </div>
         </section>
+
+        <!-- Image Library Lightbox Modal -->
+        <ImageGalleryModal
+            v-model:isOpen="isGalleryOpen"
+            :property="activeGalleryProperty"
+            :initialIndex="activeGalleryIndex"
+            @close="isGalleryOpen = false"
+        />
     </div>
 </template>
 
@@ -787,6 +835,18 @@ import FestiveHeroAnimation from '~/components/FestiveHeroAnimation.vue';
 import { isResidentialType } from '~/utils/propertyConstants';
 
 const router = useRouter();
+
+// Image Gallery Modal State
+const isGalleryOpen = ref(false);
+const activeGalleryProperty = ref(null);
+const activeGalleryIndex = ref(0);
+
+const openImageGallery = (prop, index = 0) => {
+    if (!prop) return;
+    activeGalleryProperty.value = prop;
+    activeGalleryIndex.value = index;
+    isGalleryOpen.value = true;
+};
 const {
     recentActivities,
     recentSearches,

@@ -67,12 +67,16 @@
                 <!-- Photo Gallery -->
                 <div class="lg:col-span-2 space-y-2">
                     <!-- Main Photo -->
-                    <div class="relative group rounded-2xl overflow-hidden bg-slate-900 aspect-video">
+                    <div
+                        class="relative group rounded-2xl overflow-hidden bg-slate-900 aspect-video cursor-pointer"
+                        @click="isGalleryOpen = true"
+                        title="Click to view full photo gallery"
+                    >
                         <img
                             v-if="property.photos && property.photos.length > 0"
                             :src="property.photos[activePhotoIdx]"
                             :alt="property.title"
-                            class="absolute inset-0 w-full h-full object-cover"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
                             <span class="text-5xl">🏠</span>
@@ -135,10 +139,16 @@
                             </button>
                         </template>
 
-                        <!-- Photo count -->
-                        <div class="absolute bottom-3 right-3 bg-slate-900/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm z-10">
-                            {{ activePhotoIdx + 1 }} / {{ property.photos?.length || 1 }}
-                        </div>
+                        <!-- Photo count badge (opens gallery) -->
+                        <button
+                            type="button"
+                            @click.stop="isGalleryOpen = true"
+                            class="absolute bottom-3 right-3 bg-slate-900/80 hover:bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur-sm z-10 flex items-center gap-1.5 transition cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                            title="View all photos in gallery"
+                        >
+                            <svg class="w-3.5 h-3.5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>{{ activePhotoIdx + 1 }} / {{ property.photos?.length || 1 }}</span>
+                        </button>
                     </div>
 
                     <!-- Thumbnail Strip -->
@@ -562,6 +572,15 @@
             :property-city="property?.city"
             @close="isEmiModalOpen = false"
         />
+
+        <!-- Fullscreen Image Library / Gallery Modal -->
+        <ImageGalleryModal
+            :is-open="isGalleryOpen"
+            :property="property"
+            :initial-index="activePhotoIdx"
+            @close="isGalleryOpen = false"
+            @update:is-open="isGalleryOpen = $event"
+        />
     </div>
 </template>
 
@@ -572,6 +591,7 @@ definePageMeta({
     name: 'client.property-detail',
 });
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
+import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 import {
     PROPERTY_FOR,
     isResidentialType,
@@ -645,6 +665,7 @@ useSeoMeta({
 });
 
 const activePhotoIdx = ref(0);
+const isGalleryOpen = ref(false);
 const showContactModal = ref(false);
 const isEmiModalOpen = ref(false);
 const descExpanded = ref(false);

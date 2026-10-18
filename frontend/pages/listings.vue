@@ -505,7 +505,11 @@
                             : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
                     >
                         <!-- Property Thumbnail / Gallery Carousel View -->
-                        <div class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white">
+                        <div
+                            class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white cursor-pointer"
+                            @click.stop.prevent="openImageGallery(item)"
+                            title="Click to view photos"
+                        >
                             <img
                                 v-if="item.photos && item.photos.length > 0"
                                 :src="item.photos[0]"
@@ -588,10 +592,18 @@
                                 />
                             </div>
 
-                            <!-- Bottom Tag & Image count -->
+                            <!-- Bottom Tag & Photo Gallery Button -->
                             <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
-                                <span class="bg-black/60 px-2 py-0.5 rounded">{{ item.status }}</span>
-                                <span class="bg-black/60 px-2 py-0.5 rounded">1/{{ item.photosCount || 6 }}</span>
+                                <span v-if="item.status" class="bg-black/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">{{ item.status }}</span>
+                                <button
+                                    type="button"
+                                    @click.stop.prevent="openImageGallery(item)"
+                                    class="bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-30 shadow-xs ml-auto"
+                                    title="View photo gallery"
+                                >
+                                    <span>📷</span>
+                                    <span>{{ item.photos?.length || item.photosCount || 1 }}</span>
+                                </button>
                             </div>
                         </div>
 
@@ -772,6 +784,14 @@
             :property-city="selectedEmiProperty?.city || ''"
             @close="isEmiModalOpen = false"
         />
+
+        <!-- Image Library Lightbox Modal -->
+        <ImageGalleryModal
+            v-model:isOpen="isGalleryOpen"
+            :property="activeGalleryProperty"
+            :initialIndex="activeGalleryIndex"
+            @close="isGalleryOpen = false"
+        />
     </div>
 </template>
 
@@ -782,6 +802,18 @@ import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
 
 const route = useRoute();
 const router = useRouter();
+
+// Image Gallery Modal State
+const isGalleryOpen = ref(false);
+const activeGalleryProperty = ref(null);
+const activeGalleryIndex = ref(0);
+
+const openImageGallery = (item, index = 0) => {
+    if (!item) return;
+    activeGalleryProperty.value = item;
+    activeGalleryIndex.value = index;
+    isGalleryOpen.value = true;
+};
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, currentLocality, nearbyLocalities, isDetectingLocation, detectLocation, setCity, fetchNearbyLocalities } = useUserLocation();
 const { brandPrimaryColor } = useCompanyBranding();
