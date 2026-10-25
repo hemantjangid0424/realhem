@@ -19,9 +19,9 @@
                         </div>
                         <button
                             @click="editingProperty = null"
-                            class="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                            class="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
                         >
-                            ✕
+                            <X class="w-4 h-4" />
                         </button>
                     </div>
 
@@ -67,10 +67,10 @@
                                     v-model="editForm.status"
                                     class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
                                 >
-                                    <option value="active">🟢 Active (Available)</option>
-                                    <option value="sold">🟠 Sold Out</option>
-                                    <option value="rented">🟣 Rented Out</option>
-                                    <option value="pending_approval">⚪ Pending Approval</option>
+                                    <option value="active">Active (Available)</option>
+                                    <option value="sold">Sold Out</option>
+                                    <option value="rented">Rented Out</option>
+                                    <option value="pending_approval">Pending Approval</option>
                                 </select>
                             </div>
                             <div class="pt-4">
@@ -114,7 +114,9 @@
                                         @click="removeEditPhoto(idx)"
                                         class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
                                         title="Remove photo"
-                                    >✕</button>
+                                    >
+                                        <X class="w-3 h-3" />
+                                    </button>
                                 </div>
 
                                 <!-- Add more slot -->
@@ -124,7 +126,7 @@
                                     @click="editFileInputRef?.click()"
                                     class="w-20 h-16 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-blue-400 hover:text-blue-500 transition cursor-pointer text-xs gap-0.5"
                                 >
-                                    <span class="text-lg leading-none">+</span>
+                                    <Plus class="w-4 h-4" />
                                     <span class="text-[9px] font-bold">Add</span>
                                 </button>
                             </div>
@@ -138,7 +140,7 @@
                                 @drop.prevent="handleEditFileDrop"
                                 :class="['border-2 border-dashed rounded-2xl p-5 text-center transition cursor-pointer', editIsDragging ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-blue-300']"
                             >
-                                <div class="text-2xl mb-1">📸</div>
+                                <Camera class="w-8 h-8 text-blue-500 mx-auto mb-1.5" />
                                 <p class="text-xs font-bold text-slate-600">Drop photos here or <span class="text-blue-600 underline">browse</span></p>
                                 <p class="text-[10px] text-slate-400 mt-0.5">JPG, JPEG, WEBP · Max 5 MB each · Up to 10 photos</p>
                             </div>
@@ -170,7 +172,7 @@
                                 :disabled="isSavingProperty"
                                 class="py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                             >
-                                <span v-if="isSavingProperty" class="inline-block animate-spin">&#8635;</span>
+                                <Loader2 v-if="isSavingProperty" class="w-3.5 h-3.5 animate-spin" />
                                 <span>{{ isSavingProperty ? 'Saving...' : 'Save Changes' }}</span>
                             </button>
                         </div>
@@ -190,28 +192,36 @@
                             {{ userInitials }}
                         </div>
                         <div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-wrap">
                                 <h1 class="text-2xl font-black text-white tracking-tight">{{ currentUser.name }}</h1>
                                 <span class="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full capitalize">
                                     {{ currentUser.role || 'Owner' }}
                                 </span>
                                 <span v-if="currentUser.email_verified || currentUser.email_verified_at" class="text-[10px] font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    ✓ Verified Email
+                                    <CheckCircle2 class="w-3 h-3 text-emerald-400 shrink-0" />
+                                    <span>Verified Email</span>
                                 </span>
                                 <button
                                     v-else
                                     type="button"
                                     @click="resendVerification"
                                     :disabled="isResendingEmail"
-                                    class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full flex items-center gap-1 hover:bg-amber-300 transition cursor-pointer disabled:opacity-50"
+                                    class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 hover:bg-amber-300 transition cursor-pointer disabled:opacity-50"
                                 >
-                                    <span>⚠️ {{ resendFeedback || 'Verify Email (Resend)' }}</span>
+                                    <AlertTriangle class="w-3 h-3 shrink-0" />
+                                    <span>{{ resendFeedback || 'Verify Email (Resend)' }}</span>
                                 </button>
                             </div>
-                            <div class="text-xs text-blue-100/90 flex items-center gap-2 mt-1">
-                                <span>📧 {{ currentUser.email }}</span>
-                                <span>&middot;</span>
-                                <span>📱 {{ currentUser.country_code || '+91' }} {{ currentUser.mobile }}</span>
+                            <div class="text-xs text-blue-100/90 flex items-center gap-2 mt-1 flex-wrap">
+                                <span class="flex items-center gap-1.5">
+                                    <Mail class="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                                    <span>{{ currentUser.email }}</span>
+                                </span>
+                                <span class="hidden sm:inline">&middot;</span>
+                                <span class="flex items-center gap-1.5">
+                                    <Phone class="w-3.5 h-3.5 text-blue-200 shrink-0" />
+                                    <span>{{ currentUser.country_code || '+91' }} {{ currentUser.mobile }}</span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -246,7 +256,7 @@
             <!-- ========================================== -->
             <div v-if="!currentUser && activeTab !== 'activity'" class="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 sm:p-12 text-center max-w-md mx-auto space-y-6">
                 <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <User class="w-7 h-7" />
                 </div>
                 <div class="space-y-1">
                     <h3 class="text-xl font-black text-slate-900">Login to View Your Profile</h3>
@@ -286,7 +296,8 @@
                             :class="activeTab === 'properties' ? 'text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
                             :style="activeTab === 'properties' ? { backgroundColor: brandPrimaryColor } : {}"
                         >
-                            <span>🏢 Manage My Properties</span>
+                            <Building2 class="w-4 h-4 shrink-0" />
+                            <span>Manage My Properties</span>
                             <span
                                 class="px-1.5 py-0.5 rounded-md text-[10px] font-black"
                                 :class="activeTab === 'properties' ? 'bg-black/20 text-white' : 'bg-slate-100 text-slate-600'"
@@ -302,7 +313,8 @@
                             :class="activeTab === 'profile' ? 'text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
                             :style="activeTab === 'profile' ? { backgroundColor: brandPrimaryColor } : {}"
                         >
-                            <span>👤 Edit Profile</span>
+                            <User class="w-4 h-4 shrink-0" />
+                            <span>Edit Profile</span>
                         </button>
 
                         <button
@@ -312,7 +324,8 @@
                             :class="activeTab === 'activity' ? 'text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
                             :style="activeTab === 'activity' ? { backgroundColor: brandPrimaryColor } : {}"
                         >
-                            <span>👁️ Recently Viewed</span>
+                            <Eye class="w-4 h-4 shrink-0" />
+                            <span>Recently Viewed</span>
                             <span
                                 v-if="userActivities.length > 0"
                                 class="px-1.5 py-0.5 rounded-md text-[10px] font-black"
@@ -328,25 +341,30 @@
                         class="py-2 px-4 rounded-xl text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer hover:opacity-95"
                         :style="{ backgroundColor: brandAccentColor || '#059669' }"
                     >
-                        <span>+ Post New Property</span>
+                        <Plus class="w-4 h-4 shrink-0" />
+                        <span>Post New Property</span>
                     </router-link>
                 </div>
 
                 <!-- Alert Feedback -->
                 <div v-if="successMessage" class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
                     <div class="flex items-center gap-2">
-                        <span>✓</span>
+                        <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0" />
                         <span class="font-bold">{{ successMessage }}</span>
                     </div>
-                    <button type="button" @click="successMessage = ''" class="text-emerald-700 hover:text-emerald-900 cursor-pointer">✕</button>
+                    <button type="button" @click="successMessage = ''" class="text-emerald-700 hover:text-emerald-900 cursor-pointer p-0.5">
+                        <X class="w-3.5 h-3.5" />
+                    </button>
                 </div>
 
                 <div v-if="errorMessage" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between animate-fadeIn">
                     <div class="flex items-center gap-2">
-                        <span>⚠️</span>
+                        <AlertTriangle class="w-4 h-4 text-rose-600 shrink-0" />
                         <span>{{ errorMessage }}</span>
                     </div>
-                    <button type="button" @click="errorMessage = ''" class="text-rose-700 hover:text-rose-900 cursor-pointer">✕</button>
+                    <button type="button" @click="errorMessage = ''" class="text-rose-700 hover:text-rose-900 cursor-pointer p-0.5">
+                        <X class="w-3.5 h-3.5" />
+                    </button>
                 </div>
 
                 <!-- ============================================== -->
@@ -385,8 +403,8 @@
 
                     <!-- Empty State -->
                     <div v-else-if="filteredProperties.length === 0" class="py-16 px-4 text-center bg-white rounded-3xl border border-slate-200 space-y-4">
-                        <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-2xl">
-                            🏢
+                        <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                            <Building2 class="w-8 h-8 text-blue-600" />
                         </div>
                         <div class="space-y-1">
                             <h3 class="text-base font-bold text-slate-800">No properties found</h3>
@@ -396,9 +414,10 @@
                         </div>
                         <router-link
                             to="/post-property"
-                            class="inline-block py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition"
+                            class="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition"
                         >
-                            + Post Property Now
+                            <Plus class="w-3.5 h-3.5 shrink-0" />
+                            <span>Post Property Now</span>
                         </router-link>
                     </div>
 
@@ -426,11 +445,14 @@
                                         playsinline
                                         class="w-full h-full object-cover opacity-80 pointer-events-none"
                                     ></video>
-                                    <div v-else class="text-2xl text-slate-500">🏠</div>
+                                    <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1 bg-slate-900">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                        <span class="text-[9px] font-semibold text-slate-400">No media</span>
+                                    </div>
 
                                     <span v-if="((prop.photos?.length || 0) + (prop.videos?.length || 0)) > 0" class="absolute bottom-1 right-1 bg-slate-900/85 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10">
-                                        <span v-if="!prop.photos || prop.photos.length === 0">🎥</span>
-                                        <span v-else>📷</span>
+                                        <Video v-if="!prop.photos || prop.photos.length === 0" class="w-3 h-3 text-purple-300" />
+                                        <Camera v-else class="w-3 h-3" />
                                         <span>{{ (prop.photos?.length || 0) + (prop.videos?.length || 0) }}</span>
                                     </span>
                                 </div>
@@ -455,7 +477,10 @@
                                     </h4>
 
                                     <div class="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                                        <span>📍 {{ prop.locality }}, {{ prop.city }}</span>
+                                        <span class="flex items-center gap-1">
+                                            <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
+                                            <span>{{ prop.locality }}, {{ prop.city }}</span>
+                                        </span>
                                         <span>&middot;</span>
                                         <span>
                                             <template v-if="isResidentialType(prop.property_type) && prop.bedrooms > 0">
@@ -511,7 +536,8 @@
                                     @click="openEditModal(prop)"
                                     class="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center gap-1"
                                 >
-                                    <span>✏️ Edit</span>
+                                    <Pencil class="w-3 h-3 shrink-0" />
+                                    <span>Edit</span>
                                 </button>
 
                                 <!-- View in listings link -->
@@ -526,10 +552,10 @@
                                 <button
                                     type="button"
                                     @click="deleteProperty(prop)"
-                                    class="py-1.5 px-2.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-bold transition cursor-pointer"
+                                    class="py-1.5 px-2.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-bold transition cursor-pointer flex items-center justify-center"
                                     title="Delete Listing"
                                 >
-                                    🗑️
+                                    <Trash2 class="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>
@@ -573,7 +599,8 @@
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Mobile Number</label>
                                 <span class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                                    <span>✓ Verified via OTP</span>
+                                    <Check class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span>Verified via OTP</span>
                                 </span>
                             </div>
                             <div class="relative">
@@ -616,7 +643,7 @@
                                 :disabled="isSavingProfile"
                                 class="py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                             >
-                                <span v-if="isSavingProfile" class="inline-block animate-spin">&#8635;</span>
+                                <Loader2 v-if="isSavingProfile" class="w-3.5 h-3.5 animate-spin" />
                                 <span>{{ isSavingProfile ? 'Saving...' : 'Save Profile Changes' }}</span>
                             </button>
                         </div>
@@ -644,7 +671,9 @@
                     <!-- Guest Mode Sync Banner -->
                     <div v-if="!currentUser" class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                         <div class="flex items-center gap-3">
-                            <span class="text-2xl shrink-0">💡</span>
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                <Lightbulb class="w-5 h-5 text-blue-600" />
+                            </div>
                             <div>
                                 <span class="font-bold text-slate-900 block">Viewing guest browsing history</span>
                                 <p class="text-slate-600 text-[11px] mt-0.5">These properties are saved locally in your browser. Log in or create an account to sync your history across all your devices.</p>
@@ -668,8 +697,8 @@
 
                     <!-- Empty State -->
                     <div v-else-if="userActivities.length === 0" class="py-16 px-4 text-center bg-white rounded-3xl border border-slate-200 space-y-4">
-                        <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-2xl">
-                            👁️
+                        <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                            <Eye class="w-8 h-8 text-blue-600" />
                         </div>
                         <div class="space-y-1">
                             <h3 class="text-base font-bold text-slate-800">No recently viewed properties</h3>
@@ -712,8 +741,11 @@
                                         playsinline
                                         class="w-full h-full object-cover opacity-80 pointer-events-none"
                                     ></video>
-                                    <div v-else class="w-full h-full flex items-center justify-center text-3xl text-slate-500">
-                                        🏠
+                                    <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5 bg-slate-900">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                            <Camera class="w-5 h-5 text-slate-400" />
+                                        </div>
+                                        <span class="text-[10px] font-semibold text-slate-400">No media</span>
                                     </div>
                                     <span v-if="act.property?.property_for || act.metadata?.property_for" class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold">
                                         For {{ act.property?.property_for || act.metadata?.property_for }}
@@ -726,18 +758,19 @@
                                         class="absolute bottom-2 right-2 bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
                                         :title="(!act.property?.photos?.length && !act.metadata?.photo) ? 'View video tour' : 'View media gallery'"
                                     >
-                                        <span v-if="!act.property?.photos?.length && !act.metadata?.photo">🎥</span>
-                                        <span v-else>📷</span>
+                                        <Video v-if="!act.property?.photos?.length && !act.metadata?.photo" class="w-3 h-3 text-purple-300" />
+                                        <Camera v-else class="w-3 h-3" />
                                         <span>{{ (act.property?.photos?.length || (act.metadata?.photo ? 1 : 0)) + (act.property?.videos?.length || (act.metadata?.videos?.length || 0)) }}</span>
-                                        <span v-if="(act.property?.videos?.length || act.metadata?.videos?.length) && (act.property?.photos?.length || act.metadata?.photo)" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                        <Video v-if="(act.property?.videos?.length || act.metadata?.videos?.length) && (act.property?.photos?.length || act.metadata?.photo)" class="w-3 h-3 text-purple-300 ml-0.5" />
                                     </button>
                                 </div>
                                 <div class="p-4 space-y-1.5">
                                     <div class="text-sm font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition">
                                         {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
                                     </div>
-                                    <p class="text-xs text-slate-500 line-clamp-1">
-                                        📍 {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
+                                    <p class="text-xs text-slate-500 line-clamp-1 flex items-center gap-1">
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
+                                        <span>{{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}</span>
                                     </p>
                                     <div class="text-xs font-black" :style="{ color: brandPrimaryColor }">
                                         {{ (act.property?.expected_price || act.metadata?.expected_price) ? '₹ ' + Number(act.property?.expected_price || act.metadata?.expected_price).toLocaleString('en-IN') : 'Price on Request' }}
@@ -767,6 +800,25 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import {
+    Building2,
+    User,
+    Eye,
+    Plus,
+    X,
+    Camera,
+    Video,
+    MapPin,
+    Pencil,
+    Trash2,
+    Check,
+    CheckCircle2,
+    AlertTriangle,
+    Mail,
+    Phone,
+    Lightbulb,
+    Loader2,
+} from 'lucide-vue-next';
 import AuthModal from '~/components/AuthModal.vue';
 import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 import { isResidentialType, getPropertyIntentLabel } from '~/utils/propertyConstants';

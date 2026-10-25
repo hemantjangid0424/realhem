@@ -409,3 +409,71 @@ test('authenticated user can upload photos and watermark is applied', function (
     $storedFiles = Storage::disk('public')->allFiles('properties');
     expect(count($storedFiles))->toBe(1);
 });
+
+test('public users can filter properties by furnishing, posted_by, bathrooms, facing, negotiable, and amenities', function () {
+    $user = User::factory()->create();
+
+    $match = Property::factory()->create([
+        'user_id' => $user->id,
+        'city' => 'Ahmedabad',
+        'locality' => 'Prahlad Nagar',
+        'property_for' => 'Sell',
+        'furnishing_status' => 'Furnished',
+        'user_type' => 'Owner',
+        'bathrooms' => 3,
+        'facing' => 'East',
+        'price_negotiable' => true,
+        'amenities' => ['Lift', 'Gym', 'Swimming Pool'],
+        'expected_price' => 9000000,
+    ]);
+
+    $other = Property::factory()->create([
+        'user_id' => $user->id,
+        'city' => 'Ahmedabad',
+        'locality' => 'Vastral',
+        'property_for' => 'Sell',
+        'furnishing_status' => 'Unfurnished',
+        'user_type' => 'Agent',
+        'bathrooms' => 1,
+        'facing' => 'South',
+        'price_negotiable' => false,
+        'amenities' => ['Parking'],
+        'expected_price' => 4000000,
+    ]);
+
+    // Filter by furnishing
+    $resFurnished = $this->getJson('/api/properties?furnishing=Furnished');
+    $resFurnished->assertStatus(200);
+    $ids = collect($resFurnished->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+
+    // Filter by posted_by
+    $resOwner = $this->getJson('/api/properties?posted_by=Owner');
+    $resOwner->assertStatus(200);
+    $ids = collect($resOwner->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+
+    // Filter by bathrooms
+    $resBaths = $this->getJson('/api/properties?bathrooms=3');
+    $resBaths->assertStatus(200);
+    $ids = collect($resBaths->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+
+    // Filter by facing
+    $resFacing = $this->getJson('/api/properties?facing=East');
+    $resFacing->assertStatus(200);
+    $ids = collect($resFacing->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+
+    // Filter by negotiable
+    $resNego = $this->getJson('/api/properties?negotiable_only=1');
+    $resNego->assertStatus(200);
+    $ids = collect($resNego->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+
+    // Filter by amenities
+    $resAmen = $this->getJson('/api/properties?amenities=Gym,Swimming Pool');
+    $resAmen->assertStatus(200);
+    $ids = collect($resAmen->json('data'))->pluck('id');
+    expect($ids)->toContain($match->id)->not->toContain($other->id);
+});

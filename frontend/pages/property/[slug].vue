@@ -58,6 +58,16 @@
                         <Share2 class="w-3.5 h-3.5 text-slate-500" />
                         <span>{{ copied ? '✓ Copied' : 'Share' }}</span>
                     </button>
+
+                    <button
+                        type="button"
+                        @click="isReportModalOpen = true"
+                        class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 group"
+                        title="Report this property"
+                    >
+                        <Flag class="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600" />
+                        <span>Report</span>
+                    </button>
                 </div>
             </div>
 
@@ -329,11 +339,24 @@
                             </button>
                         </div>
 
-                        <!-- Safe dealing note -->
-                        <p class="text-[10px] text-slate-400 text-center leading-relaxed flex items-center justify-center gap-1">
-                            <ShieldCheck class="w-3.5 h-3.5 text-emerald-600" />
-                            <span>100% safe to connect. Verified listing by {{ companyName }}.</span>
-                        </p>
+                        <!-- Safe dealing note & Report listing trigger -->
+                        <div class="space-y-2 pt-1">
+                            <p class="text-[10px] text-slate-400 text-center leading-relaxed flex items-center justify-center gap-1">
+                                <ShieldCheck class="w-3.5 h-3.5 text-emerald-600" />
+                                <span>100% safe to connect. Verified listing by {{ companyName }}.</span>
+                            </p>
+                            <div class="pt-2 border-t border-slate-100 flex items-center justify-center gap-1 text-[11px] text-slate-500">
+                                <span>Found something wrong?</span>
+                                <button
+                                    type="button"
+                                    @click="isReportModalOpen = true"
+                                    class="text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Flag class="w-3 h-3" />
+                                    <span>Report Property</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -380,6 +403,16 @@
                             <span>Share</span>
                         </button>
                         <span v-if="copied" class="text-[11px] text-emerald-600 font-bold">✓ Copied!</span>
+
+                        <button
+                            type="button"
+                            @click="isReportModalOpen = true"
+                            class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 group"
+                            title="Report an issue or inaccurate details"
+                        >
+                            <Flag class="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
+                            <span>Report</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -666,6 +699,13 @@
             @close="isGalleryOpen = false"
             @update:is-open="isGalleryOpen = $event"
         />
+
+        <!-- Report Property Modal -->
+        <ReportPropertyModal
+            :is-open="isReportModalOpen"
+            :property="property"
+            @close="isReportModalOpen = false"
+        />
     </div>
 </template>
 
@@ -692,9 +732,11 @@ import {
     ShieldCheck,
     Calculator,
     Landmark,
+    Flag,
 } from 'lucide-vue-next';
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
 import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
+import ReportPropertyModal from '~/components/ReportPropertyModal.vue';
 import {
     PROPERTY_FOR,
     isResidentialType,
@@ -790,6 +832,7 @@ const openVideoGallery = (vIdx = 0) => {
 
 const showContactModal = ref(false);
 const isEmiModalOpen = ref(false);
+const isReportModalOpen = ref(false);
 const descExpanded = ref(false);
 const copied = ref(false);
 

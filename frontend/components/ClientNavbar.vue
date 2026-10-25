@@ -29,7 +29,7 @@
                     <span class="hidden sm:inline text-slate-500">|</span>
                     <span class="hidden sm:inline text-slate-400">{{ companySubTagline }}</span>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-4">
                     <router-link to="/brokers" class="text-slate-300 hover:text-white transition flex items-center gap-1">
                         <span>For Brokers &amp; Builders</span>
                         <span class="text-[9px] bg-blue-600/60 text-blue-200 px-1.5 py-0.2 rounded">PRO</span>
@@ -49,34 +49,34 @@
             :class="isScrolled ? 'text-white shadow-md' : 'bg-white text-slate-800 border-b border-slate-200'"
             :style="isScrolled ? { backgroundColor: brandPrimaryColor } : {}"
         >
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16 transition-all duration-200">
+            <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 transition-all duration-200 gap-2">
                     <!-- Left: Logo & City/Locality Selector -->
-                    <div class="flex items-center gap-3 sm:gap-5 flex-shrink-0">
-                        <router-link to="/" @click="handleLogoClick" class="flex items-center gap-2.5 group">
+                    <div class="flex items-center gap-2 sm:gap-5 shrink-0 min-w-0">
+                        <router-link to="/" @click="handleLogoClick" class="flex items-center gap-2 group min-w-0">
                             <div
                                 v-if="companyLogoUrl"
-                                class="h-9 max-w-[160px] rounded-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105"
+                                class="h-8 sm:h-9 max-w-[120px] sm:max-w-[160px] rounded-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105 shrink-0"
                             >
-                                <img :src="companyLogoUrl" :alt="companyName" class="max-h-9 max-w-full object-contain" />
+                                <img :src="companyLogoUrl" :alt="companyName" class="max-h-8 sm:max-h-9 max-w-full object-contain" />
                             </div>
                             <div
                                 v-else
-                                class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105"
+                                class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-black text-base sm:text-lg shadow-sm transition-transform group-hover:scale-105 shrink-0"
                                 :class="isScrolled ? 'bg-white' : 'text-white'"
                                 :style="isScrolled ? { color: brandPrimaryColor } : { backgroundColor: brandPrimaryColor }"
                             >
                                 {{ companyShortName }}
                             </div>
-                            <div class="flex flex-col">
+                            <div class="flex-col min-w-0" :class="companyLogoUrl ? 'hidden md:flex' : 'flex'">
                                 <span
-                                    class="font-black text-xl tracking-tight leading-none"
+                                    class="font-black text-lg sm:text-xl tracking-tight leading-none truncate"
                                     :class="isScrolled ? 'text-white' : 'text-slate-900'"
                                 >
                                     {{ companyName }}<span :class="isScrolled ? 'text-amber-400' : 'text-blue-600'">.</span>
                                 </span>
                                 <span
-                                    class="text-[9px] font-bold tracking-wide uppercase transition-all duration-200"
+                                    class="text-[9px] font-bold tracking-wide uppercase transition-all duration-200 hidden sm:inline truncate"
                                     :class="isScrolled ? 'text-white/80' : 'text-slate-400'"
                                 >
                                     {{ companyTagline }}
@@ -86,20 +86,25 @@
                     </div>
 
                     <!-- CENTER: STICKY SEARCH BAR OR NAV LINKS (Smooth Crossfade with Fixed Layout) -->
-                    <div class="flex-1 max-w-xl mx-2 sm:mx-6 flex items-center justify-center min-w-0">
+                    <div
+                        class="items-center justify-center min-w-0"
+                        :class="isScrolled ? 'flex flex-1 max-w-xl mx-2 sm:mx-6' : 'hidden lg:flex flex-1 max-w-xl mx-6'"
+                    >
                         <transition name="nav-fade" mode="out-in">
                             <!-- Sticky Search Bar -->
                             <div v-if="isScrolled" key="search" class="w-full relative">
                                 <form
                                     @submit.prevent="selectActiveSuggestionOrSubmit"
-                                    class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5 w-full focus-within:ring-2 focus-within:ring-blue-400/40 transition"
+                                    class="bg-white text-slate-800 rounded-full shadow-lg border border-slate-200/60 flex items-center px-3 py-1.5 w-full focus-within:ring-2 focus-within:ring-blue-400/40 transition gap-1.5"
                                 >
-                                    <!-- Type selector (Buy, Rent, Commercial, Plots) -->
+                                    <!-- Type selector (All, Buy, Rent, Commercial, Plots) -->
                                     <div class="relative flex-shrink-0">
                                         <select
                                             v-model="stickySearchType"
+                                            @change="handleStickyTypeChange"
                                             class="bg-transparent border-none text-xs font-bold text-slate-800 outline-none cursor-pointer pr-4 appearance-none capitalize pl-1"
                                         >
+                                            <option value="all">All</option>
                                             <option value="buy">Buy</option>
                                             <option value="rent">Rent</option>
                                             <option value="commercial">Commercial</option>
@@ -109,20 +114,52 @@
                                     </div>
 
                                     <!-- Divider -->
-                                    <div class="h-4 w-px bg-slate-200 mx-2.5 flex-shrink-0"></div>
+                                    <div class="h-4 w-px bg-slate-200 mx-1 flex-shrink-0"></div>
+
+                                    <!-- Selected City Chip (matching listings.vue) -->
+                                    <div
+                                        v-if="stickyCityChip"
+                                        class="flex items-center gap-1.5 bg-slate-200/90 text-slate-800 text-xs font-bold px-2 py-0.5 rounded-lg shrink-0"
+                                    >
+                                        <span>{{ stickyCityChip }}</span>
+                                        <button
+                                            type="button"
+                                            @click="clearStickyCity"
+                                            class="hover:text-red-600 text-slate-500 font-bold cursor-pointer transition text-xs"
+                                            title="Clear city filter"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    <!-- Selected Keyword or Near Me Pill (matching listings.vue) -->
+                                    <div
+                                        v-if="activeKeywordChip"
+                                        class="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 border border-blue-200/60"
+                                    >
+                                        <span>{{ activeKeywordChip }}</span>
+                                        <button
+                                            type="button"
+                                            @click="clearStickyKeyword"
+                                            class="hover:text-blue-900 cursor-pointer text-xs"
+                                            title="Clear keyword filter"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
 
                                     <!-- Input -->
                                     <input
-                                        v-model="stickyKeyword"
+                                        v-model="stickyInput"
                                         type="text"
-                                        placeholder="Search City, Locality, Project or Title..."
+                                        :placeholder="stickyCityChip || activeKeywordChip ? 'Add more / Search Project, Locality...' : 'Search City, Locality, Project or Title...'"
                                         @input="onStickyKeywordInput"
                                         @focus="onStickyKeywordFocus"
                                         @blur="closeSuggestionsWithDelay"
                                         @keydown.down.prevent="navigateSuggestions(1)"
                                         @keydown.up.prevent="navigateSuggestions(-1)"
                                         @keydown.esc="isSuggestionsOpen = false"
-                                        class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent min-w-0"
+                                        class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 outline-none bg-transparent min-w-[60px]"
                                     />
 
                                     <!-- Actions Icons -->
@@ -244,12 +281,12 @@
                     </div>
 
                 <!-- Right Side Actions: Post Property, User Profile, Hamburger -->
-                <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
                     <!-- Recently Viewed Indicator Button (Visible for all when count > 0) -->
                     <router-link
                         v-if="totalActivityCount > 0"
                         to="/recent-activity"
-                        class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition cursor-pointer group shadow-2xs"
+                        class="inline-flex items-center gap-1 sm:gap-1.5 py-1.5 px-2 sm:px-3 rounded-full text-xs font-bold transition cursor-pointer group shadow-2xs"
                         :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 bg-white'"
                         title="View Recent Activity (Searches, Viewed, Shortlist)"
                     >
@@ -266,31 +303,32 @@
                     <!-- Post Property FREE CTA -->
                     <router-link
                         to="/post-property"
-                        class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-full text-xs font-bold transition shadow-xs cursor-pointer hover:opacity-95"
+                        class="inline-flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-2.5 sm:px-3.5 rounded-full text-xs font-bold transition shadow-xs cursor-pointer hover:opacity-95 shrink-0"
                         :style="isScrolled ? { backgroundColor: '#fff', color: brandPrimaryColor } : { backgroundColor: brandAccentColor || '#ff6b35', color: '#fff', boxShadow: '0 4px 12px ' + (brandAccentColor || '#ff6b35') + '40' }"
                     >
-                        <span>Post property</span>
-                        <span class="bg-black/20 text-white text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">FREE</span>
+                        <span class="hidden sm:inline">Post property</span>
+                        <span class="sm:hidden font-extrabold">+ Post</span>
+                        <span class="hidden sm:inline bg-black/20 text-white text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">FREE</span>
                     </router-link>
 
-                    <!-- Authenticated User Avatar with Dropdown (Hover & Click) -->
+                    <!-- Authenticated User Avatar with Dropdown (Desktop / Tablet: sm+) -->
                     <div
                         v-if="currentUser"
-                        class="relative"
+                        class="relative hidden sm:block"
                         @mouseenter="openUserDropdown"
                         @mouseleave="scheduleCloseUserDropdown"
                     >
                         <button
                             type="button"
                             @click.stop="toggleUserDropdown"
-                            class="flex items-center gap-2 py-1 px-2.5 rounded-full cursor-pointer transition select-none"
+                            class="flex items-center gap-1.5 sm:gap-2 py-1 px-1.5 sm:px-2.5 rounded-full cursor-pointer transition select-none shrink-0"
                             :class="isScrolled ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-100 text-slate-800'"
                         >
-                            <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
+                            <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0">
                                 {{ userInitials }}
                             </div>
-                            <span class="text-xs font-bold hidden sm:inline max-w-[120px] truncate">{{ currentUser.name }}</span>
-                            <ChevronDown class="w-3.5 h-3.5 opacity-70 transition-transform duration-200" :class="{ 'rotate-180': isUserDropdownOpen }" />
+                            <span class="text-xs font-bold hidden md:inline max-w-[120px] truncate">{{ currentUser.name }}</span>
+                            <ChevronDown class="w-3.5 h-3.5 opacity-70 transition-transform duration-200 hidden sm:inline" :class="{ 'rotate-180': isUserDropdownOpen }" />
                         </button>
 
                         <!-- Dropdown Menu with zero-gap hover bridge -->
@@ -386,19 +424,235 @@
                         </div>
                     </div>
 
-                    <!-- Unauthenticated: Login Button -->
+                    <!-- Unauthenticated: Login Button (Desktop / Tablet: sm+) -->
                     <button
                         v-else
                         @click="isAuthModalOpen = true"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer"
+                        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shrink-0"
                         :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200'"
                     >
                         <User class="w-3.5 h-3.5" :class="isScrolled ? 'text-white' : 'text-blue-600'" />
-                        <span class="hidden sm:inline">Login / Register</span>
+                        <span>Login / Register</span>
+                    </button>
+
+                    <!-- Mobile Hamburger Menu Button (Visible on < lg screens) -->
+                    <button
+                        type="button"
+                        @click="isMobileMenuOpen = !isMobileMenuOpen"
+                        class="lg:hidden p-1.5 sm:p-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                        :class="isScrolled ? 'text-white hover:bg-white/15' : 'text-slate-700 hover:bg-slate-100'"
+                        aria-label="Toggle Navigation Menu"
+                    >
+                        <div v-if="currentUser" class="sm:hidden w-7 h-7 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+                            {{ userInitials }}
+                        </div>
+                        <Menu v-if="!isMobileMenuOpen" class="w-5 h-5 shrink-0" />
+                        <X v-else class="w-5 h-5 shrink-0" />
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Mobile Drawer Navigation (Teleported to Body) -->
+        <Teleport to="body">
+            <transition name="drawer-fade">
+                <div
+                    v-if="isMobileMenuOpen"
+                    class="fixed inset-0 z-50 flex justify-end"
+                >
+                    <!-- Backdrop Overlay -->
+                    <div
+                        class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+                        @click="isMobileMenuOpen = false"
+                    ></div>
+
+                    <!-- Slide-over Drawer Panel -->
+                    <div class="relative w-full max-w-xs bg-white h-full shadow-2xl z-10 flex flex-col overflow-y-auto animate-slideLeft">
+                        <!-- Drawer Header -->
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between" :style="{ backgroundColor: brandPrimaryColor }">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-white text-blue-700 font-black text-sm flex items-center justify-center shadow-xs">
+                                    {{ companyShortName }}
+                                </div>
+                                <span class="font-black text-white text-base tracking-tight">
+                                    {{ companyName }}<span class="text-amber-400">.</span>
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                @click="isMobileMenuOpen = false"
+                                class="p-1.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                                aria-label="Close Menu"
+                            >
+                                <X class="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <!-- User Profile Card (if authenticated) -->
+                        <div v-if="currentUser" class="p-4 bg-slate-50 border-b border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                                    {{ userInitials }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-xs font-black text-slate-900 truncate">{{ currentUser.name }}</h4>
+                                    <p class="text-[11px] text-slate-500 truncate">{{ currentUser.email }}</p>
+                                    <span class="inline-block text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded mt-1">
+                                        {{ currentUser.role || 'Owner' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guest Login Prompt (if guest) -->
+                        <div v-else class="p-4 bg-blue-50/60 border-b border-blue-100">
+                            <p class="text-xs font-bold text-slate-800 mb-2">Welcome to {{ companyName }}</p>
+                            <button
+                                type="button"
+                                @click="isMobileMenuOpen = false; isAuthModalOpen = true;"
+                                class="w-full py-2.5 px-4 rounded-xl text-white text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer transition hover:opacity-95"
+                                :style="{ backgroundColor: brandPrimaryColor }"
+                            >
+                                <User class="w-4 h-4" />
+                                <span>Login / Register</span>
+                            </button>
+                        </div>
+
+                        <!-- Primary Nav Links -->
+                        <div class="p-4 space-y-1">
+                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1">Properties</div>
+                            <router-link
+                                :to="{ path: '/listings', query: { type: 'buy', city: selectedCity } }"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <Building2 class="w-4 h-4 text-blue-600" />
+                                    <span>Buy Properties</span>
+                                </div>
+                                <span class="text-slate-400 text-xs">&rarr;</span>
+                            </router-link>
+
+                            <router-link
+                                :to="{ path: '/listings', query: { type: 'rent', city: selectedCity } }"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <Home class="w-4 h-4 text-emerald-600" />
+                                    <span>Rent Properties</span>
+                                </div>
+                                <span class="text-slate-400 text-xs">&rarr;</span>
+                            </router-link>
+
+                            <router-link
+                                :to="{ path: '/listings', query: { type: 'commercial', city: selectedCity } }"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <Building2 class="w-4 h-4 text-purple-600" />
+                                    <span>Commercial</span>
+                                </div>
+                                <span class="text-slate-400 text-xs">&rarr;</span>
+                            </router-link>
+
+                            <router-link
+                                :to="{ path: '/listings', query: { type: 'plots', city: selectedCity } }"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <MapPin class="w-4 h-4 text-amber-600" />
+                                    <span>Plots / Land</span>
+                                </div>
+                                <span class="text-slate-400 text-xs">&rarr;</span>
+                            </router-link>
+
+                            <router-link
+                                to="/brokers"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <User class="w-4 h-4 text-indigo-600" />
+                                    <span>Brokers &amp; Builders</span>
+                                </div>
+                                <span class="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-black">PRO</span>
+                            </router-link>
+                        </div>
+
+                        <!-- Quick Actions Section -->
+                        <div class="px-4 py-2 border-t border-slate-100 space-y-1">
+                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1">Quick Actions</div>
+
+                            <router-link
+                                to="/post-property"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <PlusCircle class="w-4 h-4 text-emerald-600" />
+                                    <span>Post Free Property</span>
+                                </div>
+                                <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-black">FREE</span>
+                            </router-link>
+
+                            <router-link
+                                to="/recent-activity"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <Activity class="w-4 h-4 text-blue-600" />
+                                    <span>Recent Activity</span>
+                                </div>
+                                <span v-if="totalActivityCount > 0" class="text-[10px] font-black bg-blue-600 text-white px-2 py-0.2 rounded-full">
+                                    {{ totalActivityCount }}
+                                </span>
+                            </router-link>
+
+                            <router-link
+                                v-if="currentUser"
+                                to="/profile"
+                                @click="isMobileMenuOpen = false"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <User class="w-4 h-4 text-slate-500" />
+                                    <span>My Profile &amp; Listings</span>
+                                </div>
+                                <span class="text-slate-400 text-xs">&rarr;</span>
+                            </router-link>
+
+                            <a
+                                href="/admin/login"
+                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-amber-600 hover:bg-amber-50 transition"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <Lock class="w-4 h-4 text-amber-500" />
+                                    <span>Admin Portal</span>
+                                </div>
+                                <span class="text-amber-500 text-xs">&rarr;</span>
+                            </a>
+                        </div>
+
+                        <!-- Footer / Logout in drawer -->
+                        <div class="mt-auto p-4 border-t border-slate-100">
+                            <button
+                                v-if="currentUser"
+                                type="button"
+                                @click="handleLogout(); isMobileMenuOpen = false;"
+                                class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition cursor-pointer"
+                            >
+                                <LogOut class="w-4 h-4" />
+                                <span>Log Out</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </Teleport>
 
         <!-- Mobile OTP Authentication Modal -->
         <AuthModal
@@ -410,7 +664,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
     Lock,
     ChevronDown,
@@ -423,10 +677,17 @@ import {
     Home,
     PlusCircle,
     LogOut,
+    Menu,
+    X,
 } from 'lucide-vue-next';
 import AuthModal from './AuthModal.vue';
 
 const router = useRouter();
+const isMobileMenuOpen = ref(false);
+
+watch(() => router.currentRoute.value.fullPath, () => {
+    isMobileMenuOpen.value = false;
+});
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { abortInFlightApiRequests } = useApi();
 
@@ -465,17 +726,75 @@ const currentUser = ref(null);
 const isUserDropdownOpen = ref(false);
 
 // Sticky Header & Autocomplete Search State
+const route = useRoute();
 const isScrolled = ref(false);
 const stickySearchType = ref('buy');
-const stickyKeyword = ref('');
+const stickyInput = ref('');
 const isSuggestionsOpen = ref(false);
 const activeSuggestionIndex = ref(-1);
 
+const isNearMeRoute = computed(() => route.query.near_me === 'true');
+const activeKeywordChip = computed(() => {
+    if (isNearMeRoute.value) return 'Near me';
+    return route.query.keyword ? String(route.query.keyword) : '';
+});
+
+const stickyCityChip = computed(() => {
+    if (isNearMeRoute.value) return '';
+    if (route.path === '/listings' && route.query.city) {
+        return route.query.city !== 'All' ? String(route.query.city) : '';
+    }
+    return selectedCity.value && selectedCity.value !== 'All' ? selectedCity.value : '';
+});
+
+watch(
+    () => route.query.type,
+    (newType) => {
+        if (newType && typeof newType === 'string') {
+            stickySearchType.value = newType;
+        }
+    },
+    { immediate: true }
+);
+
+const handleStickyTypeChange = () => {
+    if (route.path === '/listings') {
+        router.push({
+            path: '/listings',
+            query: {
+                ...route.query,
+                type: stickySearchType.value,
+            },
+        });
+    }
+};
+
+const clearStickyCity = () => {
+    setCity('All');
+    if (route.path === '/listings') {
+        const query = { ...route.query };
+        delete query.city;
+        router.push({ path: '/listings', query });
+    }
+};
+
+const clearStickyKeyword = () => {
+    stickyInput.value = '';
+    if (route.path === '/listings') {
+        const query = { ...route.query };
+        delete query.keyword;
+        delete query.near_me;
+        delete query.lat;
+        delete query.lng;
+        router.push({ path: '/listings', query });
+    }
+};
+
 const onStickyKeywordInput = () => {
     activeSuggestionIndex.value = -1;
-    if (stickyKeyword.value.trim().length > 0) {
+    if (stickyInput.value.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(stickyKeyword.value, '');
+        fetchSuggestions(stickyInput.value, stickyCityChip.value || selectedCity.value);
     } else {
         isSuggestionsOpen.value = false;
         clearSuggestions();
@@ -483,9 +802,9 @@ const onStickyKeywordInput = () => {
 };
 
 const onStickyKeywordFocus = () => {
-    if (stickyKeyword.value.trim().length > 0) {
+    if (stickyInput.value.trim().length > 0) {
         isSuggestionsOpen.value = true;
-        fetchSuggestions(stickyKeyword.value, '');
+        fetchSuggestions(stickyInput.value, stickyCityChip.value || selectedCity.value);
     }
 };
 
@@ -511,6 +830,7 @@ const selectActiveSuggestionOrSubmit = () => {
 const handleSelectSuggestion = (item) => {
     isSuggestionsOpen.value = false;
     clearSuggestions();
+    stickyInput.value = '';
 
     if (item.type === 'property' && item.slug) {
         router.push(`/property/${item.slug}`);
@@ -519,7 +839,6 @@ const handleSelectSuggestion = (item) => {
 
     if (item.type === 'city') {
         setCity(item.city);
-        stickyKeyword.value = '';
         logSearch({
             city: item.city,
             type: stickySearchType.value,
@@ -537,11 +856,10 @@ const handleSelectSuggestion = (item) => {
     if (item.city) {
         setCity(item.city);
     }
-    stickyKeyword.value = item.keyword || item.title;
 
     logSearch({
         keyword: item.keyword || item.title,
-        city: item.city || selectedCity.value,
+        city: item.city || stickyCityChip.value || selectedCity.value,
         type: stickySearchType.value,
     });
 
@@ -549,7 +867,7 @@ const handleSelectSuggestion = (item) => {
         path: '/listings',
         query: {
             type: stickySearchType.value,
-            city: item.city || selectedCity.value,
+            city: item.city || stickyCityChip.value || selectedCity.value,
             keyword: item.keyword || item.title,
         },
     });
@@ -557,7 +875,7 @@ const handleSelectSuggestion = (item) => {
 
 const handleDetectLocation = () => {
     detectLocation((data) => {
-        stickyKeyword.value = 'Near me';
+        stickyInput.value = '';
         router.push({
             path: '/listings',
             query: {
@@ -595,7 +913,7 @@ const startVoiceSearch = () => {
             stickySearchType.value = queryParsed.type;
         }
 
-        stickyKeyword.value = queryParsed.keyword;
+        stickyInput.value = '';
 
         router.push({
             path: '/listings',
@@ -639,14 +957,14 @@ const handleScroll = () => {
 };
 
 const handleStickySearch = () => {
-    const raw = stickyKeyword.value || '';
+    const raw = stickyInput.value || '';
     const parsed = parseVoiceQuery(raw, {
         defaultType: stickySearchType.value,
-        defaultCity: selectedCity.value,
+        defaultCity: stickyCityChip.value || selectedCity.value,
     });
 
-    let targetCity = selectedCity.value;
-    let targetKeyword = stickyKeyword.value;
+    let targetCity = stickyCityChip.value || selectedCity.value;
+    let targetKeyword = stickyInput.value.trim();
     let targetBhks = [];
     let targetType = stickySearchType.value;
 
@@ -666,23 +984,28 @@ const handleStickySearch = () => {
 
     if (parsed.hasCity || parsed.hasBhk || parsed.hasType) {
         targetKeyword = parsed.keyword;
-        stickyKeyword.value = parsed.keyword;
     }
 
+    const finalKeyword = targetKeyword || (activeKeywordChip.value !== 'Near me' ? activeKeywordChip.value : undefined) || undefined;
+
     logSearch({
-        keyword: targetKeyword || undefined,
-        city: targetCity,
+        keyword: finalKeyword,
+        city: targetCity !== 'All' ? targetCity : undefined,
         type: targetType,
         bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
     });
 
+    stickyInput.value = '';
+    isSuggestionsOpen.value = false;
+
     router.push({
         path: '/listings',
         query: {
+            ...route.query,
             type: targetType,
-            city: targetCity,
-            keyword: targetKeyword || undefined,
-            bhk: targetBhks.length > 0 ? targetBhks.join(',') : undefined,
+            city: targetCity !== 'All' ? targetCity : undefined,
+            keyword: finalKeyword,
+            bhk: targetBhks.length > 0 ? targetBhks.join(',') : (route.query.bhk || undefined),
         },
     });
 };
@@ -804,6 +1127,27 @@ onUnmounted(() => {
 .nav-fade-leave-to {
     opacity: 0;
     transform: translateY(-4px);
+}
+
+.drawer-fade-enter-active,
+.drawer-fade-leave-active {
+    transition: opacity 0.25s ease;
+}
+.drawer-fade-enter-from,
+.drawer-fade-leave-to {
+    opacity: 0;
+}
+
+@keyframes slideLeft {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+.animate-slideLeft {
+    animation: slideLeft 0.25s ease-out forwards;
 }
 </style>
 

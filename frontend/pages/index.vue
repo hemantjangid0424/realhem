@@ -21,7 +21,7 @@
                     India's Most Trusted Real Estate Marketplace
                 </div>
 
-                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+                <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
                     Find Your Dream Home <br class="hidden sm:inline">
                     <span class="bg-gradient-to-r from-amber-200 via-white to-cyan-200 bg-clip-text text-transparent">
                         Buy, Rent &amp; Commercial Properties
@@ -32,14 +32,14 @@
                 </p>
 
                 <!-- Floating 99acres Style Search Card -->
-                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto relative z-40">
+                <div class="mt-8 bg-white text-slate-800 rounded-3xl shadow-2xl p-3.5 sm:p-7 border border-slate-100 text-left max-w-4xl mx-auto relative z-40">
                     <!-- Tab Pills: Buy | Rent | Commercial | Plots | PG/Co-living -->
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3.5 overflow-x-auto">
+                    <div class="flex items-center gap-1.5 sm:gap-2 border-b border-slate-100 pb-3 overflow-x-auto scrollbar-none">
                         <button
                             v-for="tab in searchTabs"
                             :key="tab.id"
                             @click="activeTab = tab.id"
-                            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+                            class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shrink-0"
                             :style="activeTab === tab.id ? { backgroundColor: brandPrimaryColor, color: '#fff', boxShadow: '0 4px 12px ' + brandPrimaryColor + '35' } : {}"
                             :class="activeTab === tab.id ? '' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
                         >
@@ -157,14 +157,14 @@
                     </div>
 
                     <!-- Granular BHK and Budget Bar -->
-                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs relative z-10">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-slate-400 text-[11px] font-bold uppercase">BHK:</span>
+                    <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs relative z-10">
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span class="text-slate-400 text-[11px] font-bold uppercase shrink-0">BHK:</span>
                             <button
                                 v-for="bhk in ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']"
                                 :key="bhk"
                                 @click="toggleBhk(bhk)"
-                                class="px-3 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer"
+                                class="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer"
                                 :style="selectedBhks.includes(bhk) ? { backgroundColor: brandPrimaryColor + '15', borderColor: brandPrimaryColor, color: brandPrimaryColor, fontWeight: '700' } : {}"
                                 :class="selectedBhks.includes(bhk) ? '' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
                             >
@@ -172,12 +172,12 @@
                             </button>
                         </div>
 
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-slate-400 text-[11px] font-bold uppercase">Budget:</span>
+                                <span class="text-slate-400 text-[11px] font-bold uppercase shrink-0">Budget:</span>
                                 <select
                                     v-model="searchForm.budget"
-                                    class="bg-slate-50 border border-slate-200 text-[11px] font-semibold py-1 px-2.5 rounded-lg outline-none cursor-pointer"
+                                    class="bg-slate-50 border border-slate-200 text-[11px] font-semibold py-1 px-2 rounded-lg outline-none cursor-pointer"
                                 >
                                     <option value="">Any Budget</option>
                                     <option value="under_50l">Under ₹50 Lac</option>
@@ -187,7 +187,7 @@
                                 </select>
                             </div>
 
-                            <label class="flex items-center gap-1.5 cursor-pointer text-slate-600 select-none">
+                            <label class="flex items-center gap-1.5 cursor-pointer text-slate-600 select-none shrink-0">
                                 <input type="checkbox" v-model="verifiedOnly" class="rounded text-blue-600 focus:ring-blue-500">
                                 <span class="text-[11px] font-semibold">Verified Only</span>
                             </label>
@@ -199,17 +199,22 @@
 
         <!-- Quick Real Estate Services Ribbon (99acres style) -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-            <div class="bg-white rounded-2xl shadow-md border border-slate-200/80 p-4 sm:p-5 grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div v-for="service in quickServices" :key="service.title" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition cursor-pointer">
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200/80 p-3 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+                <div
+                    v-for="(service, sIdx) in quickServices"
+                    :key="service.title"
+                    class="flex items-center gap-2.5 sm:gap-3 p-2 rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                    :class="sIdx === 4 ? 'col-span-2 sm:col-span-1' : ''"
+                >
                     <div
-                        class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0"
+                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
                         :style="{ backgroundColor: brandPrimaryColor + '18', color: brandPrimaryColor }"
                     >
-                        {{ service.icon }}
+                        <component :is="service.icon" class="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                        <span class="text-xs font-bold text-slate-800 block">{{ service.title }}</span>
-                        <span class="text-[10px] text-slate-500">{{ service.subtitle }}</span>
+                    <div class="min-w-0">
+                        <span class="text-xs font-bold text-slate-800 block truncate">{{ service.title }}</span>
+                        <span class="text-[10px] text-slate-500 block truncate">{{ service.subtitle }}</span>
                     </div>
                 </div>
             </div>
@@ -293,11 +298,13 @@
                                     {{ s.metadata?.title || s.metadata?.keyword || 'Property Search' }}
                                 </h4>
                                 <div class="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-600">
-                                    <span v-if="s.metadata?.city" class="bg-white px-2 py-0.5 rounded border border-slate-200">
-                                        📍 {{ s.metadata?.city }}
+                                    <span v-if="s.metadata?.city" class="bg-white px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+                                        <MapPin class="w-3 h-3 text-slate-400" />
+                                        <span>{{ s.metadata?.city }}</span>
                                     </span>
-                                    <span v-if="s.metadata?.bhk" class="bg-white px-2 py-0.5 rounded border border-slate-200">
-                                        🛏️ {{ s.metadata?.bhk }} BHK
+                                    <span v-if="s.metadata?.bhk" class="bg-white px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+                                        <BedDouble class="w-3 h-3 text-slate-400" />
+                                        <span>{{ s.metadata?.bhk }} BHK</span>
                                     </span>
                                 </div>
                             </div>
@@ -689,8 +696,9 @@
                                 <h3 class="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition flex-1">
                                     {{ prop.title }}
                                 </h3>
-                                <span v-if="prop.is_featured" class="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-2xs">
-                                    ★ Featured
+                                <span v-if="prop.is_featured" class="inline-flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-2xs">
+                                    <Star class="w-3 h-3 fill-current" />
+                                    <span>Featured</span>
                                 </span>
                             </div>
                             <p class="text-[11px] text-slate-500 mt-1 flex items-center justify-between gap-1">
@@ -699,7 +707,8 @@
                                     <span class="truncate">{{ prop.locality }}, {{ prop.city }}</span>
                                 </span>
                                 <span v-if="prop.is_verified" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
-                                    ✓ Verified
+                                    <Check class="w-3 h-3" />
+                                    <span>Verified</span>
                                 </span>
                             </p>
                         </div>
@@ -733,10 +742,10 @@
                     class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition cursor-pointer text-center group"
                 >
                     <div
-                        class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 font-bold text-2xl group-hover:scale-110 transition-transform"
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform"
                         :style="{ backgroundColor: brandPrimaryColor + '18', color: brandPrimaryColor }"
                     >
-                        {{ cat.icon }}
+                        <component :is="cat.icon" class="w-7 h-7" />
                     </div>
                     <h3 class="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition">{{ cat.name }}</h3>
                     <p class="text-[11px] text-slate-500 mt-1">{{ cat.count }} listings</p>
@@ -767,8 +776,9 @@
                     </div>
                     <h4 class="font-bold text-slate-900 text-xs">{{ dev.name }}</h4>
                     <p class="text-[10px] text-slate-500 mt-0.5">{{ dev.projects }} Projects</p>
-                    <div class="mt-2 text-[10px] font-bold text-amber-600 flex items-center justify-center gap-0.5">
-                        <span>★</span> {{ dev.rating }}
+                    <div class="mt-2 text-[10px] font-bold text-amber-600 flex items-center justify-center gap-1">
+                        <Star class="w-3 h-3 fill-current text-amber-500" />
+                        <span>{{ dev.rating }}</span>
                     </div>
                 </div>
             </div>
@@ -939,6 +949,8 @@ import {
     MapPin,
     Building2,
     Home,
+    LandPlot,
+    Store,
     Camera,
     Video,
     Play,
@@ -947,6 +959,12 @@ import {
     Check,
     CheckCircle2,
     ArrowRight,
+    Landmark,
+    Scale,
+    Truck,
+    Armchair,
+    TrendingUp,
+    BedDouble,
 } from 'lucide-vue-next';
 import FestiveHeroAnimation from '~/components/FestiveHeroAnimation.vue';
 import { isResidentialType } from '~/utils/propertyConstants';
@@ -1325,11 +1343,11 @@ const totalInterest = computed(() => {
 });
 
 const quickServices = [
-    { icon: '🏦', title: 'Home Loans', subtitle: 'Lowest Rates @ 8.4%' },
-    { icon: '⚖️', title: 'Legal & RERA', subtitle: 'Title Verification' },
-    { icon: '📦', title: 'Packers & Movers', subtitle: 'Hassle-free Relocation' },
-    { icon: '🛋️', title: 'Home Interiors', subtitle: 'Designer Solutions' },
-    { icon: '📈', title: 'Price Trends', subtitle: 'Locality Analytics' },
+    { icon: Landmark, title: 'Home Loans', subtitle: 'Lowest Rates @ 8.4%' },
+    { icon: Scale, title: 'Legal & RERA', subtitle: 'Title Verification' },
+    { icon: Truck, title: 'Packers & Movers', subtitle: 'Hassle-free Relocation' },
+    { icon: Armchair, title: 'Home Interiors', subtitle: 'Designer Solutions' },
+    { icon: TrendingUp, title: 'Price Trends', subtitle: 'Locality Analytics' },
 ];
 
 const apiProperties = ref([]);
@@ -1405,10 +1423,10 @@ const handpickedListings = computed(() => {
 });
 
 const propertyCategories = [
-    { name: 'Residential Apartments', type: 'buy', count: '32,400+', icon: '🏢' },
-    { name: 'Independent Houses & Villas', type: 'buy', count: '11,200+', icon: '🏡' },
-    { name: 'Residential Plots & Land', type: 'plots', count: '8,900+', icon: '📐' },
-    { name: 'Commercial Shops & Offices', type: 'commercial', count: '6,450+', icon: '🏬' },
+    { name: 'Residential Apartments', type: 'buy', count: '32,400+', icon: Building2 },
+    { name: 'Independent Houses & Villas', type: 'buy', count: '11,200+', icon: Home },
+    { name: 'Residential Plots & Land', type: 'plots', count: '8,900+', icon: LandPlot },
+    { name: 'Commercial Shops & Offices', type: 'commercial', count: '6,450+', icon: Store },
 ];
 
 const topDevelopers = [

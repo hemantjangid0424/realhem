@@ -215,10 +215,28 @@
             </div>
         </div>
 
+        <!-- Sticky Floating Mobile Filter Button (Visible only on < lg screens) -->
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden pointer-events-auto">
+            <button
+                type="button"
+                @click="isMobileFilterModalOpen = true"
+                class="flex items-center gap-2.5 py-3 px-5 rounded-full bg-slate-900/95 hover:bg-slate-900 text-white font-extrabold text-xs shadow-2xl border border-slate-700/80 active:scale-95 transition cursor-pointer backdrop-blur-md whitespace-nowrap"
+            >
+                <SlidersHorizontal class="w-4 h-4 text-blue-400" />
+                <span>Filter Properties</span>
+                <span
+                    v-if="activeFilterCount > 0"
+                    class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-xs"
+                >
+                    {{ activeFilterCount }}
+                </span>
+            </button>
+        </div>
+
         <!-- Layout Grid: Applied Filters Left Sidebar, Listings Right -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Sidebar: Applied Filters (matching screenshot with red box) -->
-            <div class="space-y-6">
+            <!-- Sidebar: Applied Filters (Desktop only) -->
+            <div class="hidden lg:block lg:col-span-1 space-y-6">
                 <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <span class="text-xs font-black uppercase tracking-wider text-slate-800">Applied Filters</span>
@@ -231,8 +249,8 @@
                         </button>
                     </div>
 
-                    <!-- Active Filter Chips (BHK, Property Type, Keywords) -->
-                    <div v-if="selectedBhks.length > 0 || (searchKeyword && !isNearMe) || selectedPropTypes.length > 0" class="flex flex-wrap gap-1.5 pb-3 border-b border-slate-100">
+                    <!-- Active Filter Chips (BHK, Property Type, Furnishing, Posted By, Bathrooms, Facing, Amenities, Negotiable, Keywords) -->
+                    <div v-if="selectedBhks.length > 0 || (searchKeyword && !isNearMe) || selectedPropTypes.length > 0 || selectedFurnishing.length > 0 || selectedPostedBy.length > 0 || selectedBathrooms !== null || selectedFacing.length > 0 || selectedAmenities.length > 0 || negotiableOnly" class="flex flex-wrap gap-1.5 pb-3 border-b border-slate-100">
                         <!-- BHK Chips (Matching 99acres 3 BHK x badge) -->
                         <span
                             v-for="bhk in selectedBhks"
@@ -262,6 +280,106 @@
                                 @click="togglePropertyType(pt)"
                                 class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
                                 title="Remove property type filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Furnishing Chips -->
+                        <span
+                            v-for="f in selectedFurnishing"
+                            :key="f"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ f }}</span>
+                            <button
+                                type="button"
+                                @click="toggleFurnishing(f)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove furnishing filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Posted By Chips -->
+                        <span
+                            v-for="role in selectedPostedBy"
+                            :key="role"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ role === 'Owner' ? 'Owner' : (role === 'Agent' ? 'Agent / Broker' : 'Builder') }}</span>
+                            <button
+                                type="button"
+                                @click="togglePostedBy(role)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove seller type filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Bathrooms Chip -->
+                        <span
+                            v-if="selectedBathrooms !== null"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ selectedBathrooms }}+ Baths</span>
+                            <button
+                                type="button"
+                                @click="selectBathrooms(selectedBathrooms)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove bathrooms filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Facing Chips -->
+                        <span
+                            v-for="fac in selectedFacing"
+                            :key="fac"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>Facing: {{ fac }}</span>
+                            <button
+                                type="button"
+                                @click="toggleFacing(fac)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove facing filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Amenities Chips -->
+                        <span
+                            v-for="am in selectedAmenities"
+                            :key="am"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>{{ am }}</span>
+                            <button
+                                type="button"
+                                @click="toggleAmenity(am)"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove amenity filter"
+                            >
+                                ✕
+                            </button>
+                        </span>
+
+                        <!-- Negotiable Only Chip -->
+                        <span
+                            v-if="negotiableOnly"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 shadow-2xs group"
+                        >
+                            <span>Negotiable Only</span>
+                            <button
+                                type="button"
+                                @click="negotiableOnly = false"
+                                class="text-blue-400 group-hover:text-red-500 font-bold cursor-pointer transition text-xs"
+                                title="Remove negotiable filter"
                             >
                                 ✕
                             </button>
@@ -426,6 +544,160 @@
                                 </span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Furnishing Status -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">Furnishing</label>
+                            <button
+                                v-if="selectedFurnishing.length > 0"
+                                type="button"
+                                @click="selectedFurnishing = []"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button
+                                v-for="f in ['Furnished', 'Semi-Furnished', 'Unfurnished']"
+                                :key="f"
+                                type="button"
+                                @click="toggleFurnishing(f)"
+                                class="px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer"
+                                :class="selectedFurnishing.includes(f) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            >
+                                <span v-if="selectedFurnishing.includes(f)">✓ </span>
+                                <span>{{ f }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Posted By / Seller Type -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">Posted By</label>
+                            <button
+                                v-if="selectedPostedBy.length > 0"
+                                type="button"
+                                @click="selectedPostedBy = []"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="space-y-1.5">
+                            <button
+                                v-for="seller in [
+                                    { value: 'Owner', label: 'Owner (0 Brokerage)' },
+                                    { value: 'Agent', label: 'Agent / Broker' },
+                                    { value: 'Builder', label: 'Builder / Developer' }
+                                ]"
+                                :key="seller.value"
+                                type="button"
+                                @click="togglePostedBy(seller.value)"
+                                class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center justify-between"
+                                :class="selectedPostedBy.includes(seller.value) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            >
+                                <span>{{ seller.label }}</span>
+                                <span v-if="selectedPostedBy.includes(seller.value)">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bathrooms -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">Bathrooms</label>
+                            <button
+                                v-if="selectedBathrooms !== null"
+                                type="button"
+                                @click="selectedBathrooms = null"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button
+                                v-for="b in [1, 2, 3, 4]"
+                                :key="b"
+                                type="button"
+                                @click="selectBathrooms(b)"
+                                class="py-1.5 rounded-xl text-xs font-semibold border text-center transition cursor-pointer"
+                                :class="selectedBathrooms === b ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            >
+                                {{ b }}+
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Facing (Vastu) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">Facing (Vastu)</label>
+                            <button
+                                v-if="selectedFacing.length > 0"
+                                type="button"
+                                @click="selectedFacing = []"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button
+                                v-for="fac in ['East', 'North', 'North-East', 'West', 'South']"
+                                :key="fac"
+                                type="button"
+                                @click="toggleFacing(fac)"
+                                class="px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer"
+                                :class="selectedFacing.includes(fac) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            >
+                                <span v-if="selectedFacing.includes(fac)">✓ </span>
+                                <span>{{ fac }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Popular Amenities -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700">Popular Amenities</label>
+                            <button
+                                v-if="selectedAmenities.length > 0"
+                                type="button"
+                                @click="selectedAmenities = []"
+                                class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            <label
+                                v-for="am in ['Lift', 'Power Backup', 'Gym', 'Swimming Pool', 'Reserved Parking', '24x7 Security', 'Clubhouse', 'Park / Garden']"
+                                :key="am"
+                                class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer hover:text-slate-900"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :checked="selectedAmenities.includes(am)"
+                                    @change="toggleAmenity(am)"
+                                    class="rounded text-blue-600 focus:ring-blue-500"
+                                >
+                                <span>{{ am }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Price & Negotiation -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Price Flexibility</label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+                            <input type="checkbox" v-model="negotiableOnly" class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="font-medium">Price Negotiable Only</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -716,6 +988,15 @@
                                 <div class="flex items-center gap-2">
                                     <button
                                         type="button"
+                                        @click.stop.prevent="openReportModal(item)"
+                                        class="p-2 rounded-xl bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 text-slate-400 text-xs font-bold transition cursor-pointer flex items-center justify-center group/rep"
+                                        title="Report this listing"
+                                    >
+                                        <Flag class="w-3.5 h-3.5 group-hover/rep:text-rose-600" />
+                                    </button>
+
+                                    <button
+                                        type="button"
                                         @click.stop.prevent="downloadBrochure(item)"
                                         class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
                                     >
@@ -823,6 +1104,444 @@
             :initialIndex="activeGalleryIndex"
             @close="isGalleryOpen = false"
         />
+
+        <!-- Report Property Modal -->
+        <ReportPropertyModal
+            :is-open="isReportModalOpen"
+            :property="selectedReportProperty"
+            @close="isReportModalOpen = false"
+        />
+
+        <!-- Mobile Filter Bottom Sheet / Modal (Teleported to Body) -->
+        <Teleport to="body">
+            <transition name="filter-modal">
+                <div
+                    v-if="isMobileFilterModalOpen"
+                    class="fixed inset-0 z-50 flex flex-col justify-end lg:hidden"
+                >
+                    <!-- Backdrop -->
+                    <div
+                        class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity"
+                        @click="isMobileFilterModalOpen = false"
+                    ></div>
+
+                    <!-- Modal / Bottom Sheet Content -->
+                    <div class="relative w-full max-h-[88vh] bg-white rounded-t-3xl shadow-2xl z-10 flex flex-col overflow-hidden animate-slideUp">
+                        <!-- Top Drag Handle & Header -->
+                        <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <SlidersHorizontal class="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-900">Filter Properties</h3>
+                                    <span class="text-[11px] text-slate-500">
+                                        {{ activeFilterCount > 0 ? `${activeFilterCount} active filters applied` : 'Refine by budget, BHK & amenities' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    v-if="hasActiveFilters"
+                                    type="button"
+                                    @click="resetFilters"
+                                    class="text-xs font-bold text-blue-600 hover:underline px-2 py-1"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="isMobileFilterModalOpen = false"
+                                    class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center cursor-pointer transition"
+                                    aria-label="Close Filters Modal"
+                                >
+                                    <X class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Scrollable Filter Body -->
+                        <div class="flex-1 overflow-y-auto p-5 space-y-6 divide-y divide-slate-100">
+                            <!-- Applied Filter Chips -->
+                            <div v-if="selectedBhks.length > 0 || (searchKeyword && !isNearMe) || selectedPropTypes.length > 0 || selectedFurnishing.length > 0 || selectedPostedBy.length > 0 || selectedBathrooms !== null || selectedFacing.length > 0 || selectedAmenities.length > 0 || negotiableOnly" class="flex flex-wrap gap-1.5 pb-2">
+                                <span
+                                    v-for="bhk in selectedBhks"
+                                    :key="bhk"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ bhk }}</span>
+                                    <button type="button" @click="toggleBhk(bhk)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-for="pt in selectedPropTypes"
+                                    :key="pt"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ pt }}</span>
+                                    <button type="button" @click="togglePropertyType(pt)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-for="f in selectedFurnishing"
+                                    :key="f"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ f }}</span>
+                                    <button type="button" @click="toggleFurnishing(f)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-for="role in selectedPostedBy"
+                                    :key="role"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ role === 'Owner' ? 'Owner' : (role === 'Agent' ? 'Agent' : 'Builder') }}</span>
+                                    <button type="button" @click="togglePostedBy(role)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-if="selectedBathrooms !== null"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ selectedBathrooms }}+ Baths</span>
+                                    <button type="button" @click="selectBathrooms(selectedBathrooms)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-for="fac in selectedFacing"
+                                    :key="fac"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>Facing: {{ fac }}</span>
+                                    <button type="button" @click="toggleFacing(fac)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-for="am in selectedAmenities"
+                                    :key="am"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ am }}</span>
+                                    <button type="button" @click="toggleAmenity(am)" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-if="negotiableOnly"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>Negotiable Only</span>
+                                    <button type="button" @click="negotiableOnly = false" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                                <span
+                                    v-if="searchKeyword && !isNearMe"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200"
+                                >
+                                    <span>{{ searchKeyword }}</span>
+                                    <button type="button" @click="clearKeyword" class="text-blue-500 font-bold">✕</button>
+                                </span>
+                            </div>
+
+                            <!-- Nearby Localities Chips -->
+                            <div v-if="activeNearbyAreas.length > 0" class="space-y-2 pt-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nearby Areas ({{ activeNearbyAreas.length }})</span>
+                                    <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded">Within 3 Km</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+                                    <span
+                                        v-for="area in activeNearbyAreas"
+                                        :key="area"
+                                        class="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-slate-50 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200"
+                                    >
+                                        <span>{{ area }}</span>
+                                        <button type="button" @click="removeNearbyArea(area)" class="text-slate-400 font-bold">✕</button>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Verified Properties Toggle -->
+                            <div class="flex items-center justify-between pt-4">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800 block">Verified properties only</span>
+                                    <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        by 99acres verification team
+                                    </span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="verifiedOnly" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+
+                            <!-- Budget Range -->
+                            <div class="pt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Budget Range</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select v-model="budgetMin" class="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold outline-none">
+                                        <option value="">No min</option>
+                                        <option value="40">₹40 L</option>
+                                        <option value="60">₹60 L</option>
+                                        <option value="80">₹80 L</option>
+                                        <option value="100">₹1 Cr</option>
+                                    </select>
+                                    <select v-model="budgetMax" class="bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold outline-none">
+                                        <option value="">No max</option>
+                                        <option value="80">₹80 L</option>
+                                        <option value="120">₹1.2 Cr</option>
+                                        <option value="150">₹1.5 Cr</option>
+                                        <option value="250">₹2.5 Cr</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Type of Property -->
+                            <div class="pt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Type of property</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    <button
+                                        v-for="propType in propertyTypeOptions"
+                                        :key="propType"
+                                        @click="togglePropertyType(propType)"
+                                        class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium border transition cursor-pointer flex items-center justify-between"
+                                        :class="selectedPropTypes.includes(propType) ? 'bg-blue-50 border-blue-400 text-blue-700 font-bold' : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        <span>+ {{ propType }}</span>
+                                        <span v-if="selectedPropTypes.includes(propType)">✓</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- No. of Bedrooms (BHK) - Residential Only -->
+                            <div v-if="activeType !== 'commercial' && activeType !== 'plots' && activeType !== 'plots_land'" class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">No. of Bedrooms (BHK)</label>
+                                    <button
+                                        v-if="selectedBhks.length > 0"
+                                        type="button"
+                                        @click="selectedBhks = []; runSearch()"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button
+                                        v-for="bhk in ['1 RK/ 1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK']"
+                                        :key="bhk"
+                                        @click="toggleBhk(bhk)"
+                                        class="py-2 px-2.5 rounded-xl text-xs font-medium border text-center transition cursor-pointer flex items-center justify-center gap-1"
+                                        :class="isBhkActive(bhk) ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        <span v-if="isBhkActive(bhk)">✓</span>
+                                        <span v-else>+</span>
+                                        <span>{{ bhk }}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Possession Status -->
+                            <div class="pt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Possession Status</label>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-slate-700">
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                        <input type="checkbox" v-model="readyToMove" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <span class="font-medium">Ready to Move</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                        <input type="checkbox" v-model="underConstruction" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <span class="font-medium">Under Construction</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Trust & Badges -->
+                            <div class="pt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Trust & Highlights</label>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-blue-700 font-semibold">
+                                        <input type="checkbox" v-model="verifiedOnly" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <span>✓ Verified Only</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-amber-700 font-semibold">
+                                        <input type="checkbox" v-model="featuredOnly" class="rounded text-amber-500 focus:ring-amber-500">
+                                        <span>★ Featured Only</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Furnishing Status -->
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Furnishing</label>
+                                    <button
+                                        v-if="selectedFurnishing.length > 0"
+                                        type="button"
+                                        @click="selectedFurnishing = []"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <button
+                                        v-for="f in ['Furnished', 'Semi-Furnished', 'Unfurnished']"
+                                        :key="f"
+                                        type="button"
+                                        @click="toggleFurnishing(f)"
+                                        class="py-2 px-1 text-center rounded-xl text-xs font-semibold border transition cursor-pointer"
+                                        :class="selectedFurnishing.includes(f) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        <span v-if="selectedFurnishing.includes(f)">✓ </span>
+                                        <span>{{ f }}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Posted By / Seller Type -->
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Posted By</label>
+                                    <button
+                                        v-if="selectedPostedBy.length > 0"
+                                        type="button"
+                                        @click="selectedPostedBy = []"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                    <button
+                                        v-for="seller in [
+                                            { value: 'Owner', label: 'Owner (0 Brokerage)' },
+                                            { value: 'Agent', label: 'Agent / Broker' },
+                                            { value: 'Builder', label: 'Builder / Developer' }
+                                        ]"
+                                        :key="seller.value"
+                                        type="button"
+                                        @click="togglePostedBy(seller.value)"
+                                        class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center justify-between"
+                                        :class="selectedPostedBy.includes(seller.value) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        <span>{{ seller.label }}</span>
+                                        <span v-if="selectedPostedBy.includes(seller.value)">✓</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Bathrooms -->
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Bathrooms</label>
+                                    <button
+                                        v-if="selectedBathrooms !== null"
+                                        type="button"
+                                        @click="selectedBathrooms = null"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button
+                                        v-for="b in [1, 2, 3, 4]"
+                                        :key="b"
+                                        type="button"
+                                        @click="selectBathrooms(b)"
+                                        class="py-2 rounded-xl text-xs font-semibold border text-center transition cursor-pointer"
+                                        :class="selectedBathrooms === b ? 'bg-blue-50 border-blue-500 text-blue-600 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        {{ b }}+
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Facing (Vastu) -->
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Facing (Vastu)</label>
+                                    <button
+                                        v-if="selectedFacing.length > 0"
+                                        type="button"
+                                        @click="selectedFacing = []"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button
+                                        v-for="fac in ['East', 'North', 'North-East', 'West', 'South']"
+                                        :key="fac"
+                                        type="button"
+                                        @click="toggleFacing(fac)"
+                                        class="px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer"
+                                        :class="selectedFacing.includes(fac) ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-2xs font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    >
+                                        <span v-if="selectedFacing.includes(fac)">✓ </span>
+                                        <span>{{ fac }}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Popular Amenities -->
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Popular Amenities</label>
+                                    <button
+                                        v-if="selectedAmenities.length > 0"
+                                        type="button"
+                                        @click="selectedAmenities = []"
+                                        class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-slate-700">
+                                    <label
+                                        v-for="am in ['Lift', 'Power Backup', 'Gym', 'Swimming Pool', 'Reserved Parking', '24x7 Security', 'Clubhouse', 'Park / Garden']"
+                                        :key="am"
+                                        class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedAmenities.includes(am)"
+                                            @change="toggleAmenity(am)"
+                                            class="rounded text-blue-600 focus:ring-blue-500"
+                                        >
+                                        <span class="truncate">{{ am }}</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Price Flexibility (Negotiable Only) -->
+                            <div class="pt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-2">Price Flexibility</label>
+                                <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-xs text-slate-700">
+                                    <input type="checkbox" v-model="negotiableOnly" class="rounded text-blue-600 focus:ring-blue-500">
+                                    <span class="font-medium">Price Negotiable Only</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sticky Footer Inside Modal -->
+                        <div class="p-4 bg-white border-t border-slate-200/80 flex items-center gap-3 shrink-0">
+                            <button
+                                type="button"
+                                @click="resetFilters"
+                                class="py-3 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition cursor-pointer"
+                            >
+                                Clear All
+                            </button>
+                            <button
+                                type="button"
+                                @click="isMobileFilterModalOpen = false"
+                                class="flex-1 py-3 px-5 rounded-xl text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+                                :style="{ backgroundColor: brandPrimaryColor }"
+                            >
+                                <span>Show {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : displayedListings.length }} Properties</span>
+                                <span>&rarr;</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </Teleport>
     </div>
 </template>
 
@@ -843,12 +1562,25 @@ import {
     Home,
     Camera,
     Video,
+    SlidersHorizontal,
+    X,
+    Flag,
 } from 'lucide-vue-next';
 import { isResidentialType } from '~/utils/propertyConstants';
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
+import ReportPropertyModal from '~/components/ReportPropertyModal.vue';
 
 const route = useRoute();
 const router = useRouter();
+
+// Report Property Modal State
+const isReportModalOpen = ref(false);
+const selectedReportProperty = ref(null);
+
+const openReportModal = (item) => {
+    selectedReportProperty.value = item;
+    isReportModalOpen.value = true;
+};
 
 // Image Gallery Modal State
 const isGalleryOpen = ref(false);
@@ -882,6 +1614,12 @@ const isNearMe = ref(route.query.near_me === 'true');
 const selectedBhks = ref(route.query.bhk ? route.query.bhk.split(',') : []);
 const selectedTags = ref([]);
 const selectedPropTypes = ref([]);
+const selectedFurnishing = ref([]);
+const selectedPostedBy = ref([]);
+const selectedBathrooms = ref(null);
+const selectedFacing = ref([]);
+const selectedAmenities = ref([]);
+const negotiableOnly = ref(false);
 const verifiedOnly = ref(false);
 const featuredOnly = ref(false);
 const readyToMove = ref(true);
@@ -1038,6 +1776,12 @@ const hasActiveFilters = computed(() => {
         selectedBhks.value.length > 0 ||
         selectedPropTypes.value.length > 0 ||
         selectedTags.value.length > 0 ||
+        selectedFurnishing.value.length > 0 ||
+        selectedPostedBy.value.length > 0 ||
+        selectedBathrooms.value !== null ||
+        selectedFacing.value.length > 0 ||
+        selectedAmenities.value.length > 0 ||
+        negotiableOnly.value ||
         !!budgetMin.value ||
         !!budgetMax.value ||
         verifiedOnly.value ||
@@ -1045,6 +1789,41 @@ const hasActiveFilters = computed(() => {
         !readyToMove.value ||
         underConstruction.value
     );
+});
+
+const isMobileFilterModalOpen = ref(false);
+
+watch(isMobileFilterModalOpen, (isOpen) => {
+    if (typeof document !== 'undefined') {
+        if (isOpen) {
+            document.body.classList.add('overflow-hidden');
+        } else {
+            document.body.classList.remove('overflow-hidden');
+        }
+    }
+});
+
+watch(() => route.query, () => {
+    isMobileFilterModalOpen.value = false;
+});
+
+const activeFilterCount = computed(() => {
+    let count = 0;
+    if (selectedBhks.value.length > 0) count += selectedBhks.value.length;
+    if (selectedPropTypes.value.length > 0) count += selectedPropTypes.value.length;
+    if (selectedTags.value.length > 0) count += selectedTags.value.length;
+    if (selectedFurnishing.value.length > 0) count += selectedFurnishing.value.length;
+    if (selectedPostedBy.value.length > 0) count += selectedPostedBy.value.length;
+    if (selectedBathrooms.value !== null) count += 1;
+    if (selectedFacing.value.length > 0) count += selectedFacing.value.length;
+    if (selectedAmenities.value.length > 0) count += selectedAmenities.value.length;
+    if (negotiableOnly.value) count += 1;
+    if (searchKeyword.value) count += 1;
+    if (budgetMin.value || budgetMax.value) count += 1;
+    if (verifiedOnly.value) count += 1;
+    if (featuredOnly.value) count += 1;
+    if (activeNearbyAreas.value.length > 0) count += activeNearbyAreas.value.length;
+    return count;
 });
 
 const isBhkActive = (bhk) => {
@@ -1139,6 +1918,38 @@ const toggleBhk = (bhk) => {
         selectedBhks.value.splice(idx, 1);
     }
     runSearch();
+};
+
+const toggleFurnishing = (item) => {
+    const idx = selectedFurnishing.value.indexOf(item);
+    if (idx === -1) selectedFurnishing.value.push(item);
+    else selectedFurnishing.value.splice(idx, 1);
+};
+
+const togglePostedBy = (role) => {
+    const idx = selectedPostedBy.value.indexOf(role);
+    if (idx === -1) selectedPostedBy.value.push(role);
+    else selectedPostedBy.value.splice(idx, 1);
+};
+
+const selectBathrooms = (num) => {
+    if (selectedBathrooms.value === num) {
+        selectedBathrooms.value = null;
+    } else {
+        selectedBathrooms.value = num;
+    }
+};
+
+const toggleFacing = (dir) => {
+    const idx = selectedFacing.value.indexOf(dir);
+    if (idx === -1) selectedFacing.value.push(dir);
+    else selectedFacing.value.splice(idx, 1);
+};
+
+const toggleAmenity = (amenity) => {
+    const idx = selectedAmenities.value.indexOf(amenity);
+    if (idx === -1) selectedAmenities.value.push(amenity);
+    else selectedAmenities.value.splice(idx, 1);
 };
 
 const clearCity = () => {
@@ -1266,6 +2077,12 @@ const resetFilters = () => {
     selectedBhks.value = [];
     selectedPropTypes.value = [];
     selectedTags.value = [];
+    selectedFurnishing.value = [];
+    selectedPostedBy.value = [];
+    selectedBathrooms.value = null;
+    selectedFacing.value = [];
+    selectedAmenities.value = [];
+    negotiableOnly.value = false;
     readyToMove.value = true;
     underConstruction.value = false;
     verifiedOnly.value = false;
@@ -1596,6 +2413,24 @@ const fetchApiProperties = async (page = 1, append = false) => {
         } else if (!readyToMove.value && underConstruction.value) {
             params.set('construction_status', 'under');
         }
+        if (selectedFurnishing.value.length > 0) {
+            params.set('furnishing', selectedFurnishing.value.join(','));
+        }
+        if (selectedPostedBy.value.length > 0) {
+            params.set('posted_by', selectedPostedBy.value.join(','));
+        }
+        if (selectedBathrooms.value !== null) {
+            params.set('bathrooms', String(selectedBathrooms.value));
+        }
+        if (selectedFacing.value.length > 0) {
+            params.set('facing', selectedFacing.value.join(','));
+        }
+        if (selectedAmenities.value.length > 0) {
+            params.set('amenities', selectedAmenities.value.join(','));
+        }
+        if (negotiableOnly.value) {
+            params.set('negotiable_only', '1');
+        }
 
         if (params.toString()) {
             url += '?' + params.toString();
@@ -1710,6 +2545,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
     if (scrollObserver) {
         scrollObserver.disconnect();
         scrollObserver = null;
@@ -1727,6 +2565,12 @@ watch(
         selectedPropTypes.value,
         selectedBhks.value,
         selectedTags.value,
+        selectedFurnishing.value,
+        selectedPostedBy.value,
+        selectedBathrooms.value,
+        selectedFacing.value,
+        selectedAmenities.value,
+        negotiableOnly.value,
         sortBy.value,
         readyToMove.value,
         underConstruction.value,
@@ -1763,4 +2607,27 @@ const displayedListings = computed(() => {
 
 const filteredListings = computed(() => displayedListings.value || []);
 </script>
+
+<style scoped>
+.filter-modal-enter-active,
+.filter-modal-leave-active {
+    transition: opacity 0.25s ease;
+}
+.filter-modal-enter-from,
+.filter-modal-leave-to {
+    opacity: 0;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+.animate-slideUp {
+    animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+</style>
 

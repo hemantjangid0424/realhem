@@ -168,6 +168,63 @@ class PropertyController extends Controller
             }
         }
 
+        // Furnishing status filter (Furnished, Semi-Furnished, Unfurnished)
+        if ($request->filled('furnishing')) {
+            $furnishing = is_array($request->query('furnishing'))
+                ? $request->query('furnishing')
+                : explode(',', (string) $request->query('furnishing'));
+            $furnishing = array_filter(array_map('trim', $furnishing));
+            if (! empty($furnishing)) {
+                $query->whereIn('furnishing_status', $furnishing);
+            }
+        }
+
+        // Posted By filter (Owner, Agent, Builder)
+        if ($request->filled('posted_by')) {
+            $postedBy = is_array($request->query('posted_by'))
+                ? $request->query('posted_by')
+                : explode(',', (string) $request->query('posted_by'));
+            $postedBy = array_filter(array_map('trim', $postedBy));
+            if (! empty($postedBy)) {
+                $query->whereIn('user_type', $postedBy);
+            }
+        }
+
+        // Bathrooms filter (e.g. 1, 2, 3, 4)
+        if ($request->filled('bathrooms')) {
+            $bathrooms = (int) $request->query('bathrooms');
+            if ($bathrooms > 0) {
+                $query->where('bathrooms', '>=', $bathrooms);
+            }
+        }
+
+        // Facing filter (East, North, North-East, West, South)
+        if ($request->filled('facing')) {
+            $facing = is_array($request->query('facing'))
+                ? $request->query('facing')
+                : explode(',', (string) $request->query('facing'));
+            $facing = array_filter(array_map('trim', $facing));
+            if (! empty($facing)) {
+                $query->whereIn('facing', $facing);
+            }
+        }
+
+        // Price Negotiable filter
+        if ($request->boolean('negotiable_only')) {
+            $query->where('price_negotiable', true);
+        }
+
+        // Amenities filter (e.g. Lift, Power Backup, Gym, Swimming Pool, Parking, 24x7 Security)
+        if ($request->filled('amenities')) {
+            $amenities = is_array($request->query('amenities'))
+                ? $request->query('amenities')
+                : explode(',', (string) $request->query('amenities'));
+            $amenities = array_filter(array_map('trim', $amenities));
+            foreach ($amenities as $amenity) {
+                $query->whereJsonContains('amenities', $amenity);
+            }
+        }
+
         // Search query (Uses MySQL FULLTEXT index when available for sub-millisecond execution on crores of records)
         if ($request->filled('search') || $request->filled('keyword')) {
             $rawSearch = trim((string) ($request->query('search') ?: $request->query('keyword')));

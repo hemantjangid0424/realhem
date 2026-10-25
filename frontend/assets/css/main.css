@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-@source "./**/*.{vue,js,ts,jsx,tsx}";
-@source "../../resources/**/*.{vue,js,ts,jsx,tsx}";
+@source "../..";
+@source "../../../resources";
 
 :root {
     --brand-primary: #005ca8;

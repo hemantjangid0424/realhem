@@ -143,7 +143,7 @@
                 <!-- ============================================== -->
                 <!-- LEFT SIDEBAR: STEP WIZARD & PROPERTY SCORE     -->
                 <!-- ============================================== -->
-                <div class="lg:col-span-3 space-y-6">
+                <div class="hidden lg:block lg:col-span-3 space-y-6">
                     <!-- Steps Progress Card (Exact 99acres style) -->
                     <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
                         <div
@@ -239,8 +239,19 @@
                 <!-- ============================================== -->
                 <!-- CENTER COLUMN: ACTIVE FORM STEP                -->
                 <!-- ============================================== -->
-                <div class="lg:col-span-6">
-                    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
+                <div class="lg:col-span-6 space-y-4">
+                    <!-- Mobile Stepper & Score Ribbon -->
+                    <div class="lg:hidden bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                        <div class="flex items-center justify-between text-xs font-bold mb-2">
+                            <span class="text-slate-900">Step {{ currentStep }} of {{ steps.length }}: <span class="text-blue-600">{{ steps[currentStep - 1]?.title }}</span></span>
+                            <span class="text-emerald-600 font-extrabold">{{ propertyScore }}% Score</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: ((currentStep / steps.length) * 100) + '%' }"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-8 space-y-6">
                         <!-- Top Back Button Link -->
                         <div v-if="currentStep > 1" class="flex items-center justify-between pb-2 border-b border-slate-100">
                             <button
