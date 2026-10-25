@@ -21,9 +21,7 @@
                     <!-- Property Summary Info -->
                     <div class="min-w-0 flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <ImageIcon class="w-5 h-5" />
                         </div>
                         <div class="min-w-0">
                             <h3 class="text-white font-extrabold text-sm sm:text-base truncate leading-snug">
@@ -39,14 +37,14 @@
                     <!-- Center Badges: Combined Photos + Videos summary -->
                     <div class="hidden md:flex items-center gap-2 text-xs shrink-0">
                         <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/80 font-semibold flex items-center gap-1.5">
-                            <span>📸</span>
+                            <Camera class="w-3.5 h-3.5 text-slate-400" />
                             <span>{{ photosList.length }} {{ photosList.length === 1 ? 'Photo' : 'Photos' }}</span>
                         </span>
                         <span
                             v-if="videosList.length > 0"
                             class="px-2.5 py-1 rounded-lg bg-purple-950/70 text-purple-300 border border-purple-700/60 font-semibold flex items-center gap-1.5"
                         >
-                            <span>🎥</span>
+                            <Video class="w-3.5 h-3.5 text-purple-400" />
                             <span>{{ videosList.length }} {{ videosList.length === 1 ? 'Video' : 'Videos' }}</span>
                         </span>
                     </div>
@@ -56,9 +54,9 @@
                         <!-- Current Item Type Badge -->
                         <span
                             v-if="currentItem?.type === 'video'"
-                            class="hidden xs:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-600 text-white text-[11px] font-bold shadow-xs animate-pulse"
+                            class="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-600 text-white text-[11px] font-bold shadow-xs animate-pulse"
                         >
-                            <span>🎥</span>
+                            <Video class="w-3 h-3 text-white" />
                             <span>Video Tour</span>
                         </span>
 
@@ -85,9 +83,7 @@
                             class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center justify-center transition cursor-pointer"
                             title="Close (Esc)"
                         >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <X class="w-5 h-5" :stroke-width="2.5" />
                         </button>
                     </div>
                 </div>
@@ -102,9 +98,7 @@
                         class="absolute left-3 sm:left-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
                         title="Previous item (←)"
                     >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ChevronLeft class="w-6 h-6" :stroke-width="2.5" />
                     </button>
 
                     <!-- Active Image / Video Viewport -->
@@ -149,9 +143,7 @@
                         class="absolute right-3 sm:right-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
                         title="Next item (→)"
                     >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <ChevronRight class="w-6 h-6" :stroke-width="2.5" />
                     </button>
                 </div>
 
@@ -197,7 +189,7 @@
                                 ></video>
                                 <div class="relative z-10 w-full h-full flex flex-col items-center justify-center bg-black/40 gap-0.5 text-white">
                                     <div class="w-5 h-5 rounded-full bg-purple-600/90 flex items-center justify-center shadow-xs">
-                                        <svg class="w-2.5 h-2.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        <Play class="w-2.5 h-2.5 fill-current translate-x-0.5" />
                                     </div>
                                     <span class="text-[9px] font-black uppercase tracking-tight text-white drop-shadow-xs">Video</span>
                                 </div>
@@ -227,6 +219,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import {
+    ImageIcon,
+    X,
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Camera,
+    Video,
+} from 'lucide-vue-next';
 
 export interface GalleryProperty {
     id?: number | string;

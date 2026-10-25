@@ -36,7 +36,7 @@
                     </router-link>
                     <span class="text-slate-700">|</span>
                     <a href="/admin/login" class="text-amber-400 hover:text-amber-300 font-semibold transition flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <Lock class="w-3 h-3" />
                         Admin Portal &rarr;
                     </a>
                 </div>
@@ -105,7 +105,7 @@
                                             <option value="commercial">Commercial</option>
                                             <option value="plots">Plots</option>
                                         </select>
-                                        <svg class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        <ChevronDown class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
 
                                     <!-- Divider -->
@@ -136,7 +136,7 @@
                                             class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center rounded-full hover:bg-slate-100"
                                         >
                                             <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <MapPin v-else class="w-4 h-4" />
                                         </button>
 
                                         <!-- Voice / Mic Icon -->
@@ -146,7 +146,7 @@
                                             title="Voice Search"
                                             class="text-slate-400 hover:text-blue-600 p-1 cursor-pointer transition flex items-center justify-center"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                            <Mic class="w-4 h-4" />
                                         </button>
 
                                         <!-- Search Magnifying Glass Button -->
@@ -154,7 +154,7 @@
                                             type="submit"
                                             class="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition flex-shrink-0"
                                         >
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                            <Search class="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </form>
@@ -179,7 +179,14 @@
                                         :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
                                     >
                                         <div class="flex items-center gap-3 min-w-0">
-                                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                                            <div
+                                                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                                :class="item.type === 'city' ? 'bg-indigo-50 text-indigo-600' : item.type === 'project' ? 'bg-emerald-50 text-emerald-600' : item.type === 'property' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'"
+                                            >
+                                                <Building2 v-if="item.type === 'project' || item.icon === 'Building2'" class="w-3.5 h-3.5" />
+                                                <Home v-else-if="item.type === 'property' || item.icon === 'Home'" class="w-3.5 h-3.5" />
+                                                <MapPin v-else class="w-3.5 h-3.5" />
+                                            </div>
                                             <div class="min-w-0">
                                                 <div class="text-xs font-bold truncate flex items-center gap-2">
                                                     <span class="truncate">{{ item.title }}</span>
@@ -246,7 +253,7 @@
                         :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 bg-white'"
                         title="View Recent Activity (Searches, Viewed, Shortlist)"
                     >
-                        <span class="text-xs group-hover:scale-110 transition-transform">📊</span>
+                        <Activity class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                         <span class="hidden md:inline">Activity</span>
                         <span
                             class="px-1.5 py-0.2 rounded-full text-[10px] font-black"
@@ -283,7 +290,7 @@
                                 {{ userInitials }}
                             </div>
                             <span class="text-xs font-bold hidden sm:inline max-w-[120px] truncate">{{ currentUser.name }}</span>
-                            <svg class="w-3.5 h-3.5 opacity-70 transition-transform duration-200" :class="{ 'rotate-180': isUserDropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <ChevronDown class="w-3.5 h-3.5 opacity-70 transition-transform duration-200" :class="{ 'rotate-180': isUserDropdownOpen }" />
                         </button>
 
                         <!-- Dropdown Menu with zero-gap hover bridge -->
@@ -316,7 +323,7 @@
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
                                     >
-                                        <span class="text-base">👤</span>
+                                        <User class="w-4 h-4 text-slate-500" />
                                         <div>
                                             <span class="block">My Profile &amp; Account</span>
                                             <span class="text-[10px] font-normal text-slate-400">Edit name, email &amp; role</span>
@@ -328,7 +335,7 @@
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
                                     >
-                                        <span class="text-base">🏢</span>
+                                        <Building2 class="w-4 h-4 text-slate-500" />
                                         <div>
                                             <span class="block">Manage My Properties</span>
                                             <span class="text-[10px] font-normal text-slate-400">View, edit &amp; toggle status</span>
@@ -340,7 +347,7 @@
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
                                     >
-                                        <span class="text-base">📊</span>
+                                        <Activity class="w-4 h-4 text-slate-500" />
                                         <div class="flex-1 flex items-center justify-between">
                                             <div>
                                                 <span class="block">Activity &amp; Shortlist</span>
@@ -357,7 +364,7 @@
                                         @click="isUserDropdownOpen = false"
                                         class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition"
                                     >
-                                        <span class="text-base">➕</span>
+                                        <PlusCircle class="w-4 h-4 text-emerald-600" />
                                         <div>
                                             <span class="block">Post New Property</span>
                                             <span class="text-[10px] font-normal text-emerald-600/80">100% Free with 0% brokerage</span>
@@ -371,7 +378,7 @@
                                         @click="handleLogout(); isUserDropdownOpen = false;"
                                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer text-left"
                                     >
-                                        <span class="text-base">🚪</span>
+                                        <LogOut class="w-4 h-4 text-rose-500" />
                                         <span>Log Out</span>
                                     </button>
                                 </div>
@@ -386,7 +393,7 @@
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer"
                         :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200'"
                     >
-                        <svg class="w-3.5 h-3.5" :class="isScrolled ? 'text-white' : 'text-blue-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <User class="w-3.5 h-3.5" :class="isScrolled ? 'text-white' : 'text-blue-600'" />
                         <span class="hidden sm:inline">Login / Register</span>
                     </button>
                 </div>
@@ -404,6 +411,19 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import {
+    Lock,
+    ChevronDown,
+    MapPin,
+    Mic,
+    Search,
+    Activity,
+    User,
+    Building2,
+    Home,
+    PlusCircle,
+    LogOut,
+} from 'lucide-vue-next';
 import AuthModal from './AuthModal.vue';
 
 const router = useRouter();

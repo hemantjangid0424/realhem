@@ -17,7 +17,7 @@
                             <option value="commercial">Commercial</option>
                             <option value="plots">Plots</option>
                         </select>
-                        <svg class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <ChevronDown class="w-3 h-3 text-slate-500 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
                     <div class="h-5 w-px bg-slate-200"></div>
@@ -59,7 +59,7 @@
                             class="w-8 h-8 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
                         >
                             <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <MapPin v-else class="w-4 h-4" />
                         </button>
 
                         <!-- Mic Button -->
@@ -69,7 +69,7 @@
                             title="Search by Voice"
                             class="w-8 h-8 rounded-xl text-slate-500 hover:text-[#005ca8] hover:bg-blue-50 flex items-center justify-center cursor-pointer transition"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                            <Mic class="w-4 h-4" />
                         </button>
 
                         <!-- Search Button -->
@@ -78,7 +78,7 @@
                             class="w-8 h-8 rounded-xl text-white flex items-center justify-center shadow-xs cursor-pointer transition hover:opacity-90"
                             :style="{ backgroundColor: brandPrimaryColor }"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <Search class="w-4 h-4" />
                         </button>
                     </div>
                 </form>
@@ -103,7 +103,14 @@
                         :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
                     >
                         <div class="flex items-center gap-3 min-w-0">
-                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                            <div
+                                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                :class="item.type === 'city' ? 'bg-indigo-50 text-indigo-600' : item.type === 'project' ? 'bg-emerald-50 text-emerald-600' : item.type === 'property' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'"
+                            >
+                                <Building2 v-if="item.type === 'project' || item.icon === 'Building2'" class="w-3.5 h-3.5" />
+                                <Home v-else-if="item.type === 'property' || item.icon === 'Home'" class="w-3.5 h-3.5" />
+                                <MapPin v-else class="w-3.5 h-3.5" />
+                            </div>
                             <div class="min-w-0">
                                 <div class="text-xs font-bold truncate flex items-center gap-2">
                                     <span class="truncate">{{ item.title }}</span>
@@ -562,7 +569,7 @@
                                     title="Featured Property"
                                     @click.stop.prevent
                                 >
-                                    <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <Star class="w-3 h-3 fill-current shrink-0" />
                                     <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                         FEATURED
                                     </span>
@@ -575,7 +582,7 @@
                                     title="Verified Property"
                                     @click.stop.prevent
                                 >
-                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    <Check class="w-3 h-3 text-white shrink-0" :stroke-width="3" />
                                     <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                         VERIFIED
                                     </span>
@@ -588,7 +595,7 @@
                                     title="Posted by Owner"
                                     @click.stop.prevent
                                 >
-                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    <User class="w-3 h-3 text-white shrink-0" />
                                     <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                         BY OWNER
                                     </span>
@@ -599,7 +606,7 @@
                                     title="Agent Listing"
                                     @click.stop.prevent
                                 >
-                                    <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    <Briefcase class="w-3 h-3 text-white shrink-0" />
                                     <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                         AGENT
                                     </span>
@@ -700,7 +707,7 @@
                                         <span class="text-xs font-bold text-slate-800">{{ item.sellerName || item.postedBy }}</span>
                                         <span v-if="item.sellerLabel === 'Owner' && item.project_name" class="text-[11px] text-slate-400 font-medium">({{ item.project_name }})</span>
                                         <span v-if="item.is_verified || item.isRera" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="Verified Listing">
-                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                            <Check class="w-2.5 h-2.5" :stroke-width="3" />
                                             Verified
                                         </span>
                                     </div>
@@ -712,7 +719,7 @@
                                         @click.stop.prevent="downloadBrochure(item)"
                                         class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
                                     >
-                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        <Download class="w-3.5 h-3.5 text-slate-500" />
                                         <span>Brochure</span>
                                     </button>
 
@@ -722,7 +729,7 @@
                                         class="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5 hover:opacity-90"
                                         :style="{ backgroundColor: brandPrimaryColor }"
                                     >
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                        <Phone class="w-3.5 h-3.5" />
                                         <span>View Number</span>
                                     </button>
                                 </div>
@@ -773,7 +780,7 @@
                         class="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl text-white font-bold text-sm transition cursor-pointer shadow-md hover:opacity-95"
                         :style="{ backgroundColor: brandPrimaryColor }"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <Phone class="w-4 h-4" />
                         Call {{ selectedContactProperty.sellerPhone }}
                     </a>
                 </div>
@@ -811,6 +818,20 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
+import {
+    ChevronDown,
+    MapPin,
+    Mic,
+    Search,
+    Star,
+    Check,
+    User,
+    Briefcase,
+    Download,
+    Phone,
+    Building2,
+    Home,
+} from 'lucide-vue-next';
 import { isResidentialType } from '~/utils/propertyConstants';
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
 

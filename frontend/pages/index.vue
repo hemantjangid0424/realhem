@@ -68,7 +68,7 @@
                                     class="w-full bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold py-2.5 pl-9 pr-20 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition"
                                 />
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <Search class="w-4 h-4" />
                                 </div>
                                 <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
                                     <!-- Mic Voice Search Icon -->
@@ -79,7 +79,7 @@
                                         class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition flex items-center justify-center"
                                         :style="{ ':hover': { color: brandPrimaryColor } }"
                                     >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                        <Mic class="w-4 h-4" />
                                     </button>
                                     <!-- Near Me GPS Icon with Location Detection -->
                                     <button
@@ -90,7 +90,7 @@
                                         class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg cursor-pointer transition flex items-center justify-center"
                                     >
                                         <svg v-if="isDetectingLocation" class="w-4 h-4 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <MapPin v-else class="w-4 h-4" />
                                     </button>
                                 </div>
 
@@ -114,7 +114,14 @@
                                         :class="activeSuggestionIndex === idx ? 'bg-blue-50/90 text-blue-950' : 'hover:bg-slate-50 text-slate-800'"
                                     >
                                         <div class="flex items-center gap-3 min-w-0">
-                                            <span class="text-base shrink-0">{{ item.icon }}</span>
+                                            <div
+                                                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                                :class="item.type === 'city' ? 'bg-indigo-50 text-indigo-600' : item.type === 'project' ? 'bg-emerald-50 text-emerald-600' : item.type === 'property' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'"
+                                            >
+                                                <Building2 v-if="item.type === 'project' || item.icon === 'Building2'" class="w-3.5 h-3.5" />
+                                                <Home v-else-if="item.type === 'property' || item.icon === 'Home'" class="w-3.5 h-3.5" />
+                                                <MapPin v-else class="w-3.5 h-3.5" />
+                                            </div>
                                             <div class="min-w-0">
                                                 <div class="text-xs font-bold truncate flex items-center gap-2">
                                                     <span class="truncate">{{ item.title }}</span>
@@ -144,7 +151,7 @@
                                 :style="{ backgroundColor: brandPrimaryColor, boxShadow: '0 4px 12px ' + brandPrimaryColor + '40' }"
                             >
                                 <span>Search</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                <ArrowRight class="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -345,7 +352,7 @@
                                     ></video>
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
                                         <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
-                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <Play class="w-3.5 h-3.5 fill-current translate-x-0.5" />
                                         </div>
                                     </div>
                                 </div>
@@ -413,7 +420,7 @@
                 <div v-else-if="homeActivityTab === 'shortlisted'">
                     <div v-if="shortlistedProperties.length === 0" class="py-10 text-center text-xs text-slate-500 font-semibold space-y-2">
                         <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-xs">
-                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            <Heart class="w-6 h-6 fill-current" />
                         </div>
                         <p>No favourite properties saved yet. Click the heart icon on any property to save it here.</p>
                     </div>
@@ -448,7 +455,7 @@
                                     ></video>
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
                                         <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
-                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <Play class="w-3.5 h-3.5 fill-current translate-x-0.5" />
                                         </div>
                                     </div>
                                 </div>
@@ -598,7 +605,7 @@
                                 title="Featured Property"
                                 @click.stop.prevent
                             >
-                                <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <Star class="w-3 h-3 fill-current shrink-0" />
                                 <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     FEATURED
                                 </span>
@@ -609,7 +616,7 @@
                                 title="Verified Property"
                                 @click.stop.prevent
                             >
-                                <svg class="w-3 h-3 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <Check class="w-3 h-3 text-white shrink-0" :stroke-width="3" />
                                 <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     VERIFIED
                                 </span>
@@ -621,7 +628,7 @@
                                 :title="prop.badge"
                                 @click.stop.prevent
                             >
-                                <svg class="w-3 h-3 fill-current shrink-0" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000-16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <CheckCircle2 class="w-3 h-3 fill-current shrink-0" />
                                 <span class="max-w-0 opacity-0 group-hover/badge:max-w-24 group-hover/badge:opacity-100 group-hover/badge:pl-1 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     {{ prop.badge }}
                                 </span>
@@ -677,7 +684,7 @@
                             </div>
                             <p class="text-[11px] text-slate-500 mt-1 flex items-center justify-between gap-1">
                                 <span class="flex items-center gap-1 truncate">
-                                    <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                    <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
                                     <span class="truncate">{{ prop.locality }}, {{ prop.city }}</span>
                                 </span>
                                 <span v-if="prop.is_verified" class="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
@@ -915,6 +922,19 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import {
+    Search,
+    Mic,
+    MapPin,
+    Building2,
+    Home,
+    Play,
+    Heart,
+    Star,
+    Check,
+    CheckCircle2,
+    ArrowRight,
+} from 'lucide-vue-next';
 import FestiveHeroAnimation from '~/components/FestiveHeroAnimation.vue';
 import { isResidentialType } from '~/utils/propertyConstants';
 

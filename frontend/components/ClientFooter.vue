@@ -29,13 +29,15 @@
                     </p>
 
                     <!-- Contact Details -->
-                    <div class="space-y-1 text-[11px] text-slate-300 pt-1">
+                    <div class="space-y-1.5 text-[11px] text-slate-300 pt-1">
                         <p v-if="companyPhone" class="flex items-center gap-2">
-                            <span>📞 Toll-Free:</span>
+                            <Phone class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <span class="text-slate-400">Toll-Free:</span>
                             <a :href="`tel:${companyPhone}`" class="text-blue-400 font-bold hover:underline">{{ companyPhone }}</a>
                         </p>
                         <p v-if="companyEmail" class="flex items-center gap-2">
-                            <span>✉️ Email:</span>
+                            <Mail class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <span class="text-slate-400">Email:</span>
                             <a :href="`mailto:${companyEmail}`" class="text-blue-400 font-semibold hover:underline">{{ companyEmail }}</a>
                         </p>
                     </div>
@@ -116,6 +118,7 @@
 </template>
 
 <script setup>
+import { Phone, Mail } from 'lucide-vue-next';
 const {
     companyName,
     companyShortName,

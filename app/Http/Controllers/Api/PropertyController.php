@@ -663,7 +663,7 @@ class PropertyController extends Controller
                     return [
                         'type' => 'city',
                         'category' => 'City',
-                        'icon' => '📍',
+                        'icon' => 'MapPin',
                         'title' => $c->name,
                         'subtitle' => 'City in India',
                         'city' => $c->name,
@@ -683,7 +683,7 @@ class PropertyController extends Controller
                 return [
                     'type' => 'locality',
                     'category' => 'Locality / Area',
-                    'icon' => '🏘️',
+                    'icon' => 'MapPin',
                     'title' => $title,
                     'subtitle' => $loc['display'] ?: ($loc['city'] ? "Locality in {$loc['city']}" : 'Locality'),
                     'city' => $loc['city'],
@@ -710,7 +710,7 @@ class PropertyController extends Controller
                 return [
                     'type' => 'project',
                     'category' => 'Apartment / Project',
-                    'icon' => '🏢',
+                    'icon' => 'Building2',
                     'title' => $name,
                     'subtitle' => $proj['display'] ?: implode(', ', array_filter([$proj['locality'] ?? null, $proj['city'] ?? null])),
                     'city' => $proj['city'] ?? null,
@@ -741,7 +741,7 @@ class PropertyController extends Controller
                     return [
                         'type' => 'project',
                         'category' => 'Apartment / Project',
-                        'icon' => '🏢',
+                        'icon' => 'Building2',
                         'title' => $prop->project_name,
                         'subtitle' => implode(', ', array_filter([$prop->locality, $prop->city])),
                         'city' => $prop->city,
@@ -786,7 +786,7 @@ class PropertyController extends Controller
                     return [
                         'type' => 'property',
                         'category' => 'Property Listing',
-                        'icon' => '🏠',
+                        'icon' => 'Home',
                         'title' => $prop->title,
                         'subtitle' => implode(' • ', array_filter([$prop->locality.', '.$prop->city, $formattedPrice])),
                         'city' => $prop->city,

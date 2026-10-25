@@ -44,7 +44,7 @@
                 v-if="isAnimating && isSaved && showFloatingToast"
                 class="pointer-events-none absolute -top-8.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold text-white bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 shadow-lg border border-pink-200/50 whitespace-nowrap z-50 tracking-wide flex items-center gap-1"
             >
-                <span>❤️</span>
+                <Heart class="w-2.5 h-2.5 fill-current" />
                 <span>Favourited!</span>
             </span>
         </transition>
@@ -109,6 +109,7 @@
 
 <script setup>
 import { ref, computed, useAttrs } from 'vue';
+import { Heart } from 'lucide-vue-next';
 
 const attrs = useAttrs();
 

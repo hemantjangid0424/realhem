@@ -14,9 +14,7 @@
                 class="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                 title="Close"
             >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X class="w-5 h-5" />
             </button>
 
             <!-- Title & Status Header -->
@@ -64,7 +62,7 @@
                 <!-- Error or Warning message -->
                 <div v-if="errorMessage" class="mt-4 text-xs font-semibold text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200 text-left sm:text-center">
                     <p class="flex items-center justify-center gap-1.5 font-bold mb-1">
-                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <AlertTriangle class="w-4 h-4 text-amber-600" />
                         Voice Recognition Notice
                     </p>
                     <span>{{ errorMessage }}</span>
@@ -87,9 +85,7 @@
                     :title="isListening ? 'Tap to stop' : 'Tap to speak'"
                 >
                     <!-- Mic Icon -->
-                    <svg class="w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
+                    <Mic class="w-8 h-8 sm:w-9 sm:h-9" :stroke-width="2.2" />
                 </button>
             </div>
 
@@ -117,6 +113,7 @@
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue';
+import { X, AlertTriangle, Mic } from 'lucide-vue-next';
 
 const { isVoiceModalOpen, voiceSearchContext, closeVoiceModal, deliverResult } = useVoiceSearch();
 

@@ -41,7 +41,7 @@
             <!-- ========================================== -->
             <div v-if="!currentUser" class="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-8 animate-fadeIn mt-10">
                 <div class="w-16 h-16 rounded-3xl bg-blue-50 text-[#005ca8] flex items-center justify-center mx-auto shadow-inner">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <Lock class="w-8 h-8" />
                 </div>
 
                 <div class="space-y-2">
@@ -54,14 +54,14 @@
 
                 <div class="grid grid-cols-2 gap-3 text-left">
                     <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-2.5">
-                        <span class="text-lg">🏷️</span>
+                        <Tag class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                         <div>
                             <h4 class="text-xs font-bold text-slate-800">Zero Brokerage</h4>
                             <p class="text-[11px] text-slate-500">Save 100% in broker commissions</p>
                         </div>
                     </div>
                     <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-2.5">
-                        <span class="text-lg">⚡</span>
+                        <Zap class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                         <div>
                             <h4 class="text-xs font-bold text-slate-800">Instant Go-Live</h4>
                             <p class="text-[11px] text-slate-500">Listed across search in under 2 mins</p>
@@ -75,7 +75,7 @@
                         @click="isAuthModalOpen = true"
                         class="w-full py-3.5 px-6 rounded-2xl bg-[#005ca8] hover:bg-[#004e8f] text-white font-extrabold text-sm shadow-lg shadow-blue-500/25 transition cursor-pointer flex items-center justify-center gap-2"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <Smartphone class="w-4 h-4" />
                         <span>Login with Mobile Number to Continue &rarr;</span>
                     </button>
 
@@ -169,7 +169,7 @@
                                             : 'border-2 border-slate-300 text-slate-400 bg-white')
                                 ]"
                             >
-                                <span v-if="currentStep > idx + 1">✓</span>
+                                <Check v-if="currentStep > idx + 1" class="w-3.5 h-3.5" :stroke-width="3" />
                                 <span v-else>{{ idx + 1 }}</span>
                             </div>
 
@@ -256,7 +256,7 @@
 
                         <!-- Error Message Banner -->
                         <div v-if="errorMessage" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-                            <svg class="w-4 h-4 shrink-0 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            <AlertCircle class="w-4 h-4 shrink-0 text-rose-500" />
                             <span>{{ errorMessage }}</span>
                         </div>
 
@@ -362,10 +362,10 @@
                                             type="button"
                                             @click="pickCurrentLocation"
                                             :disabled="isDetectingLocation"
-                                            class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer disabled:opacity-50 transition"
+                                            class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer disabled:opacity-50 transition"
                                         >
                                             <span v-if="isDetectingLocation" class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
-                                            <span v-else class="text-sm">📍</span>
+                                            <MapPin v-else class="w-3.5 h-3.5 text-blue-600" />
                                             <span>{{ isDetectingLocation ? 'Detecting...' : 'Pick my location' }}</span>
                                         </button>
                                     </div>
@@ -402,7 +402,9 @@
                                             class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2.5 overflow-hidden">
-                                                <span class="text-base shrink-0">{{ item.icon || (item.category === 'apartment' ? '🏢' : (item.category === 'city' ? '🏙️' : '📍')) }}</span>
+                                                <Building2 v-if="item.category === 'apartment'" class="w-4 h-4 text-amber-600 shrink-0" />
+                                                <Landmark v-else-if="item.category === 'city'" class="w-4 h-4 text-blue-600 shrink-0" />
+                                                <MapPin v-else class="w-4 h-4 text-slate-400 shrink-0" />
                                                 <div class="truncate">
                                                     <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.title || item.city }}</p>
                                                     <p class="text-[10px] text-slate-400 truncate">{{ item.subtitle || item.display || item.state }}</p>
@@ -474,7 +476,9 @@
                                             class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2 overflow-hidden">
-                                                <span class="text-base shrink-0">{{ item.icon || (item.category === 'apartment' ? '🏢' : (item.category === 'city' ? '🏙️' : '📍')) }}</span>
+                                                <Building2 v-if="item.category === 'apartment'" class="w-4 h-4 text-amber-600 shrink-0" />
+                                                <Landmark v-else-if="item.category === 'city'" class="w-4 h-4 text-blue-600 shrink-0" />
+                                                <MapPin v-else class="w-4 h-4 text-slate-400 shrink-0" />
                                                 <div class="truncate">
                                                     <p class="text-xs font-bold text-slate-800 truncate">{{ item.name || item.title || item.city }}</p>
                                                     <p class="text-[10px] text-slate-400 truncate">{{ item.subtitle || item.display || item.state }}</p>
@@ -526,7 +530,7 @@
                                             class="w-full text-left px-3 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2 overflow-hidden">
-                                                <span class="text-sm shrink-0">📍</span>
+                                                <MapPin class="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                                 <div class="truncate">
                                                     <p class="text-xs font-bold text-slate-800 truncate">{{ item.locality || item.name }}</p>
                                                     <p class="text-[10px] text-slate-400 truncate">{{ item.display || item.city }}</p>
@@ -584,7 +588,7 @@
                                             class="w-full text-left px-3 py-2.5 hover:bg-blue-50/60 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 transition cursor-pointer"
                                         >
                                             <div class="flex items-center gap-2 overflow-hidden">
-                                                <span class="text-sm shrink-0">🏢</span>
+                                                <Building2 class="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                                 <div class="truncate">
                                                     <p class="text-xs font-bold text-slate-800 truncate">{{ item.project_name || item.name }}</p>
                                                     <p class="text-[10px] text-slate-400 truncate">{{ item.locality ? `${item.locality}, ${item.city}` : (item.display || item.city) }}</p>
@@ -674,7 +678,7 @@
                                         {{ isPlot ? 'Add Plot / Land Area' : 'Add Area Details' }}
                                     </label>
                                     <span class="text-slate-400 cursor-help" title="At least one area is required to calculate price per sq.ft.">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <Info class="w-3.5 h-3.5" />
                                     </span>
                                 </div>
                                 <p class="text-[11px] text-slate-400 mb-2">At least one area type is mandatory</p>
@@ -705,7 +709,7 @@
                                             <option value="bigha">bigha</option>
                                             <option value="guntha">guntha</option>
                                         </select>
-                                        <svg class="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        <ChevronDown class="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
                                 </div>
 
@@ -784,7 +788,7 @@
                                             @click="startCustomBedrooms"
                                             class="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
                                         >
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                            <Pencil class="w-3 h-3" />
                                             <span>Edit ({{ form.bedrooms }})</span>
                                         </button>
                                     </div>
@@ -830,7 +834,7 @@
                                                 class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full flex items-center justify-center text-[8px] shadow-xs"
                                                 title="Edit"
                                             >
-                                                ✎
+                                                <Pencil class="w-2 h-2" />
                                             </span>
                                         </button>
                                         <!-- Done button while inline editing -->
@@ -864,7 +868,7 @@
                                             @click="startCustomBathrooms"
                                             class="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
                                         >
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                            <Pencil class="w-3 h-3" />
                                             <span>Edit ({{ form.bathrooms }})</span>
                                         </button>
                                     </div>
@@ -910,7 +914,7 @@
                                                 class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full flex items-center justify-center text-[8px] shadow-xs"
                                                 title="Edit"
                                             >
-                                                ✎
+                                                <Pencil class="w-2 h-2" />
                                             </span>
                                         </button>
                                         <!-- Done button while inline editing -->
@@ -944,7 +948,7 @@
                                             @click="startCustomBalconies"
                                             class="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
                                         >
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                            <Pencil class="w-3 h-3" />
                                             <span>Edit ({{ form.balconies }})</span>
                                         </button>
                                     </div>
@@ -990,7 +994,7 @@
                                                 class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full flex items-center justify-center text-[8px] shadow-xs"
                                                 title="Edit"
                                             >
-                                                ✎
+                                                <Pencil class="w-2 h-2" />
                                             </span>
                                         </button>
                                         <!-- Done button while inline editing -->
@@ -1274,7 +1278,7 @@
                                             <option value="Entire building">Entire building</option>
                                             <option value="Top floor">Top floor</option>
                                         </select>
-                                        <svg class="w-3.5 h-3.5 text-slate-500 absolute right-3 bottom-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        <ChevronDown class="w-3.5 h-3.5 text-slate-500 absolute right-3 bottom-3 pointer-events-none" />
                                     </div>
                                 </div>
                             </div>
@@ -1456,7 +1460,9 @@
                                     ]"
                                 >
                                     <div class="space-y-2">
-                                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mx-auto text-2xl">📸</div>
+                                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                                            <Camera class="w-6 h-6" />
+                                        </div>
                                         <p class="text-sm font-bold text-slate-700">
                                             {{ isDragging ? 'Drop files here' : 'Click to upload or drag & drop' }}
                                         </p>
@@ -1526,7 +1532,9 @@
                                     ]"
                                 >
                                     <div class="space-y-2">
-                                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-2xl">🎥</div>
+                                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+                                            <Video class="w-6 h-6" />
+                                        </div>
                                         <p class="text-sm font-bold text-slate-700">
                                             {{ isDraggingVideo ? 'Drop video here' : 'Click to upload property walkthrough video or drag & drop' }}
                                         </p>
@@ -1574,7 +1582,7 @@
                                         @click="triggerVideoFileInput"
                                         class="aspect-video rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer gap-1.5"
                                     >
-                                        <span class="text-3xl leading-none">🎥</span>
+                                        <Video class="w-7 h-7 text-purple-500" />
                                         <span class="text-xs font-bold">+ Add Another Video</span>
                                         <span class="text-[10px] text-slate-400">Up to 50 MB</span>
                                     </button>
@@ -1620,9 +1628,9 @@
                                         class="p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition cursor-pointer text-left"
                                         :class="form.amenities.includes(amenity.name) ? 'bg-blue-50 border-blue-500 text-blue-800 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
                                     >
-                                        <span class="text-base">{{ amenity.icon }}</span>
+                                        <LucideIcon :name="amenity.icon" :size="16" class="text-blue-600 shrink-0" />
                                         <span class="truncate">{{ amenity.name }}</span>
-                                        <span v-if="form.amenities.includes(amenity.name)" class="ml-auto text-blue-600">✓</span>
+                                        <Check v-if="form.amenities.includes(amenity.name)" class="ml-auto w-3.5 h-3.5 text-blue-600 shrink-0" :stroke-width="3" />
                                     </button>
                                 </div>
                             </div>
@@ -1634,9 +1642,10 @@
                                     <button
                                         type="button"
                                         @click="autoGenerateTitle"
-                                        class="text-[11px] text-blue-600 hover:text-blue-800 font-bold cursor-pointer"
+                                        class="text-[11px] text-blue-600 hover:text-blue-800 font-bold cursor-pointer flex items-center gap-1"
                                     >
-                                        🪄 Auto-Generate Title
+                                        <Wand2 class="w-3.5 h-3.5" />
+                                        <span>Auto-Generate Title</span>
                                     </button>
                                 </div>
                                 <input
@@ -1654,9 +1663,10 @@
                                     <button
                                         type="button"
                                         @click="autoGenerateDescription"
-                                        class="text-[11px] text-blue-600 hover:text-blue-800 font-bold cursor-pointer"
+                                        class="text-[11px] text-blue-600 hover:text-blue-800 font-bold cursor-pointer flex items-center gap-1"
                                     >
-                                        🪄 Auto-Fill Description
+                                        <Wand2 class="w-3.5 h-3.5" />
+                                        <span>Auto-Fill Description</span>
                                     </button>
                                 </div>
                                 <textarea
@@ -1682,7 +1692,8 @@
                                     class="py-3.5 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-[#005ca8] hover:from-blue-700 hover:to-[#004e8f] text-white font-extrabold text-sm shadow-lg shadow-blue-500/25 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     <span v-if="isSubmitting" class="inline-block animate-spin">&#8635;</span>
-                                    <span>{{ isSubmitting ? 'Posting Property...' : 'Post Property Now 🚀' }}</span>
+                                    <span>{{ isSubmitting ? 'Posting Property...' : 'Post Property Now' }}</span>
+                                    <Rocket v-if="!isSubmitting" class="w-4 h-4 ml-1" />
                                 </button>
                             </div>
                         </div>
@@ -1722,7 +1733,7 @@
                     <!-- Need Help Box (Exact 99acres layout from screenshot) -->
                     <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-2">
                         <div class="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                            <span class="text-blue-600">📞</span>
+                            <Phone class="w-3.5 h-3.5 text-blue-600 shrink-0" />
                             <span>Need help?</span>
                         </div>
                         <p class="text-[11px] text-slate-500 leading-relaxed">
@@ -1736,8 +1747,9 @@
                         <div class="font-black text-slate-800 line-clamp-1">
                             {{ isResidential ? `${form.bedrooms} BHK ${form.property_type}` : `${form.carpet_area || 0} ${form.carpet_area_unit} ${form.property_type}` }}
                         </div>
-                        <div class="text-[11px] text-slate-500">
-                            📍 {{ form.locality || 'Locality' }}, {{ form.city || 'City' }}
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                            <MapPin class="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>{{ form.locality || 'Locality' }}, {{ form.city || 'City' }}</span>
                         </div>
                         <div class="pt-2 border-t border-slate-100 flex items-center justify-between font-bold">
                             <span class="text-[#005ca8]">{{ formatPriceWords(form.expected_price) }}</span>
@@ -1752,6 +1764,25 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
+import {
+    Camera,
+    Video,
+    Wand2,
+    Rocket,
+    Phone,
+    MapPin,
+    Check,
+    Lock,
+    Smartphone,
+    Tag,
+    Zap,
+    Building2,
+    Landmark,
+    Pencil,
+    Info,
+    ChevronDown,
+    AlertCircle,
+} from 'lucide-vue-next';
 import AuthModal from '~/components/AuthModal.vue';
 import {
     PROPERTY_FOR,
@@ -1904,48 +1935,48 @@ const steps = computed(() => [
 ]);
 
 const residentialAmenities = [
-    { name: 'Lift', icon: '🛗' },
-    { name: '24x7 Security', icon: '👮' },
-    { name: 'Reserved Parking', icon: '🚗' },
-    { name: 'Gym', icon: '🏋️' },
-    { name: 'Swimming Pool', icon: '🏊' },
-    { name: 'Power Backup', icon: '⚡' },
-    { name: 'Clubhouse', icon: '🏛️' },
-    { name: 'Piped Gas', icon: '🔥' },
-    { name: 'Children Play Area', icon: '🎠' },
-    { name: 'Park / Garden', icon: '🌳' },
-    { name: 'Intercom', icon: '📞' },
-    { name: 'CCTV Surveillance', icon: '📹' },
+    { name: 'Lift', icon: 'ArrowUpDown' },
+    { name: '24x7 Security', icon: 'ShieldCheck' },
+    { name: 'Reserved Parking', icon: 'Car' },
+    { name: 'Gym', icon: 'Dumbbell' },
+    { name: 'Swimming Pool', icon: 'Waves' },
+    { name: 'Power Backup', icon: 'Zap' },
+    { name: 'Clubhouse', icon: 'Building2' },
+    { name: 'Piped Gas', icon: 'Flame' },
+    { name: 'Children Play Area', icon: 'Smile' },
+    { name: 'Park / Garden', icon: 'Trees' },
+    { name: 'Intercom', icon: 'PhoneCall' },
+    { name: 'CCTV Surveillance', icon: 'Cctv' },
 ];
 
 const commercialAmenities = [
-    { name: 'Central AC', icon: '❄️' },
-    { name: '24x7 Power Backup', icon: '⚡' },
-    { name: 'High-Speed Elevators', icon: '🛗' },
-    { name: 'Reserved Parking', icon: '🚗' },
-    { name: 'Visitor Parking', icon: '🅿️' },
-    { name: '24x7 Security & CCTV', icon: '📹' },
-    { name: 'Fire Safety System', icon: '🧯' },
-    { name: 'Cafeteria / Food Court', icon: '☕' },
-    { name: 'Conference Facility', icon: '💼' },
-    { name: 'High-Speed Internet / Fiber', icon: '🌐' },
-    { name: 'Reception & Waiting Lounge', icon: '🛋️' },
-    { name: 'ATM in Campus', icon: '🏧' },
+    { name: 'Central AC', icon: 'Wind' },
+    { name: '24x7 Power Backup', icon: 'Zap' },
+    { name: 'High-Speed Elevators', icon: 'ArrowUpDown' },
+    { name: 'Reserved Parking', icon: 'Car' },
+    { name: 'Visitor Parking', icon: 'ParkingSquare' },
+    { name: '24x7 Security & CCTV', icon: 'ShieldCheck' },
+    { name: 'Fire Safety System', icon: 'Flame' },
+    { name: 'Cafeteria / Food Court', icon: 'Utensils' },
+    { name: 'Conference Facility', icon: 'Users' },
+    { name: 'High-Speed Internet / Fiber', icon: 'Wifi' },
+    { name: 'Reception & Waiting Lounge', icon: 'Armchair' },
+    { name: 'ATM in Campus', icon: 'Landmark' },
 ];
 
 const plotAmenities = [
-    { name: 'Boundary Wall', icon: '🧱' },
-    { name: 'Gated Community', icon: '⛩️' },
-    { name: '24x7 Security Guard', icon: '👮' },
-    { name: 'Street Lighting', icon: '💡' },
-    { name: 'Water Connection', icon: '🚰' },
-    { name: 'Electricity Connection', icon: '⚡' },
-    { name: 'Sewage / Drainage Line', icon: '🛣️' },
-    { name: 'Wide Asphalt / Concrete Road', icon: '🛣️' },
-    { name: 'Corner Plot', icon: '📐' },
-    { name: 'Park Facing', icon: '🌳' },
-    { name: 'Rainwater Harvesting', icon: '🌧️' },
-    { name: 'Clear Title / NA Approved', icon: '📜' },
+    { name: 'Boundary Wall', icon: 'Fence' },
+    { name: 'Gated Community', icon: 'ShieldCheck' },
+    { name: '24x7 Security Guard', icon: 'ShieldCheck' },
+    { name: 'Street Lighting', icon: 'Lamp' },
+    { name: 'Water Connection', icon: 'Droplets' },
+    { name: 'Electricity Connection', icon: 'Zap' },
+    { name: 'Sewage / Drainage Line', icon: 'Pipette' },
+    { name: 'Wide Asphalt / Concrete Road', icon: 'Milestone' },
+    { name: 'Corner Plot', icon: 'Maximize2' },
+    { name: 'Park Facing', icon: 'Trees' },
+    { name: 'Rainwater Harvesting', icon: 'CloudRain' },
+    { name: 'Clear Title / NA Approved', icon: 'FileCheck' },
 ];
 
 const availableAmenities = computed(() => {

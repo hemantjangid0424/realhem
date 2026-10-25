@@ -13,7 +13,9 @@
 
         <!-- Not Found State -->
         <div v-else-if="notFound" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-4">
-            <div class="text-5xl">🏚️</div>
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                <Building2 class="w-8 h-8" />
+            </div>
             <h2 class="text-2xl font-black text-slate-900">Property Not Found</h2>
             <p class="text-sm text-slate-500">This listing may have been removed or the link is incorrect.</p>
             <button @click="router.push('/listings')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition cursor-pointer">
@@ -53,9 +55,7 @@
                         class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                         title="Share property via system share"
                     >
-                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
+                        <Share2 class="w-3.5 h-3.5 text-slate-500" />
                         <span>{{ copied ? '✓ Copied' : 'Share' }}</span>
                     </button>
                 </div>
@@ -90,7 +90,9 @@
                                 @click.stop
                             ></video>
                             <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
-                                <span class="text-5xl">🏠</span>
+                                <div class="w-14 h-14 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center">
+                                    <Camera class="w-7 h-7" />
+                                </div>
                                 <p class="text-sm font-semibold">No media available</p>
                             </div>
                         </div>
@@ -103,7 +105,7 @@
                                 class="group/badge h-7 px-2 hover:px-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
                                 title="Featured Listing"
                             >
-                                <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                <Star class="w-3.5 h-3.5 fill-current shrink-0" />
                                 <span class="max-w-0 opacity-0 group-hover/badge:max-w-36 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     FEATURED LISTING
                                 </span>
@@ -115,7 +117,7 @@
                                 class="group/badge h-7 px-2 hover:px-3 rounded-full bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
                                 title="Verified Partner"
                             >
-                                <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <Check class="w-3.5 h-3.5 text-white shrink-0" :stroke-width="3" />
                                 <span class="max-w-0 opacity-0 group-hover/badge:max-w-40 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     VERIFIED BY REALHEM
                                 </span>
@@ -141,13 +143,13 @@
                                 @click="prevPhoto"
                                 class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition cursor-pointer backdrop-blur-sm z-10"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                                <ChevronLeft class="w-4 h-4" :stroke-width="2.5" />
                             </button>
                             <button
                                 @click="nextPhoto"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition cursor-pointer backdrop-blur-sm z-10"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                <ChevronRight class="w-4 h-4" :stroke-width="2.5" />
                             </button>
                         </template>
 
@@ -161,7 +163,7 @@
                                 class="bg-purple-600/90 hover:bg-purple-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur-sm flex items-center gap-1.5 transition cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
                                 title="Watch property video tour"
                             >
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <Play class="w-3.5 h-3.5 fill-current" />
                                 <span>Video Tour ({{ property.videos.length }})</span>
                             </button>
 
@@ -174,11 +176,11 @@
                                 title="View media gallery"
                             >
                                 <template v-if="!property.photos || property.photos.length === 0">
-                                    <svg class="w-3.5 h-3.5 fill-current text-purple-400" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <Play class="w-3.5 h-3.5 fill-current text-purple-400" />
                                     <span>Video 1 of {{ property.videos.length }}</span>
                                 </template>
                                 <template v-else>
-                                    <svg class="w-3.5 h-3.5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <Camera class="w-3.5 h-3.5 text-white/90" />
                                     <span>{{ activePhotoIdx + 1 }} / {{ (property.photos?.length || 0) + (property.videos?.length || 0) }}</span>
                                 </template>
                             </button>
@@ -219,10 +221,10 @@
                                     v-if="property.property_for === PROPERTY_FOR.SELL || !property.property_for"
                                     type="button"
                                     @click="isEmiModalOpen = true"
-                                    class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1 rounded-xl transition cursor-pointer shrink-0"
+                                    class="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1 rounded-xl transition cursor-pointer shrink-0"
                                     title="Open EMI Calculator"
                                 >
-                                    <span>🧮</span>
+                                    <Calculator class="w-3.5 h-3.5" />
                                     <span>EMI Calculator</span>
                                 </button>
                             </div>
@@ -234,12 +236,12 @@
                                 class="mt-3 p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200/80 hover:border-blue-200 transition cursor-pointer flex items-center justify-between text-xs group"
                             >
                                 <div class="flex items-center gap-2 text-slate-700">
-                                    <span class="text-sm">🏦</span>
+                                    <Landmark class="w-4 h-4 text-blue-600" />
                                     <span>EMI starts at <strong class="text-slate-900 font-black">{{ estimatedMonthlyEmiFormatted }}</strong>/mo</span>
                                 </div>
                                 <span class="text-[11px] font-bold text-blue-600 group-hover:text-blue-700 group-hover:underline flex items-center gap-0.5">
                                     Calculate EMI
-                                    <svg class="w-3 h-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                    <ChevronRight class="w-3 h-3 transition-transform group-hover:translate-x-0.5" :stroke-width="2.5" />
                                 </span>
                             </div>
                         </div>
@@ -298,7 +300,7 @@
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
                                     <span>{{ property.user?.name || 'Verified Owner' }}</span>
-                                    <svg v-if="property.is_verified" class="w-4 h-4 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Verified Seller"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    <BadgeCheck v-if="property.is_verified" class="w-4 h-4 text-blue-600 shrink-0" title="Verified Seller" />
                                 </div>
                                 <div class="text-[11px] text-slate-500 capitalize flex items-center gap-1">
                                     <span>{{ property.user_type || 'Owner' }}</span>
@@ -315,21 +317,22 @@
                                 class="w-full py-3 rounded-2xl text-white font-black text-sm shadow-md transition cursor-pointer flex items-center justify-center gap-2 hover:opacity-95"
                                 :style="{ backgroundColor: brandPrimaryColor }"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                <Phone class="w-4 h-4" />
                                 View Contact Number
                             </button>
                             <button
                                 @click="handleContactClick('message')"
                                 class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition cursor-pointer flex items-center justify-center gap-2"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <MessageSquare class="w-4 h-4" />
                                 Send Message
                             </button>
                         </div>
 
                         <!-- Safe dealing note -->
-                        <p class="text-[10px] text-slate-400 text-center leading-relaxed">
-                            🔒 100% safe to connect. Verified listing by {{ companyName }}.
+                        <p class="text-[10px] text-slate-400 text-center leading-relaxed flex items-center justify-center gap-1">
+                            <ShieldCheck class="w-3.5 h-3.5 text-emerald-600" />
+                            <span>100% safe to connect. Verified listing by {{ companyName }}.</span>
                         </p>
                     </div>
                 </div>
@@ -345,20 +348,20 @@
                                 v-if="property.is_featured"
                                 class="inline-flex items-center gap-1 text-[11px] font-black text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-full shadow-2xs"
                             >
-                                <svg class="w-3 h-3 fill-amber-500" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                                ★ Featured Property
+                                <Star class="w-3 h-3 fill-amber-500 text-amber-500" />
+                                Featured Property
                             </span>
                             <span
                                 v-if="property.is_verified"
                                 class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full"
                             >
-                                <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <Check class="w-3 h-3 text-blue-600" :stroke-width="3" />
                                 Verified Listing
                             </span>
                         </div>
                         <h1 class="text-xl font-black text-slate-900 leading-tight">{{ property.title }}</h1>
                         <p class="text-sm text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-                            <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <MapPin class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                             <span>
                                 {{ [property.address, property.sub_locality, property.locality, property.city].filter(Boolean).join(', ') }}
                                 <strong v-if="property.pincode" class="text-slate-800 font-bold"> - {{ property.pincode }}</strong>
@@ -373,9 +376,7 @@
                             class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                             title="Share property via system share"
                         >
-                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                            </svg>
+                            <Share2 class="w-4 h-4 text-slate-500" />
                             <span>Share</span>
                         </button>
                         <span v-if="copied" class="text-[11px] text-emerald-600 font-bold">✓ Copied!</span>
@@ -417,7 +418,7 @@
                     <div v-if="property.videos && property.videos.length > 0" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                             <div class="flex items-center gap-2">
-                                <span class="text-lg">🎥</span>
+                                <Video class="w-4 h-4 text-purple-600" />
                                 <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Property Video Tour</h2>
                                 <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                                     {{ property.videos.length }} {{ property.videos.length === 1 ? 'Video' : 'Videos' }}
@@ -455,7 +456,7 @@
                                         class="text-purple-300 hover:text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition"
                                     >
                                         <span>Expand</span>
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                        <Maximize2 class="w-3 h-3" />
                                     </button>
                                 </div>
                             </div>
@@ -471,7 +472,7 @@
                                 :key="amenity"
                                 class="px-3 py-1.5 bg-blue-50 text-blue-800 border border-blue-100 rounded-xl text-xs font-semibold flex items-center gap-1.5"
                             >
-                                <span>{{ amenityIcon(amenity) }}</span>
+                                <LucideIcon :name="amenityIcon(amenity)" :size="14" class="text-blue-600 shrink-0" />
                                 <span>{{ amenity }}</span>
                             </span>
                         </div>
@@ -486,7 +487,7 @@
                         <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div class="space-y-1">
                                 <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                    <span>📍</span>
+                                    <MapPin class="w-4 h-4 text-rose-500 shrink-0" />
                                     <span>{{ property.project_name ? `${property.project_name}, ` : '' }}{{ property.locality }}, {{ property.city }}{{ property.pincode ? ' - ' + property.pincode : '' }}</span>
                                 </div>
                                 <div class="text-[11px] text-slate-500">
@@ -512,7 +513,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-100 pb-3">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-xs">
-                                    🏦
+                                    <Landmark class="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Home Loan &amp; EMI Assistance</h2>
@@ -552,9 +553,9 @@
                                 class="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-md transition cursor-pointer hover:opacity-95 flex items-center justify-center gap-1.5 shrink-0"
                                 :style="{ backgroundColor: brandPrimaryColor }"
                             >
-                                <span>🧮</span>
+                                <Calculator class="w-3.5 h-3.5" />
                                 <span>Open Full EMI Calculator</span>
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                <ChevronRight class="w-3.5 h-3.5" :stroke-width="2.5" />
                             </button>
                         </div>
                     </div>
@@ -634,11 +635,11 @@
                 <div v-if="property?.user?.mobile" class="space-y-2.5">
                     <a
                         :href="'tel:' + (property.user.country_code || '+91') + property.user.mobile"
-                        class="flex items-center gap-3 w-full py-3 px-4 rounded-2xl text-white font-bold text-sm transition cursor-pointer shadow-md hover:opacity-95"
+                        class="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-2xl text-white font-bold text-sm transition cursor-pointer shadow-md hover:opacity-95"
                         :style="{ backgroundColor: brandPrimaryColor }"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                        {{ property.user.country_code || '+91' }} {{ property.user.mobile }}
+                        <Phone class="w-4 h-4" />
+                        <span>{{ property.user.country_code || '+91' }} {{ property.user.mobile }}</span>
                     </a>
                 </div>
                 <p class="text-[10px] text-slate-400 text-center">
@@ -674,6 +675,24 @@ import { ref, computed, watch, onMounted } from 'vue';
 definePageMeta({
     name: 'client.property-detail',
 });
+import {
+    Share2,
+    Star,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Camera,
+    Video,
+    BadgeCheck,
+    Phone,
+    MessageSquare,
+    MapPin,
+    Maximize2,
+    ShieldCheck,
+    Calculator,
+    Landmark,
+} from 'lucide-vue-next';
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
 import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 import {
@@ -770,22 +789,22 @@ const isEmiModalOpen = ref(false);
 const descExpanded = ref(false);
 const copied = ref(false);
 
-const amenityIconMap = {
-    'Lift': '🛗',
-    '24x7 Security': '👮',
-    'Reserved Parking': '🚗',
-    'Gym': '🏋️',
-    'Swimming Pool': '🏊',
-    'Power Backup': '⚡',
-    'Clubhouse': '🏛️',
-    'Piped Gas': '🔥',
-    'Children Play Area': '🎠',
-    'Park / Garden': '🌳',
-    'Intercom': '📞',
-    'CCTV Surveillance': '📹',
+const amenityIconMap: Record<string, string> = {
+    'Lift': 'ArrowUpDown',
+    '24x7 Security': 'ShieldCheck',
+    'Reserved Parking': 'Car',
+    'Gym': 'Dumbbell',
+    'Swimming Pool': 'Waves',
+    'Power Backup': 'Zap',
+    'Clubhouse': 'Building2',
+    'Piped Gas': 'Flame',
+    'Children Play Area': 'Smile',
+    'Park / Garden': 'Trees',
+    'Intercom': 'PhoneCall',
+    'CCTV Surveillance': 'Cctv',
 };
 
-const amenityIcon = (name) => amenityIconMap[name] ?? '✓';
+const amenityIcon = (name: string) => amenityIconMap[name] ?? 'CheckCircle2';
 
 const formatPrice = (val) => {
     if (!val || val <= 0) return 'Price on Request';

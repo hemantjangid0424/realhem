@@ -16,7 +16,7 @@
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-black text-lg shadow-2xs">
-                            🏦
+                            <Landmark class="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
@@ -37,7 +37,7 @@
                         class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
                         title="Close"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <X class="w-4 h-4" :stroke-width="2.5" />
                     </button>
                 </div>
 
@@ -267,12 +267,12 @@
                             class="w-full p-4 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 transition cursor-pointer"
                         >
                             <div class="flex items-center gap-2">
-                                <span>📅</span>
+                                <Calendar class="w-4 h-4 text-blue-600 shrink-0" />
                                 <span>Year-by-Year Loan Repayment Schedule (Amortization Table)</span>
                             </div>
                             <div class="flex items-center gap-1 text-blue-600">
                                 <span>{{ showSchedule ? 'Hide Table' : 'View Schedule' }}</span>
-                                <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': showSchedule }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': showSchedule }" />
                             </div>
                         </button>
 
@@ -305,8 +305,8 @@
                     <!-- Free Home Loan Assistance Lead Banner -->
                     <div class="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="space-y-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-base">🤝</span>
+                            <div class="flex items-center gap-2">
+                                <Handshake class="w-4 h-4 text-emerald-700 shrink-0" />
                                 <h4 class="text-xs sm:text-sm font-black text-emerald-950">Need Assistance with Pre-Approved Home Loans?</h4>
                             </div>
                             <p class="text-[11px] sm:text-xs text-emerald-800 leading-relaxed">
@@ -351,6 +351,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import {
+    X,
+    ChevronDown,
+    Landmark,
+    Calendar,
+    Handshake,
+} from 'lucide-vue-next';
 
 const props = defineProps({
     isOpen: {
