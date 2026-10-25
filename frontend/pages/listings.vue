@@ -505,40 +505,60 @@
                             : 'border-slate-200/80 shadow-xs hover:border-slate-300'"
                     >
                         <!-- Property Thumbnail / Gallery Carousel View -->
-                        <div
-                            class="w-full md:w-64 h-52 bg-slate-900 rounded-xl relative overflow-hidden flex-shrink-0 flex items-center justify-center text-white cursor-pointer"
-                            @click.stop.prevent="openImageGallery(item)"
-                            title="Click to view photos"
-                        >
-                            <img
-                                v-if="item.photos && item.photos.length > 0"
-                                :src="item.photos[0]"
-                                :alt="item.title"
-                                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <video
-                                v-else-if="item.videos && item.videos.length > 0"
-                                :src="item.videos[0] + '#t=0.5'"
-                                preload="metadata"
-                                muted
-                                playsinline
-                                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none opacity-80"
-                            ></video>
-                            <div v-if="(item.photos && item.photos.length > 0) || (item.videos && item.videos.length > 0)" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
-                            <div class="text-center p-4 relative z-20">
-                                <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
-                                    {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
-                                </span>
-                                <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
-                                <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
+                        <div class="w-full md:w-64 h-52 relative flex-shrink-0">
+                            <!-- Inner clipped media container -->
+                            <div
+                                class="w-full h-full bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center text-white cursor-pointer"
+                                @click.stop.prevent="openImageGallery(item)"
+                                title="Click to view media"
+                            >
+                                <img
+                                    v-if="item.photos && item.photos.length > 0"
+                                    :src="item.photos[0]"
+                                    :alt="item.title"
+                                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <video
+                                    v-else-if="item.videos && item.videos.length > 0"
+                                    :src="item.videos[0] + '#t=0.5'"
+                                    preload="metadata"
+                                    muted
+                                    playsinline
+                                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none opacity-80"
+                                ></video>
+                                <div v-if="(item.photos && item.photos.length > 0) || (item.videos && item.videos.length > 0)" class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10"></div>
+                                <div class="text-center p-4 relative z-20">
+                                    <span class="text-[11px] font-bold tracking-wider uppercase text-amber-300 block">
+                                        {{ item.project_name || item.sellerName || (item.sellerLabel === 'Owner' ? 'Owner Listing' : item.builder) }}
+                                    </span>
+                                    <span class="text-base font-extrabold mt-1 block leading-snug line-clamp-2">{{ item.title }}</span>
+                                    <span class="text-xs text-slate-300 block mt-0.5">{{ item.locality }}, {{ item.city }}</span>
+                                </div>
+
+                                <!-- Bottom Tag & Photo Gallery Button -->
+                                <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
+                                    <span v-if="item.status" class="bg-black/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">{{ item.status }}</span>
+                                    <button
+                                        v-if="((item.photos?.length || 0) + (item.videos?.length || 0)) > 0"
+                                        type="button"
+                                        @click.stop.prevent="openImageGallery(item)"
+                                        class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-30 shadow-xs ml-auto border border-white/10"
+                                        :title="(!item.photos || item.photos.length === 0) ? 'View video tour' : 'View media gallery'"
+                                    >
+                                        <span v-if="!item.photos || item.photos.length === 0">🎥</span>
+                                        <span v-else>📷</span>
+                                        <span>{{ (item.photos?.length || 0) + (item.videos?.length || 0) }}</span>
+                                        <span v-if="item.videos && item.videos.length > 0 && item.photos && item.photos.length > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- 99acres Badge Overlay -->
-                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30">
+                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-30 pointer-events-none">
                                 <!-- Featured Badge -->
                                 <span
                                     v-if="item.is_featured"
-                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer pointer-events-auto"
                                     title="Featured Property"
                                     @click.stop.prevent
                                 >
@@ -551,7 +571,7 @@
                                 <!-- Verified Badge -->
                                 <span
                                     v-if="item.is_verified || item.isRera"
-                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-blue-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer pointer-events-auto"
                                     title="Verified Property"
                                     @click.stop.prevent
                                 >
@@ -564,7 +584,7 @@
                                 <!-- Poster Type Badge (By Owner / Agent / Builder) -->
                                 <span
                                     v-if="item.sellerLabel === 'Owner'"
-                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer pointer-events-auto"
                                     title="Posted by Owner"
                                     @click.stop.prevent
                                 >
@@ -575,7 +595,7 @@
                                 </span>
                                 <span
                                     v-else-if="item.sellerLabel === 'Agent'"
-                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer"
+                                    class="group/badge h-6 px-1.5 hover:px-2.5 rounded-full bg-indigo-600 text-white font-black text-[9px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer pointer-events-auto"
                                     title="Agent Listing"
                                     @click.stop.prevent
                                 >
@@ -598,23 +618,6 @@
                                     :propertyId="item.id"
                                     size="sm"
                                 />
-                            </div>
-
-                            <!-- Bottom Tag & Photo Gallery Button -->
-                            <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/90 z-20">
-                                <span v-if="item.status" class="bg-black/60 px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]">{{ item.status }}</span>
-                                <button
-                                    v-if="((item.photos?.length || 0) + (item.videos?.length || 0)) > 0"
-                                    type="button"
-                                    @click.stop.prevent="openImageGallery(item)"
-                                    class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-30 shadow-xs ml-auto border border-white/10"
-                                    :title="(!item.photos || item.photos.length === 0) ? 'View video tour' : 'View media gallery'"
-                                >
-                                    <span v-if="!item.photos || item.photos.length === 0">🎥</span>
-                                    <span v-else>📷</span>
-                                    <span>{{ (item.photos?.length || 0) + (item.videos?.length || 0) }}</span>
-                                    <span v-if="item.videos && item.videos.length > 0 && item.photos && item.photos.length > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
-                                </button>
                             </div>
                         </div>
 

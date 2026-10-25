@@ -15,14 +15,14 @@
         <!-- Shockwave Pulse Ring (Fires on Click when Favourited) -->
         <span
             v-if="isAnimating && isSaved"
-            class="heart-ripple pointer-events-none absolute rounded-full"
+            class="heart-ripple pointer-events-none absolute rounded-full z-40"
             :class="rippleSizeClass"
         />
 
         <!-- Confetti / Particle Sparkle Explosion (360 degrees) -->
         <span
             v-if="isAnimating && isSaved"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible z-50"
         >
             <span
                 v-for="particle in particles"
@@ -170,14 +170,14 @@ const isSaved = computed(() => {
 
 // 8 Particle sparks radiating around the heart with vibrant party colors
 const particles = [
-    { id: 1, dx: 0, dy: -26, color: '#ff2a6d', size: 6, delay: 0 },
-    { id: 2, dx: 20, dy: -20, color: '#ff69b4', size: 5, delay: 20 },
-    { id: 3, dx: 26, dy: 0, color: '#f59e0b', size: 6, delay: 35 },
-    { id: 4, dx: 20, dy: 20, color: '#a855f7', size: 5, delay: 10 },
-    { id: 5, dx: 0, dy: 26, color: '#ff3366', size: 6, delay: 30 },
-    { id: 6, dx: -20, dy: 20, color: '#38bdf8', size: 5, delay: 15 },
-    { id: 7, dx: -26, dy: 0, color: '#10b981', size: 6, delay: 40 },
-    { id: 8, dx: -20, dy: -20, color: '#f43f5e', size: 5, delay: 25 },
+    { id: 1, dx: 0, dy: -32, color: '#ff2a6d', size: 6, delay: 0 },
+    { id: 2, dx: 24, dy: -24, color: '#ff69b4', size: 5, delay: 20 },
+    { id: 3, dx: 32, dy: 0, color: '#f59e0b', size: 6, delay: 35 },
+    { id: 4, dx: 24, dy: 24, color: '#a855f7', size: 5, delay: 10 },
+    { id: 5, dx: 0, dy: 32, color: '#ff3366', size: 6, delay: 30 },
+    { id: 6, dx: -24, dy: 24, color: '#38bdf8', size: 5, delay: 15 },
+    { id: 7, dx: -32, dy: 0, color: '#10b981', size: 6, delay: 40 },
+    { id: 8, dx: -24, dy: -24, color: '#f43f5e', size: 5, delay: 25 },
 ];
 
 const buttonClasses = computed(() => {
@@ -222,9 +222,9 @@ const iconSizeClass = computed(() => {
 
 const rippleSizeClass = computed(() => {
     const map = {
-        sm: 'w-10 h-10',
-        md: 'w-14 h-14',
-        lg: 'w-18 h-18',
+        sm: 'w-12 h-12',
+        md: 'w-16 h-16',
+        lg: 'w-20 h-20',
     };
     return map[props.size] || map.md;
 });
@@ -313,15 +313,15 @@ const handleClick = async (event) => {
         transform: scale(0.2);
         opacity: 0.95;
         border: 3px solid #f43f5e;
-        background-color: rgba(244, 63, 94, 0.35);
+        background-color: rgba(244, 63, 94, 0.4);
     }
-    50% {
-        opacity: 0.6;
+    45% {
+        opacity: 0.7;
     }
     100% {
-        transform: scale(2.1);
+        transform: scale(2.6);
         opacity: 0;
-        border: 1px solid #ff3366;
+        border: 1.5px solid #ff3366;
         background-color: transparent;
     }
 }
@@ -338,7 +338,7 @@ const handleClick = async (event) => {
     }
     100% {
         opacity: 0;
-        transform: translate(calc(var(--dx) * 1.55), calc(var(--dy) * 1.55)) scale(0);
+        transform: translate(calc(var(--dx) * 1.6), calc(var(--dy) * 1.6)) scale(0);
     }
 }
 

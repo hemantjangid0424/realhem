@@ -66,34 +66,37 @@
 
                 <!-- Photo Gallery -->
                 <div class="lg:col-span-2 space-y-2">
-                    <!-- Main Photo -->
-                    <div
-                        class="relative group rounded-2xl overflow-hidden bg-slate-900 aspect-video cursor-pointer"
-                        @click="openPhotoGallery(activePhotoIdx)"
-                        title="Click to view full photo gallery"
-                    >
-                        <img
-                            v-if="property.photos && property.photos.length > 0"
-                            :src="property.photos[activePhotoIdx]"
-                            :alt="property.title"
-                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <video
-                            v-else-if="property.videos && property.videos.length > 0"
-                            :src="property.videos[0]"
-                            controls
-                            playsinline
-                            preload="metadata"
-                            class="absolute inset-0 w-full h-full object-contain bg-black"
-                            @click.stop
-                        ></video>
-                        <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
-                            <span class="text-5xl">🏠</span>
-                            <p class="text-sm font-semibold">No media available</p>
+                    <!-- Main Photo Container (unclipped for heart animation burst) -->
+                    <div class="relative group aspect-video">
+                        <!-- Media Canvas with rounded-2xl & overflow-hidden -->
+                        <div
+                            class="absolute inset-0 rounded-2xl overflow-hidden bg-slate-900 cursor-pointer"
+                            @click="openPhotoGallery(activePhotoIdx)"
+                            title="Click to view full photo gallery"
+                        >
+                            <img
+                                v-if="property.photos && property.photos.length > 0"
+                                :src="property.photos[activePhotoIdx]"
+                                :alt="property.title"
+                                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <video
+                                v-else-if="property.videos && property.videos.length > 0"
+                                :src="property.videos[0]"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                class="absolute inset-0 w-full h-full object-contain bg-black"
+                                @click.stop
+                            ></video>
+                            <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
+                                <span class="text-5xl">🏠</span>
+                                <p class="text-sm font-semibold">No media available</p>
+                            </div>
                         </div>
 
                         <!-- Overlay badges -->
-                        <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10">
+                        <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
                             <!-- Featured Badge -->
                             <span
                                 v-if="property.is_featured"
