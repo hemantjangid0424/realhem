@@ -738,21 +738,31 @@
                     </div>
                 </template>
 
-                <!-- Load More / Pagination Stream for Crores of Records -->
-                <div v-if="hasNextPage" class="pt-4 pb-8 flex flex-col items-center justify-center gap-2">
-                    <button
-                        type="button"
-                        @click="loadNextPage"
-                        :disabled="isLoadingMore"
-                        class="px-6 py-3 rounded-2xl text-sm font-extrabold text-white shadow-md transition-all cursor-pointer hover:shadow-lg disabled:opacity-60 flex items-center gap-2"
-                        :style="{ backgroundColor: brandPrimaryColor }"
+                <!-- Infinite Scroll Sentinel & Automatic On-Scroll Loader -->
+                <div ref="infiniteScrollSentinel" class="pt-6 pb-12 flex flex-col items-center justify-center gap-2.5">
+                    <!-- Loading Spinner while fetching next page on scroll -->
+                    <div
+                        v-if="isLoadingMore"
+                        class="flex items-center gap-2.5 py-3 px-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-xs font-bold text-slate-700"
                     >
-                        <span v-if="isLoadingMore" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        <span>{{ isLoadingMore ? 'Loading More Properties...' : 'Load More Properties' }}</span>
-                    </button>
-                    <span class="text-xs text-slate-400 font-semibold">
-                        Showing {{ apiProperties.length }} of {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : apiProperties.length }} listings
-                    </span>
+                        <span class="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                        <span>Loading more properties...</span>
+                    </div>
+
+                    <!-- Progress Indicator when more pages exist -->
+                    <div v-else-if="hasNextPage" class="py-2 text-center">
+                        <span class="text-xs text-slate-400 font-semibold">
+                            Showing {{ apiProperties.length }} of {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : apiProperties.length }} listings
+                        </span>
+                    </div>
+
+                    <!-- End of results banner when all items are loaded -->
+                    <div v-else-if="apiProperties.length > 0" class="py-6 text-center">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">
+                            <Check class="w-3.5 h-3.5 text-emerald-600" />
+                            <span>You've reached the end • {{ totalCount > 0 ? totalCount.toLocaleString('en-IN') : apiProperties.length }} listings shown</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -817,7 +827,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import {
     ChevronDown,
     MapPin,
@@ -1622,22 +1632,91 @@ const fetchApiProperties = async (page = 1, append = false) => {
     }
 };
 
+const infiniteScrollSentinel = ref(null);
+let scrollObserver = null;
+
+const setupInfiniteScroll = () => {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+
+    if (scrollObserver) {
+        scrollObserver.disconnect();
+        scrollObserver = null;
+    }
+
+    scrollObserver = new IntersectionObserver(
+        (entries) => {
+            const entry = entries[0];
+            if (entry && entry.isIntersecting) {
+                if (hasNextPage.value && !isLoadingMore.value && !isLoadingProperties.value) {
+                    loadNextPage();
+                }
+            }
+        },
+        {
+            root: null,
+            rootMargin: '400px 0px', // Pre-fetch 400px before user reaches the bottom
+            threshold: 0.05,
+        }
+    );
+
+    if (infiniteScrollSentinel.value) {
+        scrollObserver.observe(infiniteScrollSentinel.value);
+    }
+};
+
+watch(infiniteScrollSentinel, (el) => {
+    if (el && scrollObserver) {
+        scrollObserver.disconnect();
+        scrollObserver.observe(el);
+    } else if (el) {
+        setupInfiniteScroll();
+    }
+});
+
+watch(hasNextPage, (hasMore) => {
+    if (hasMore) {
+        nextTick(() => {
+            if (infiniteScrollSentinel.value && scrollObserver) {
+                scrollObserver.observe(infiniteScrollSentinel.value);
+            } else {
+                setupInfiniteScroll();
+            }
+        });
+    }
+});
+
 const loadNextPage = () => {
     if (!hasNextPage.value || isLoadingMore.value) return;
     fetchApiProperties(currentPage.value + 1, true);
 };
 
+let onInvalidateHandler = null;
+
 onMounted(async () => {
     if (isNearMe.value) {
         await initNearbyAreas();
     }
-    fetchApiProperties(1, false);
+    await fetchApiProperties(1, false);
 
-    const onInvalidate = () => {
+    nextTick(() => {
+        setupInfiniteScroll();
+    });
+
+    onInvalidateHandler = () => {
         invalidateCache('api/properties');
         fetchApiProperties(1, false);
     };
-    window.addEventListener('realhem-property-invalidated', onInvalidate);
+    window.addEventListener('realhem-property-invalidated', onInvalidateHandler);
+});
+
+onUnmounted(() => {
+    if (scrollObserver) {
+        scrollObserver.disconnect();
+        scrollObserver = null;
+    }
+    if (typeof window !== 'undefined' && onInvalidateHandler) {
+        window.removeEventListener('realhem-property-invalidated', onInvalidateHandler);
+    }
 });
 
 watch(
