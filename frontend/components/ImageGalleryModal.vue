@@ -307,9 +307,9 @@ const photosList = computed<string[]>(() => {
         return p.property.photos.filter(Boolean);
     }
 
-    // 3. Single photo fallback (only if real photo)
+    // 3. Single photo fallback
     const singlePhoto = (p as any).photo || p.metadata?.photo || p.property?.photos?.[0];
-    if (singlePhoto && typeof singlePhoto === 'string' && !singlePhoto.includes('unsplash.com')) {
+    if (singlePhoto && typeof singlePhoto === 'string') {
         return [singlePhoto];
     }
 

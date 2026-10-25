@@ -709,7 +709,7 @@ const router = useRouter();
 
 const slug = computed(() => (route.params.slug as string) || '');
 
-const { data: propertyData, status, error } = await useAsyncData(
+const { data: propertyData, status, error } = useLazyAsyncData(
     `property_detail_${route.params.slug}`,
     async () => {
         const s = route.params.slug;
@@ -722,11 +722,15 @@ const { data: propertyData, status, error } = await useAsyncData(
                 return prop;
             }
             return null;
-        } catch (e) {
+        } catch (e: any) {
+            if (e?.name === 'AbortError' || e?.isAbort) {
+                return null;
+            }
             return null;
         }
     },
     {
+        lazy: true,
         watch: [() => route.params.slug],
     }
 );

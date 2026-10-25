@@ -334,7 +334,7 @@ class GeocodingService
             return 'Kolkata';
         }
 
-        return $rawCity ?: 'Delhi NCR';
+        return $rawCity ?: 'Ahmedabad';
     }
 
     /**

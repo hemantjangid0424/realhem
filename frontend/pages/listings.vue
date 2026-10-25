@@ -552,10 +552,10 @@
                                         class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-30 shadow-xs ml-auto border border-white/10"
                                         :title="(!item.photos || item.photos.length === 0) ? 'View video tour' : 'View media gallery'"
                                     >
-                                        <span v-if="!item.photos || item.photos.length === 0">🎥</span>
-                                        <span v-else>📷</span>
+                                        <Video v-if="!item.photos || item.photos.length === 0" class="w-3 h-3 text-purple-300" />
+                                        <Camera v-else class="w-3 h-3" />
                                         <span>{{ (item.photos?.length || 0) + (item.videos?.length || 0) }}</span>
-                                        <span v-if="item.videos && item.videos.length > 0 && item.photos && item.photos.length > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                        <Video v-if="item.videos && item.videos.length > 0 && item.photos && item.photos.length > 0" class="w-3 h-3 text-purple-300" />
                                     </button>
                                 </div>
                             </div>
@@ -831,6 +831,8 @@ import {
     Phone,
     Building2,
     Home,
+    Camera,
+    Video,
 } from 'lucide-vue-next';
 import { isResidentialType } from '~/utils/propertyConstants';
 import EmiCalculatorModal from '~/components/EmiCalculatorModal.vue';
@@ -1072,7 +1074,7 @@ watch(
         activeType.value = newQ.type || 'all';
         if (newQ.city) {
             activeCity.value = newQ.city;
-        } else if (!activeCity.value || activeCity.value === 'All') {
+        } else if (!activeCity.value) {
             activeCity.value = currentCity.value || 'Ahmedabad';
         }
 

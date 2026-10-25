@@ -71,8 +71,8 @@
                 <div class="lg:col-span-2">
                     <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Top Cities</h4>
                     <ul class="space-y-2">
-                        <li><router-link to="/listings?city=Delhi NCR" class="hover:text-white transition">Delhi NCR</router-link></li>
                         <li><router-link to="/listings?city=Ahmedabad" class="hover:text-white transition">Ahmedabad</router-link></li>
+                        <li><router-link to="/listings?city=Delhi NCR" class="hover:text-white transition">Delhi NCR</router-link></li>
                         <li><router-link to="/listings?city=Mumbai" class="hover:text-white transition">Mumbai</router-link></li>
                         <li><router-link to="/listings?city=Bangalore" class="hover:text-white transition">Bangalore</router-link></li>
                         <li><router-link to="/listings?city=Pune" class="hover:text-white transition">Pune</router-link></li>

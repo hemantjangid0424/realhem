@@ -137,6 +137,9 @@ export function useFrontendCache() {
       return inFlightRequests.get(cacheKey);
     }
 
+    const controller = new AbortController();
+    const unregister = registerInFlightController(controller, url, 'GET');
+
     const promise = (async () => {
       try {
         const headers = {
@@ -146,6 +149,7 @@ export function useFrontendCache() {
 
         const res = await fetch(url, {
           ...options.fetchOptions,
+          signal: options.fetchOptions?.signal || controller.signal,
           headers,
         });
 
@@ -157,7 +161,13 @@ export function useFrontendCache() {
         const data = await res.json();
         set(cacheKey, data, ttlMs, etag);
         return data;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          return cached !== null ? cached : null;
+        }
+        throw err;
       } finally {
+        unregister();
         inFlightRequests.delete(cacheKey);
       }
     })();

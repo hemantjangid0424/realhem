@@ -400,7 +400,10 @@ export function useUserActivity() {
         contactedProperties.value = contRes?.data || [];
         isLoaded.value = true;
         return;
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.name === 'AbortError' || err?.isAbort) {
+          return;
+        }
         console.warn('Failed to load user activities from API, using fallback:', err);
       }
     }

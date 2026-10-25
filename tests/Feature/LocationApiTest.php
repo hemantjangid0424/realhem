@@ -117,7 +117,7 @@ test('detects location fallback when coordinates are missing', function () {
     $response->assertStatus(200)
         ->assertJson([
             'success' => true,
-            'city' => 'Delhi NCR',
+            'city' => 'Ahmedabad',
         ]);
 });
 

@@ -53,7 +53,7 @@
                 <div class="flex items-center justify-between h-16 transition-all duration-200">
                     <!-- Left: Logo & City/Locality Selector -->
                     <div class="flex items-center gap-3 sm:gap-5 flex-shrink-0">
-                        <router-link to="/" class="flex items-center gap-2.5 group">
+                        <router-link to="/" @click="handleLogoClick" class="flex items-center gap-2.5 group">
                             <div
                                 v-if="companyLogoUrl"
                                 class="h-9 max-w-[160px] rounded-xl overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105"
@@ -428,6 +428,11 @@ import AuthModal from './AuthModal.vue';
 
 const router = useRouter();
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
+const { abortInFlightApiRequests } = useApi();
+
+const handleLogoClick = () => {
+    abortInFlightApiRequests('logo_click');
+};
 const { currentCity: selectedCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
     companyName,

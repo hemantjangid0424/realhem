@@ -1,5 +1,5 @@
 export function useUserLocation() {
-  const currentCity = useState<string>('realhem_city', () => 'Delhi NCR');
+  const currentCity = useState<string>('realhem_city', () => 'Ahmedabad');
   const currentLocality = useState<string>('realhem_locality', () => '');
   const nearbyLocalities = useState<string[]>('realhem_nearby_localities', () => []);
   const isNearMeActive = useState<boolean>('realhem_is_near_me', () => false);
@@ -8,8 +8,8 @@ export function useUserLocation() {
   let toastTimeout: any = null;
 
   const availableCities = [
-    'Delhi NCR',
     'Ahmedabad',
+    'Delhi NCR',
     'Mumbai',
     'Bangalore',
     'Pune',
@@ -20,8 +20,16 @@ export function useUserLocation() {
 
   if (import.meta.client) {
     const saved = localStorage.getItem('realhem_city');
-    if (saved && !currentCity.value) {
+    if (saved) {
       currentCity.value = saved;
+    } else if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((result) => {
+          if (result.state === 'granted') {
+            detectLocation(null, true);
+          }
+        }).catch(() => {});
+      }
     }
   }
 
@@ -81,9 +89,11 @@ export function useUserLocation() {
     isNearMeActive.value = false;
   };
 
-  const detectLocation = async (onDetected: ((data: any) => void) | null = null) => {
-    isDetectingLocation.value = true;
-    showToast('📍 Detecting your current location...', 8000);
+  const detectLocation = async (onDetected: ((data: any) => void) | null = null, silent = false) => {
+    isDetectingLocation.value = !silent;
+    if (!silent) {
+      showToast('📍 Detecting your current location...', 8000);
+    }
 
     const { apiBase } = useApi();
 
@@ -99,8 +109,10 @@ export function useUserLocation() {
       }
       isNearMeActive.value = true;
 
-      const displayMsg = data.display || data.city || 'Location detected';
-      showToast(`📍 Location detected: ${displayMsg}`);
+      if (!silent) {
+        const displayMsg = data.display || data.city || 'Location detected';
+        showToast(`📍 Location detected: ${displayMsg}`);
+      }
 
       if (onDetected && typeof onDetected === 'function') {
         onDetected(data);
@@ -115,7 +127,9 @@ export function useUserLocation() {
         applyDetectedData(data);
       } catch {
         isDetectingLocation.value = false;
-        showToast('Unable to detect location. Please select your city.');
+        if (!silent) {
+          showToast('Unable to detect location. Please select your city.');
+        }
       }
       return;
     }
@@ -150,7 +164,9 @@ export function useUserLocation() {
             });
           } catch {
             isDetectingLocation.value = false;
-            showToast('Could not resolve your area. Please pick your city.');
+            if (!silent) {
+              showToast('Could not resolve your area. Please pick your city.');
+            }
           }
         }
       },
@@ -160,10 +176,14 @@ export function useUserLocation() {
           const res = await fetch(`${apiBase}/api/locations/detect`);
           const data = await res.json();
           applyDetectedData(data);
-          showToast(`Location permission unavailable. Showing nearby properties in ${data.city}.`);
+          if (!silent) {
+            showToast(`Location permission unavailable. Showing nearby properties in ${data.city}.`);
+          }
         } catch {
           isDetectingLocation.value = false;
-          showToast('Location permission denied. Please choose your city.');
+          if (!silent) {
+            showToast('Location permission denied. Please choose your city.');
+          }
         }
       },
       {

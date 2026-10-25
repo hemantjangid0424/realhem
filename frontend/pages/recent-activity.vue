@@ -28,17 +28,6 @@
 
                 <!-- Action Button -->
                 <div class="flex items-center gap-3 shrink-0 flex-wrap">
-                    <button
-                        v-if="currentTabCount > 0"
-                        type="button"
-                        @click="handleClearCurrentModule"
-                        class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 backdrop-blur-sm"
-                        title="Clear items in this tab"
-                    >
-                        <span>🗑️</span>
-                        <span>Clear {{ currentTabLabel }}</span>
-                    </button>
-
                     <router-link
                         to="/listings"
                         class="px-4 py-2.5 rounded-xl bg-white text-slate-900 font-extrabold text-xs shadow-md hover:bg-slate-100 transition flex items-center gap-1.5"
@@ -202,8 +191,9 @@
 
                             <!-- Search Criteria Badges -->
                             <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
-                                <span v-if="item.metadata?.city" class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
-                                    📍 {{ item.metadata?.city }}
+                                <span v-if="item.metadata?.city" class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold inline-flex items-center gap-1">
+                                    <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span>{{ item.metadata?.city }}</span>
                                 </span>
                                 <span v-if="item.metadata?.bhk" class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
                                     🛏️ {{ item.metadata?.bhk }} BHK
@@ -322,12 +312,14 @@
                                     ></video>
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
                                         <div class="w-9 h-9 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
-                                            <svg class="w-4 h-4 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <Play class="w-4 h-4 fill-current translate-x-0.5" />
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
-                                    <span class="text-3xl">🏠</span>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                    </div>
                                     <span class="text-[10px] font-semibold text-slate-400">No media</span>
                                 </div>
 
@@ -351,7 +343,7 @@
                                         class="w-7 h-7 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white text-xs flex items-center justify-center shadow-md transition cursor-pointer"
                                         title="Remove from history"
                                     >
-                                        ✕
+                                        <X class="w-3.5 h-3.5" />
                                     </button>
                                 </div>
 
@@ -370,10 +362,10 @@
                                             class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
                                             :title="getItemPhotoCount(act) === 0 ? 'View video tour' : 'View media gallery'"
                                         >
-                                            <span v-if="getItemPhotoCount(act) === 0">🎥</span>
-                                            <span v-else>📷</span>
+                                            <Video v-if="getItemPhotoCount(act) === 0" class="w-3 h-3 text-purple-300" />
+                                            <Camera v-else class="w-3 h-3" />
                                             <span>{{ getItemMediaCount(act) }}</span>
-                                            <span v-if="getItemVideoCount(act) > 0 && getItemPhotoCount(act) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                            <Video v-if="getItemVideoCount(act) > 0 && getItemPhotoCount(act) > 0" class="text-purple-300 text-[9px] font-bold" />
                                         </button>
                                     </div>
                                 </div>
@@ -385,7 +377,7 @@
                                         {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
                                     </h3>
                                     <p class="text-xs text-slate-500 line-clamp-1 flex items-center gap-1">
-                                        <span>📍</span>
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
                                         <span>{{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}</span>
                                     </p>
                                 </div>
@@ -468,18 +460,20 @@
                                     ></video>
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
                                         <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
-                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <Play class="w-3.5 h-3.5 fill-current translate-x-0.5" />
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
-                                    <span class="text-3xl">🏠</span>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                    </div>
                                     <span class="text-[10px] font-semibold text-slate-400">No media</span>
                                 </div>
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
                                     <span class="px-2.5 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        <Heart class="w-3 h-3 fill-current" />
                                         <span>Favourited</span>
                                     </span>
                                 </div>
@@ -508,10 +502,10 @@
                                             class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
                                             :title="getItemPhotoCount(item) === 0 ? 'View video tour' : 'View media gallery'"
                                         >
-                                            <span v-if="getItemPhotoCount(item) === 0">🎥</span>
-                                            <span v-else>📷</span>
+                                            <Video v-if="getItemPhotoCount(item) === 0" class="w-3 h-3 text-purple-300" />
+                                            <Camera v-else class="w-3 h-3" />
                                             <span>{{ getItemMediaCount(item) }}</span>
-                                            <span v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                            <Video v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold" />
                                         </button>
                                     </div>
                                 </div>
@@ -523,7 +517,7 @@
                                         {{ item.property?.title || item.metadata?.title || 'Shortlisted Property' }}
                                     </h3>
                                     <p class="text-xs text-slate-500 line-clamp-1 flex items-center gap-1">
-                                        <span>📍</span>
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
                                         <span>{{ item.property?.locality || item.metadata?.locality || '' }}{{ (item.property?.city || item.metadata?.city) ? ', ' + (item.property?.city || item.metadata?.city) : '' }}</span>
                                     </p>
                                 </div>
@@ -600,18 +594,21 @@
                                     ></video>
                                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
                                         <div class="w-8 h-8 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-md">
-                                            <svg class="w-3.5 h-3.5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <Play class="w-3.5 h-3.5 fill-current translate-x-0.5" />
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1">
-                                    <span class="text-3xl">🏠</span>
+                                <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                    </div>
                                     <span class="text-[10px] font-semibold text-slate-400">No media</span>
                                 </div>
 
                                 <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
-                                    <span class="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                                        <span>✓</span> Contacted
+                                    <span class="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                                        <Check class="w-3 h-3 text-white" :stroke-width="3" />
+                                        <span>Contacted</span>
                                     </span>
                                 </div>
 
@@ -621,7 +618,7 @@
                                     class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white text-xs flex items-center justify-center shadow-md transition cursor-pointer z-20"
                                     title="Remove from contacted"
                                 >
-                                    ✕
+                                    <X class="w-3.5 h-3.5" />
                                 </button>
 
                                 <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent p-3 pt-6 flex items-end justify-between z-10">
@@ -635,10 +632,10 @@
                                         class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs border border-white/10"
                                         :title="getItemPhotoCount(item) === 0 ? 'View video tour' : 'View media gallery'"
                                     >
-                                        <span v-if="getItemPhotoCount(item) === 0">🎥</span>
-                                        <span v-else>📷</span>
+                                        <Video v-if="getItemPhotoCount(item) === 0" class="w-3 h-3 text-purple-300" />
+                                        <Camera v-else class="w-3 h-3" />
                                         <span>{{ getItemMediaCount(item) }}</span>
-                                        <span v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                        <Video v-if="getItemVideoCount(item) > 0 && getItemPhotoCount(item) > 0" class="text-purple-300 text-[9px] font-bold" />
                                     </button>
                                 </div>
                             </div>
@@ -649,7 +646,7 @@
                                         {{ item.property?.title || item.metadata?.title || 'Contacted Property' }}
                                     </h3>
                                     <p class="text-xs text-slate-500 line-clamp-1 flex items-center gap-1">
-                                        <span>📍</span>
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
                                         <span>{{ item.property?.locality || item.metadata?.locality || '' }}{{ (item.property?.city || item.metadata?.city) ? ', ' + (item.property?.city || item.metadata?.city) : '' }}</span>
                                     </p>
                                 </div>
@@ -682,6 +679,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import {
+    Camera,
+    Video,
+    MapPin,
+    Play,
+    Check,
+    X,
+    Building2,
+} from 'lucide-vue-next';
 import AuthModal from '~/components/AuthModal.vue';
 import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
 
@@ -701,7 +707,6 @@ const {
     toggleShortlist,
     loadAllActivities,
     removeItem,
-    clearActivityType,
     syncGuestActivitiesToServer,
 } = useUserActivity();
 
@@ -730,7 +735,7 @@ const openImageGallery = (property: any, index = 0) => {
 
 const getItemPhoto = (item: any) => {
     const photo = item?.property?.photos?.[0] || item?.metadata?.photo;
-    if (photo && typeof photo === 'string' && !photo.includes('unsplash.com')) {
+    if (photo && typeof photo === 'string') {
         return photo;
     }
     return null;
@@ -748,7 +753,7 @@ const getItemPhotoCount = (item: any) => {
     if (Array.isArray(item?.property?.photos) && item.property.photos.length > 0) {
         return item.property.photos.length;
     }
-    if (item?.metadata?.photo && typeof item.metadata.photo === 'string' && !item.metadata.photo.includes('unsplash.com')) {
+    if (item?.metadata?.photo && typeof item.metadata.photo === 'string') {
         return 1;
     }
     return 0;
@@ -904,21 +909,6 @@ const replaySearch = (item: any) => {
         path: '/listings',
         query: queryParams,
     });
-};
-
-const handleClearCurrentModule = async () => {
-    if (!confirm(`Are you sure you want to clear your ${currentTabLabel.value}?`)) {
-        return;
-    }
-    if (activeModule.value === 'searches') {
-        await clearActivityType('recent_search');
-    } else if (activeModule.value === 'viewed') {
-        await clearActivityType('view_property');
-    } else if (activeModule.value === 'shortlisted') {
-        await clearActivityType('shortlist');
-    } else if (activeModule.value === 'contacted') {
-        await clearActivityType('contacted');
-    }
 };
 
 const handleActivityUpdated = (e) => {

@@ -263,7 +263,7 @@ class LocationController extends Controller
             }
         }
 
-        $detectedCity = $detectedCity ?: 'Delhi NCR';
+        $detectedCity = $detectedCity ?: 'Ahmedabad';
         $nearbyList = GeocodingService::getNearbyLocalities($detectedCity, $detectedLocality, $lat, $lng);
 
         return response()->json([

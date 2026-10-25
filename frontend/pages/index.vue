@@ -356,8 +356,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1">
-                                    <span class="text-2xl">🏠</span>
+                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                    </div>
                                     <span class="text-[9px] font-semibold text-slate-400">No media</span>
                                 </div>
 
@@ -381,7 +383,7 @@
                                     class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View photo gallery"
                                 >
-                                    <span>📷</span>
+                                    <Camera class="w-3 h-3" />
                                     <span>{{ getItemPhotoCount(act) }}</span>
                                 </button>
                                 <button
@@ -391,7 +393,7 @@
                                     class="absolute bottom-2 right-2 bg-purple-600/90 hover:bg-purple-600 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View video tour"
                                 >
-                                    <span>🎥</span>
+                                    <Video class="w-3 h-3" />
                                     <span>{{ getItemVideoCount(act) }}</span>
                                 </button>
                             </div>
@@ -401,8 +403,9 @@
                                     <h4 class="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-blue-600 transition">
                                         {{ act.property?.title || act.metadata?.title || 'Property Listing' }}
                                     </h4>
-                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate">
-                                        📍 {{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}
+                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
+                                        <span>{{ act.property?.locality || act.metadata?.locality || '' }}{{ (act.property?.city || act.metadata?.city) ? ', ' + (act.property?.city || act.metadata?.city) : '' }}</span>
                                     </p>
                                 </div>
                                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -459,8 +462,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1">
-                                    <span class="text-2xl">🏠</span>
+                                <div v-else class="flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                        <Camera class="w-5 h-5 text-slate-400" />
+                                    </div>
                                     <span class="text-[9px] font-semibold text-slate-400">No media</span>
                                 </div>
 
@@ -480,7 +485,7 @@
                                     class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View photo gallery"
                                 >
-                                    <span>📷</span>
+                                    <Camera class="w-3 h-3" />
                                     <span>{{ getItemPhotoCount(item) }}</span>
                                 </button>
                                 <button
@@ -490,7 +495,7 @@
                                     class="absolute bottom-2 right-2 bg-purple-600/90 hover:bg-purple-600 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer z-20 shadow-xs"
                                     title="View video tour"
                                 >
-                                    <span>🎥</span>
+                                    <Video class="w-3 h-3" />
                                     <span>{{ getItemVideoCount(item) }}</span>
                                 </button>
                             </div>
@@ -500,8 +505,9 @@
                                     <h4 class="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-rose-600 transition">
                                         {{ item.property?.title || item.metadata?.title || 'Shortlisted Property' }}
                                     </h4>
-                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate">
-                                        📍 {{ item.property?.locality || item.metadata?.locality || '' }}{{ (item.property?.city || item.metadata?.city) ? ', ' + (item.property?.city || item.metadata?.city) : '' }}
+                                    <p class="text-[10px] text-slate-500 mt-0.5 truncate flex items-center gap-1">
+                                        <MapPin class="w-3 h-3 text-slate-400 shrink-0" />
+                                        <span>{{ item.property?.locality || item.metadata?.locality || '' }}{{ (item.property?.city || item.metadata?.city) ? ', ' + (item.property?.city || item.metadata?.city) : '' }}</span>
                                     </p>
                                 </div>
                                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -595,7 +601,12 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="text-3xl">🏠</div>
+                        <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                            <div class="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center">
+                                <Camera class="w-5 h-5 text-slate-400" />
+                            </div>
+                            <span class="text-[9px] font-semibold text-slate-400">No media</span>
+                        </div>
 
                         <!-- Badge Overlay -->
                         <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-20">
@@ -662,10 +673,10 @@
                                     class="bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-all duration-200 hover:scale-105 cursor-pointer shadow-xs border border-white/10"
                                     :title="(!prop.photos || prop.photos.length === 0) ? 'View video tour' : 'View media gallery'"
                                 >
-                                    <span v-if="!prop.photos || prop.photos.length === 0">🎥</span>
-                                    <span v-else>📷</span>
+                                    <Video v-if="!prop.photos || prop.photos.length === 0" class="w-3 h-3 text-purple-300" />
+                                    <Camera v-else class="w-3 h-3" />
                                     <span>{{ (prop.photos?.length || 0) + (prop.videos?.length || 0) }}</span>
-                                    <span v-if="prop.videos && prop.videos.length > 0 && prop.photos && prop.photos.length > 0" class="text-purple-300 text-[9px] font-bold">🎥</span>
+                                    <Video v-if="prop.videos && prop.videos.length > 0 && prop.photos && prop.photos.length > 0" class="w-3 h-3 text-purple-300" />
                                 </button>
                             </div>
                         </div>
@@ -928,6 +939,8 @@ import {
     MapPin,
     Building2,
     Home,
+    Camera,
+    Video,
     Play,
     Heart,
     Star,
@@ -954,7 +967,7 @@ const openImageGallery = (prop, index = 0) => {
 
 const getItemPhoto = (item) => {
     const photo = item?.property?.photos?.[0] || item?.metadata?.photo;
-    if (photo && typeof photo === 'string' && !photo.includes('unsplash.com')) {
+    if (photo && typeof photo === 'string') {
         return photo;
     }
     return null;
@@ -972,7 +985,7 @@ const getItemPhotoCount = (item) => {
     if (Array.isArray(item?.property?.photos) && item.property.photos.length > 0) {
         return item.property.photos.length;
     }
-    if (item?.metadata?.photo && typeof item.metadata.photo === 'string' && !item.metadata.photo.includes('unsplash.com')) {
+    if (item?.metadata?.photo && typeof item.metadata.photo === 'string') {
         return 1;
     }
     return 0;
@@ -1335,12 +1348,15 @@ const formatPriceWords = (val) => {
     return `₹ ${num.toLocaleString('en-IN')}`;
 };
 
-const { data: propertiesResponse } = await useAsyncData('home_featured_properties', async () => {
+const { data: propertiesResponse } = useLazyAsyncData('home_featured_properties', async () => {
     const { get } = useApi();
     try {
         const data = await get('/api/properties');
         return data;
-    } catch {
+    } catch (err) {
+        if (err?.name === 'AbortError' || err?.isAbort) {
+            return { data: [] };
+        }
         return { data: [] };
     }
 }, { default: () => ({ data: [] }) });
