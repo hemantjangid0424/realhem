@@ -6,12 +6,13 @@
     </main>
     <ClientFooter />
     <VoiceSearchModal />
+    <FloatingActivityButton />
 
     <!-- Floating Location Feedback Toast -->
     <transition name="toast-slide">
       <div
         v-if="locationToast"
-        class="fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white text-xs font-bold py-2.5 px-4 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-700/80 backdrop-blur-md animate-fadeIn"
+        class="fixed bottom-20 right-5 sm:bottom-22 sm:right-7 z-50 bg-slate-900/95 text-white text-xs font-bold py-2.5 px-4 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-700/80 backdrop-blur-md animate-fadeIn"
       >
         <span>{{ locationToast }}</span>
       </div>

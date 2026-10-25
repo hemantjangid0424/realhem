@@ -108,15 +108,16 @@
                         </div>
 
                         <!-- Overlay badges -->
-                        <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
+                        <div class="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-30 pointer-events-none">
                             <!-- Featured Badge -->
                             <span
                                 v-if="property.is_featured"
-                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
+                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm pointer-events-auto"
                                 title="Featured Listing"
+                                @click.stop.prevent
                             >
                                 <Star class="w-3.5 h-3.5 fill-current shrink-0" />
-                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-36 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-40 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     FEATURED LISTING
                                 </span>
                             </span>
@@ -124,11 +125,12 @@
                             <!-- Verified Badge -->
                             <span
                                 v-if="property.is_verified"
-                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm"
+                                class="group/badge h-7 px-2 hover:px-3 rounded-full bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center transition-all duration-300 ease-out hover:scale-105 hover:shadow-md cursor-pointer backdrop-blur-sm pointer-events-auto"
                                 title="Verified Partner"
+                                @click.stop.prevent
                             >
                                 <Check class="w-3.5 h-3.5 text-white shrink-0" :stroke-width="3" />
-                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-40 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
+                                <span class="max-w-0 opacity-0 group-hover/badge:max-w-44 group-hover/badge:opacity-100 group-hover/badge:pl-1.5 overflow-hidden whitespace-nowrap transition-all duration-300 ease-out">
                                     VERIFIED BY REALHEM
                                 </span>
                             </span>

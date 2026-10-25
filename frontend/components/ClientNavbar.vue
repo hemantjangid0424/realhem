@@ -88,7 +88,7 @@
                     <!-- CENTER: STICKY SEARCH BAR OR NAV LINKS (Smooth Crossfade with Fixed Layout) -->
                     <div
                         class="items-center justify-center min-w-0"
-                        :class="isScrolled ? 'flex flex-1 max-w-xl mx-2 sm:mx-6' : 'hidden lg:flex flex-1 max-w-xl mx-6'"
+                        :class="isScrolled ? 'flex flex-1 max-w-xl mx-2 sm:mx-6' : 'hidden lg:flex flex-1 max-w-2xl mx-2 xl:mx-6'"
                     >
                         <transition name="nav-fade" mode="out-in">
                             <!-- Sticky Search Bar -->
@@ -245,34 +245,39 @@
                             </div>
 
                             <!-- Default Navigation Links -->
-                            <nav v-else key="nav" class="hidden lg:flex items-center gap-1">
+                            <nav v-else key="nav" class="hidden lg:flex items-center gap-0.5 xl:gap-1.5 flex-nowrap shrink-0">
                                 <router-link
                                     :to="{ path: '/listings', query: { type: 'buy', city: selectedCity } }"
-                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                    class="px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition whitespace-nowrap"
+                                    :class="{ 'text-blue-600 font-bold bg-blue-50/60': route.path === '/listings' && (route.query.type === 'buy' || (!route.query.type && !route.query.keyword)) }"
                                 >
                                     Buy
                                 </router-link>
                                 <router-link
                                     :to="{ path: '/listings', query: { type: 'rent', city: selectedCity } }"
-                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                    class="px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition whitespace-nowrap"
+                                    :class="{ 'text-blue-600 font-bold bg-blue-50/60': route.path === '/listings' && route.query.type === 'rent' }"
                                 >
                                     Rent
                                 </router-link>
                                 <router-link
                                     :to="{ path: '/listings', query: { type: 'commercial', city: selectedCity } }"
-                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                    class="px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition whitespace-nowrap"
+                                    :class="{ 'text-blue-600 font-bold bg-blue-50/60': route.path === '/listings' && route.query.type === 'commercial' }"
                                 >
                                     Commercial
                                 </router-link>
                                 <router-link
                                     :to="{ path: '/listings', query: { type: 'plots', city: selectedCity } }"
-                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                    class="px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition whitespace-nowrap"
+                                    :class="{ 'text-blue-600 font-bold bg-blue-50/60': route.path === '/listings' && (route.query.type === 'plots' || route.query.type === 'plots_land') }"
                                 >
                                     Plots / Land
                                 </router-link>
                                 <router-link
                                     to="/brokers"
-                                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition"
+                                    class="px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50/50 transition whitespace-nowrap"
+                                    :class="{ 'text-blue-600 font-bold bg-blue-50/60': route.path === '/brokers' }"
                                 >
                                     Brokers &amp; Builders
                                 </router-link>
@@ -282,24 +287,6 @@
 
                 <!-- Right Side Actions: Post Property, User Profile, Hamburger -->
                 <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-                    <!-- Recently Viewed Indicator Button (Visible for all when count > 0) -->
-                    <router-link
-                        v-if="totalActivityCount > 0"
-                        to="/recent-activity"
-                        class="inline-flex items-center gap-1 sm:gap-1.5 py-1.5 px-2 sm:px-3 rounded-full text-xs font-bold transition cursor-pointer group shadow-2xs"
-                        :class="isScrolled ? 'text-white hover:bg-white/15 border border-white/30' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 bg-white'"
-                        title="View Recent Activity (Searches, Viewed, Shortlist)"
-                    >
-                        <Activity class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                        <span class="hidden md:inline">Activity</span>
-                        <span
-                            class="px-1.5 py-0.2 rounded-full text-[10px] font-black"
-                            :class="isScrolled ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'"
-                        >
-                            {{ totalActivityCount }}
-                        </span>
-                    </router-link>
-
                     <!-- Post Property FREE CTA -->
                     <router-link
                         to="/post-property"

@@ -222,7 +222,7 @@
 
         <!-- Recent Activity Modules on Homepage: Recent Searches | Viewed | Shortlisted -->
         <section
-            v-if="recentSearches.length > 0 || recentActivities.length > 0 || shortlistedProperties.length > 0"
+            v-if="searchCount > 0 || viewedCount > 0 || shortlistCount > 0 || contactedCount > 0"
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
         >
             <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-6 space-y-5">
@@ -231,6 +231,7 @@
                     <div class="flex items-center gap-6 sm:gap-10 overflow-x-auto scrollbar-none">
                         <!-- Recent Searches -->
                         <button
+                            v-if="searchCount > 0"
                             type="button"
                             @click="homeActivityTab = 'searches'"
                             class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
@@ -241,6 +242,7 @@
 
                         <!-- Viewed -->
                         <button
+                            v-if="viewedCount > 0"
                             type="button"
                             @click="homeActivityTab = 'viewed'"
                             class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
@@ -251,6 +253,7 @@
 
                         <!-- Shortlisted -->
                         <button
+                            v-if="shortlistCount > 0"
                             type="button"
                             @click="homeActivityTab = 'shortlisted'"
                             class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
@@ -261,6 +264,7 @@
 
                         <!-- Contacted -->
                         <button
+                            v-if="contactedCount > 0"
                             type="button"
                             @click="homeActivityTab = 'contacted'"
                             class="pb-3 text-sm sm:text-base font-bold whitespace-nowrap transition cursor-pointer relative"
@@ -656,7 +660,7 @@
                         <!-- Custom Heart Shortlist Button (Top Right Corner) -->
                         <div class="absolute top-3 right-3 z-30" @click.stop.prevent>
                             <ShortlistButton
-                                :property="{ id: prop.id, title: prop.title, slug: prop.slug, property_type: prop.category, expected_price: prop.price, photos: prop.photos, locality: prop.locality, city: prop.city, carpet_area: prop.area }"
+                                :property="{ id: prop.id, title: prop.title, slug: prop.slug, property_type: prop.category, expected_price: prop.expected_price || prop.price, photos: prop.photos, locality: prop.locality, city: prop.city, carpet_area: prop.area }"
                                 :propertyId="prop.id"
                                 size="sm"
                             />
@@ -1034,6 +1038,27 @@ const {
 } = useUserActivity();
 
 const homeActivityTab = ref('viewed');
+
+// Keep homeActivityTab synchronized to a tab that actually has records (> 0)
+watch(
+    [searchCount, viewedCount, shortlistCount, contactedCount],
+    ([sc, vc, slc, cc]) => {
+        const counts = {
+            searches: sc || 0,
+            viewed: vc || 0,
+            shortlisted: slc || 0,
+            contacted: cc || 0,
+        };
+        // If current tab is empty or has 0 records, switch to first visible tab
+        if (!counts[homeActivityTab.value] || counts[homeActivityTab.value] === 0) {
+            if (vc > 0) homeActivityTab.value = 'viewed';
+            else if (slc > 0) homeActivityTab.value = 'shortlisted';
+            else if (sc > 0) homeActivityTab.value = 'searches';
+            else if (cc > 0) homeActivityTab.value = 'contacted';
+        }
+    },
+    { immediate: true }
+);
 const { openVoiceModal, parseVoiceQuery } = useVoiceSearch();
 const { currentCity, isDetectingLocation, detectLocation, setCity } = useUserLocation();
 const {
@@ -1353,8 +1378,14 @@ const quickServices = [
 const apiProperties = ref([]);
 
 const formatPriceWords = (val) => {
-    if (!val || val <= 0) return 'Price on Request';
+    if (!val) return 'Price on Request';
+    if (typeof val === 'string' && (val.includes('₹') || val.includes('Cr') || val.includes('L') || val.includes('Lakh'))) {
+        return val;
+    }
     const num = Number(val);
+    if (isNaN(num) || num <= 0) {
+        return typeof val === 'string' && val.trim() ? val : 'Price on Request';
+    }
     if (num >= 10000000) {
         const cr = (num / 10000000).toFixed(2);
         return `₹ ${cr.replace(/\.00$/, '')} Cr`;
@@ -1394,6 +1425,7 @@ watch(() => propertiesResponse.value, (data) => {
                     bhk: isRes && bedrooms > 0 ? `${bedrooms} BHK` : '',
                     bedrooms: bedrooms,
                     price: formatPriceWords(p.expected_price),
+                    expected_price: p.expected_price,
                     rate: p.price_per_sqft ? `₹ ${Number(p.price_per_sqft).toLocaleString('en-IN')}/sq.ft` : '',
                     locality: p.locality || '',
                     city: p.city || '',
@@ -1454,12 +1486,14 @@ const handleActivityUpdated = (e) => {
 
 onMounted(async () => {
     await loadAllActivities();
-    if (viewedCount.value === 0 && searchCount.value > 0) {
-        homeActivityTab.value = 'searches';
-    } else if (viewedCount.value > 0) {
+    if (viewedCount.value > 0) {
         homeActivityTab.value = 'viewed';
     } else if (shortlistCount.value > 0) {
         homeActivityTab.value = 'shortlisted';
+    } else if (searchCount.value > 0) {
+        homeActivityTab.value = 'searches';
+    } else if (contactedCount.value > 0) {
+        homeActivityTab.value = 'contacted';
     }
     if (import.meta.client) {
         window.addEventListener('realhem-activity-logged', handleActivityUpdated);

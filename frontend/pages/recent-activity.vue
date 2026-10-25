@@ -822,8 +822,14 @@ const handleUserAuthenticated = async () => {
 };
 
 const formatPrice = (val: any) => {
-    if (!val || Number(val) <= 0) return 'Price on Request';
+    if (!val) return 'Price on Request';
+    if (typeof val === 'string' && (val.includes('₹') || val.includes('Cr') || val.includes('L') || val.includes('Lakh'))) {
+        return val;
+    }
     const num = Number(val);
+    if (isNaN(num) || num <= 0) {
+        return typeof val === 'string' && val.trim() ? val : 'Price on Request';
+    }
     if (num >= 10000000) {
         const cr = (num / 10000000).toFixed(2);
         return `₹ ${cr.replace(/\.00$/, '')} Cr`;
