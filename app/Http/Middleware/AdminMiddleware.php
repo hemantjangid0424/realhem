@@ -9,12 +9,18 @@ use Symfony\Component\HttpFoundation\Response;
 class AdminMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Handle an incoming request and ensure user has administrative privileges.
      *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (! $request->user() || ! $request->user()->isAdmin()) {
+            return response()->json([
+                'message' => 'Access denied. Administrative privileges are required.',
+            ], 403);
+        }
+
         return $next($request);
     }
 }

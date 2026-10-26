@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\AdminLoginRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,12 +15,9 @@ class AdminAuthController extends Controller
     /**
      * Handle an admin login request.
      */
-    public function login(Request $request): JsonResponse
+    public function login(AdminLoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         /** @var User|null $user */
         $user = User::where('email', $validated['email'])->first();

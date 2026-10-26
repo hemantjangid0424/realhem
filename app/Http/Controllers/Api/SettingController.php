@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Setting\UpdateLegalSettingsRequest;
+use App\Http\Requests\Setting\UpdateSettingRequest;
+use App\Http\Requests\Setting\UploadAssetRequest;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -36,13 +38,8 @@ class SettingController extends Controller
     /**
      * Upload branding asset (Logo or Favicon).
      */
-    public function uploadAsset(Request $request): JsonResponse
+    public function uploadAsset(UploadAssetRequest $request): JsonResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:png,jpg,jpeg,svg,webp,ico|max:4096',
-            'type' => 'nullable|string|in:logo,favicon,general',
-        ]);
-
         $file = $request->file('file');
         $prefix = $request->input('type', 'brand');
         $filename = $prefix.'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
@@ -59,33 +56,9 @@ class SettingController extends Controller
     /**
      * Update branding and company settings (Admin only).
      */
-    public function update(Request $request): JsonResponse
+    public function update(UpdateSettingRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'company_name' => 'required|string|max:100',
-            'company_short_name' => 'required|string|max:10',
-            'company_tagline' => 'required|string|max:255',
-            'company_sub_tagline' => 'nullable|string|max:255',
-            'company_logo_url' => 'nullable|string|max:500',
-            'company_favicon_url' => 'nullable|string|max:500',
-            'company_phone' => 'nullable|string|max:50',
-            'company_email' => 'nullable|email|max:100',
-            'brand_primary_color' => 'nullable|string|max:20',
-            'brand_secondary_color' => 'nullable|string|max:20',
-            'brand_accent_color' => 'nullable|string|max:20',
-            'theme_font_family' => 'nullable|string|max:50',
-            'theme_border_radius' => 'nullable|string|max:20',
-            'header_style' => 'nullable|string|max:50',
-            'hero_style' => 'nullable|string|max:50',
-            'festival_animation' => 'nullable|string|max:50',
-            'banner_enabled' => 'nullable|string|max:10',
-            'banner_text' => 'nullable|string|max:500',
-            'banner_badge' => 'nullable|string|max:50',
-            'banner_link' => 'nullable|string|max:255',
-            'footer_style' => 'nullable|string|max:50',
-            'footer_about' => 'nullable|string|max:1000',
-            'copyright_text' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated as $key => $value) {
             $group = match ($key) {
@@ -127,16 +100,9 @@ class SettingController extends Controller
     /**
      * Update legal pages and statutory policy texts (Admin only).
      */
-    public function updateLegalSettings(Request $request): JsonResponse
+    public function updateLegalSettings(UpdateLegalSettingsRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'terms' => 'nullable|string',
-            'privacy' => 'nullable|string',
-            'rera' => 'nullable|string',
-            'refund' => 'nullable|string',
-            'updated_at' => 'nullable|string|max:50',
-            'version' => 'nullable|string|max:20',
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated as $key => $value) {
             Setting::set("legal_{$key}", (string) ($value ?? ''), 'legal');

@@ -14,6 +14,8 @@ class AdminPropertyController extends Controller
     /**
      * Columns loaded for index view.
      * Includes all essential listing attributes.
+     *
+     * @var list<string>
      */
     private const INDEX_COLUMNS = [
         'id', 'user_id', 'user_type', 'property_for', 'property_type',
@@ -27,40 +29,20 @@ class AdminPropertyController extends Controller
     ];
 
     /**
-     * Check administrative privileges for all actions.
-     */
-    protected function authorizeAdmin(Request $request): ?JsonResponse
-    {
-        if (! $request->user() || ! $request->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Access denied. Administrative privileges are required.',
-            ], 403);
-        }
-
-        return null;
-    }
-
-    /**
      * Get paginated properties list with search, status filters, and summary metrics.
      */
     public function index(Request $request): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         // Summary counts for tabs and badges (cached to protect database at scale)
-        $counts = Cache::remember('admin_property_counts', 60, function () {
-            return [
-                'total' => Property::count(),
-                'pending' => Property::whereIn('status', ['pending', 'pending_approval'])->count(),
-                'active' => Property::where('status', 'active')->count(),
-                'rejected' => Property::where('status', 'rejected')->count(),
-                'inactive' => Property::whereIn('status', ['inactive', 'sold', 'rented'])->count(),
-                'verified' => Property::where('is_verified', true)->count(),
-                'featured' => Property::where('is_featured', true)->count(),
-            ];
-        });
+        $counts = Cache::remember('admin_property_counts', 60, fn () => [
+            'total' => Property::count(),
+            'pending' => Property::whereIn('status', ['pending', 'pending_approval'])->count(),
+            'active' => Property::where('status', 'active')->count(),
+            'rejected' => Property::where('status', 'rejected')->count(),
+            'inactive' => Property::whereIn('status', ['inactive', 'sold', 'rented'])->count(),
+            'verified' => Property::where('is_verified', true)->count(),
+            'featured' => Property::where('is_featured', true)->count(),
+        ]);
 
         $query = Property::query()
             ->select(self::INDEX_COLUMNS)
@@ -103,7 +85,6 @@ class AdminPropertyController extends Controller
             $rawSearch = trim((string) $request->query('search'));
 
             if (preg_match('/^#?(\d+)$/', $rawSearch, $matches)) {
-                // Instant O(1) primary key lookup
                 $query->where('id', (int) $matches[1]);
             } else {
                 $search = '%'.$rawSearch.'%';
@@ -159,12 +140,8 @@ class AdminPropertyController extends Controller
     /**
      * Get single property detail with complete owner information and photos for review.
      */
-    public function show(Request $request, Property $property): JsonResponse
+    public function show(Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $property->load('user:id,name,email,mobile,country_code,role');
 
         return response()->json([
@@ -178,10 +155,6 @@ class AdminPropertyController extends Controller
      */
     public function approve(Request $request, Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $verify = $request->boolean('verify', true);
 
         $property->status = 'active';
@@ -202,12 +175,8 @@ class AdminPropertyController extends Controller
     /**
      * Reject a property listing.
      */
-    public function reject(Request $request, Property $property): JsonResponse
+    public function reject(Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $property->status = 'rejected';
         $property->save();
         $property->load('user:id,name,email,mobile,country_code,role');
@@ -225,10 +194,6 @@ class AdminPropertyController extends Controller
      */
     public function updateStatus(Request $request, Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $validated = $request->validate([
             'status' => ['required', 'string', Rule::in(['active', 'pending', 'pending_approval', 'rejected', 'inactive', 'sold', 'rented'])],
         ]);
@@ -248,12 +213,8 @@ class AdminPropertyController extends Controller
     /**
      * Toggle verified badge on the property.
      */
-    public function toggleVerified(Request $request, Property $property): JsonResponse
+    public function toggleVerified(Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $property->is_verified = ! $property->is_verified;
         $property->save();
         $property->load('user:id,name,email,mobile,country_code,role');
@@ -271,12 +232,8 @@ class AdminPropertyController extends Controller
     /**
      * Toggle featured badge on the property.
      */
-    public function toggleFeatured(Request $request, Property $property): JsonResponse
+    public function toggleFeatured(Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $property->is_featured = ! $property->is_featured;
         $property->save();
         $property->load('user:id,name,email,mobile,country_code,role');
@@ -296,10 +253,6 @@ class AdminPropertyController extends Controller
      */
     public function update(Request $request, Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -347,12 +300,8 @@ class AdminPropertyController extends Controller
     /**
      * Permanently delete a property from the portal.
      */
-    public function destroy(Request $request, Property $property): JsonResponse
+    public function destroy(Property $property): JsonResponse
     {
-        if ($deny = $this->authorizeAdmin($request)) {
-            return $deny;
-        }
-
         $property->delete();
         $this->clearCountsCache();
 

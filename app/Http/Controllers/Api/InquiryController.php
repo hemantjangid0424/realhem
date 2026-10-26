@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inquiry\StoreInquiryRequest;
+use App\Http\Requests\Inquiry\UpdateInquiryStatusRequest;
 use App\Models\Inquiry;
 use App\Notifications\InquiryConfirmationNotification;
 use Illuminate\Http\JsonResponse;
@@ -15,19 +17,9 @@ class InquiryController extends Controller
     /**
      * Submit an inquiry, feedback, support request, or problem report (Public).
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreInquiryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'type' => 'required|string|in:contact,request_info,feedback,report_problem,career',
-            'name' => 'required|string|max:150',
-            'email' => 'required|email|max:150',
-            'phone' => 'nullable|string|max:30',
-            'subject' => 'nullable|string|max:200',
-            'message' => 'required|string|max:5000',
-            'rating' => 'nullable|integer|min:1|max:5',
-            'property_id' => 'nullable|integer|exists:properties,id',
-            'metadata' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         $inquiry = Inquiry::create([
             'type' => $validated['type'],
@@ -123,19 +115,16 @@ class InquiryController extends Controller
     /**
      * Update inquiry/report status (Admin only).
      */
-    public function updateStatus(Request $request, Inquiry $inquiry): JsonResponse
+    public function updateStatus(UpdateInquiryStatusRequest $request, Inquiry $inquiry): JsonResponse
     {
-        $validated = $request->validate([
-            'status' => 'required|string|in:pending,resolved,dismissed',
-        ]);
-
+        $status = $request->validated('status');
         $inquiry->update([
-            'status' => $validated['status'],
+            'status' => $status,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Status updated to '.ucfirst($validated['status']).' successfully!',
+            'message' => 'Status updated to '.ucfirst($status).' successfully!',
             'inquiry' => $inquiry,
         ]);
     }

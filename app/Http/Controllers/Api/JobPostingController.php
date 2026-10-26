@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Job\StoreJobPostingRequest;
+use App\Http\Requests\Job\UpdateJobPostingRequest;
 use App\Models\JobPosting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,8 +12,6 @@ use Illuminate\Support\Str;
 
 class JobPostingController extends Controller
 {
-    /**
-     * Default starter job openings if database table is currently empty.
     /**
      * Public list of active job postings.
      */
@@ -85,20 +85,9 @@ class JobPostingController extends Controller
     /**
      * Store a newly created job posting.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreJobPostingRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'department' => 'required|string|max:100',
-            'location' => 'required|string|max:100',
-            'type' => 'required|string|max:50',
-            'experience' => 'nullable|string|max:100',
-            'tags' => 'nullable|array',
-            'description' => 'required|string|max:10000',
-            'requirements' => 'nullable|string|max:10000',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-        ]);
+        $validated = $request->validated();
 
         $baseSlug = Str::slug($validated['title']);
         $slug = $baseSlug;
@@ -121,21 +110,9 @@ class JobPostingController extends Controller
     /**
      * Update an existing job posting.
      */
-    public function update(Request $request, JobPosting $job): JsonResponse
+    public function update(UpdateJobPostingRequest $request, JobPosting $job): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'department' => 'required|string|max:100',
-            'location' => 'required|string|max:100',
-            'type' => 'required|string|max:50',
-            'experience' => 'nullable|string|max:100',
-            'tags' => 'nullable|array',
-            'description' => 'required|string|max:10000',
-            'requirements' => 'nullable|string|max:10000',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-        ]);
-
+        $validated = $request->validated();
         $job->update($validated);
 
         return response()->json([

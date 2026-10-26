@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\PropertyFor;
+use App\Filters\PropertyFilter;
 use Database\Factories\PropertyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -91,6 +93,18 @@ class Property extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Scope a query to apply search and criteria filters.
+     *
+     * @param  Builder<Property>  $query
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Property>
+     */
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        return app(PropertyFilter::class)->apply($query, $filters);
     }
 
     /**

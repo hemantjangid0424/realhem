@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
+use App\Models\Inquiry;
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -23,8 +25,8 @@ class AdminDashboardController extends Controller
             'total_buyers' => User::where('role', 'user')->count(),
             'total_properties' => Property::count(),
             'pending_verifications' => Property::whereIn('status', ['pending', 'pending_approval'])->orWhere('is_verified', false)->count(),
-            'total_inquiries' => 0,
-            'cities_count' => 8,
+            'total_inquiries' => Inquiry::count(),
+            'cities_count' => City::count() ?: 8,
         ];
 
         $recentUsers = User::latest()->take(6)->get(['id', 'name', 'email', 'role', 'created_at']);
@@ -44,7 +46,7 @@ class AdminDashboardController extends Controller
 
         $query = User::latest();
 
-        if ($role && in_array($role, ['admin', 'agent', 'owner', 'user'])) {
+        if ($role && in_array($role, ['admin', 'agent', 'owner', 'user'], true)) {
             $query->where('role', $role);
         }
 

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Activity\StoreUserActivityRequest;
+use App\Http\Requests\Activity\SyncUserActivitiesRequest;
+use App\Http\Requests\Activity\ToggleShortlistRequest;
 use App\Models\Property;
 use App\Models\UserActivity;
 use Illuminate\Http\JsonResponse;
@@ -33,14 +36,9 @@ class UserActivityController extends Controller
     /**
      * Store a new activity for the authenticated user.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserActivityRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'activity_type' => ['nullable', 'string', 'max:50'],
-            'property_id' => ['nullable', 'integer', 'exists:properties,id'],
-            'metadata' => ['nullable', 'array'],
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
         $activityType = $validated['activity_type'] ?? 'view_property';
         $propertyId = $validated['property_id'] ?? null;
@@ -98,13 +96,9 @@ class UserActivityController extends Controller
     /**
      * Toggle shortlist for a property.
      */
-    public function toggleShortlist(Request $request): JsonResponse
+    public function toggleShortlist(ToggleShortlistRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'property_id' => ['required', 'integer', 'exists:properties,id'],
-            'metadata' => ['nullable', 'array'],
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
         $propId = $validated['property_id'];
 
@@ -181,16 +175,9 @@ class UserActivityController extends Controller
     /**
      * Sync guest activities stored in local browser upon login.
      */
-    public function sync(Request $request): JsonResponse
+    public function sync(SyncUserActivitiesRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'activities' => ['required', 'array', 'max:100'],
-            'activities.*.property_id' => ['nullable', 'integer'],
-            'activities.*.activity_type' => ['nullable', 'string', 'max:50'],
-            'activities.*.metadata' => ['nullable', 'array'],
-            'activities.*.created_at' => ['nullable', 'string'],
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
         $syncedCount = 0;
 

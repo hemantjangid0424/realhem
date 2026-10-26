@@ -87,7 +87,7 @@ Route::get('/jobs', [JobPostingController::class, 'index']);
 Route::prefix('admin')->group(function () {
     Route::post('/auth/login', [AdminAuthController::class, 'login']);
 
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('/auth/me', [AdminAuthController::class, 'me']);
         Route::post('/auth/logout', [AdminAuthController::class, 'logout']);
         Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats']);
