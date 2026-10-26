@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Otp;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -75,12 +76,25 @@ class OtpService
     }
 
     /**
-     * Generate an OTP and store it in cache for 10 minutes.
+     * Generate an OTP and store it in both the database and cache.
      */
     public function generateAndStoreOtp(string $mobile, string $countryCode = '+91'): string
     {
         $otp = config('app.env') === 'production' ? (string) rand(1000, 9999) : '1234';
 
+        // Store OTP in database table `otps`
+        try {
+            Otp::create([
+                'country_code' => $countryCode,
+                'mobile' => $mobile,
+                'otp' => $otp,
+                'expires_at' => now()->addMinutes(10),
+            ]);
+        } catch (\Throwable $e) {
+            // graceful fallback if DB fails
+        }
+
+        // Keep cache for speed and backward compatibility
         Cache::put("otp_{$countryCode}_{$mobile}", $otp, now()->addMinutes(10));
         Cache::put("otp_{$mobile}", $otp, now()->addMinutes(10));
 
@@ -88,7 +102,7 @@ class OtpService
     }
 
     /**
-     * Verify the supplied OTP against cached records.
+     * Verify the supplied OTP against database records and cached entries.
      *
      * @throws ValidationException
      */
@@ -96,10 +110,43 @@ class OtpService
     {
         $cachedOtp = Cache::get("otp_{$countryCode}_{$mobile}") ?? Cache::get("otp_{$mobile}");
 
-        if ($otp !== '1234' && $otp !== $cachedOtp) {
+        /** @var Otp|null $dbOtp */
+        $dbOtp = null;
+        try {
+            $dbOtp = Otp::where('mobile', $mobile)
+                ->where(function ($q) use ($countryCode) {
+                    $q->where('country_code', $countryCode)
+                        ->orWhereNull('country_code');
+                })
+                ->where('expires_at', '>=', now())
+                ->whereNull('verified_at')
+                ->latest('id')
+                ->first();
+        } catch (\Throwable $e) {
+            // fallback to cache
+        }
+
+        $isValid = false;
+        if ($otp === '1234') {
+            $isValid = true;
+        } elseif ($dbOtp && $dbOtp->otp === $otp) {
+            $isValid = true;
+        } elseif ($cachedOtp && $cachedOtp === $otp) {
+            $isValid = true;
+        }
+
+        if (! $isValid) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP. Please try again.'],
             ]);
+        }
+
+        if ($dbOtp && ! $dbOtp->verified_at) {
+            try {
+                $dbOtp->update(['verified_at' => now()]);
+            } catch (\Throwable $e) {
+                // ignore
+            }
         }
 
         Cache::forget("otp_{$countryCode}_{$mobile}");

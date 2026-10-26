@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Otp;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +24,10 @@ test('user can request otp with valid 10-digit mobile number', function () {
         ]);
 
     expect(Cache::get('otp_9876543210'))->not->toBeNull();
+
+    $this->assertDatabaseHas('otps', [
+        'mobile' => '9876543210',
+    ]);
 });
 
 test('requesting otp fails with invalid mobile number', function () {
@@ -40,6 +45,13 @@ test('existing registered user can verify otp and immediately log in', function 
         'email' => 'amit@example.com',
         'mobile' => '9876543210',
         'role' => 'user',
+    ]);
+
+    Otp::create([
+        'country_code' => '+91',
+        'mobile' => '9876543210',
+        'otp' => '1234',
+        'expires_at' => now()->addMinutes(10),
     ]);
 
     Cache::put('otp_9876543210', '1234', now()->addMinutes(10));
@@ -60,6 +72,8 @@ test('existing registered user can verify otp and immediately log in', function 
             ],
         ])
         ->assertJsonStructure(['token', 'user']);
+
+    expect(Otp::where('mobile', '9876543210')->first()->verified_at)->not->toBeNull();
 });
 
 test('new user verifying otp receives requires_profile status with session token', function () {

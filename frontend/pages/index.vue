@@ -1405,7 +1405,7 @@ const formatPriceWords = (val) => {
 const { data: propertiesResponse } = useLazyAsyncData('home_featured_properties', async () => {
     const { get } = useApi();
     try {
-        const data = await get('/api/properties');
+        const data = await get('/api/properties?per_page=12&simple=1');
         return data;
     } catch (err) {
         if (err?.name === 'AbortError' || err?.isAbort) {

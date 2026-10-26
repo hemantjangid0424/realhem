@@ -140,6 +140,11 @@ class PropertyService
     public function clearCache(Property $property): void
     {
         Cache::forget("prop_show_{$property->id}");
+        if (Cache::has('prop_version')) {
+            Cache::increment('prop_version');
+        } else {
+            Cache::put('prop_version', 2, now()->addDays(30));
+        }
     }
 
     /**

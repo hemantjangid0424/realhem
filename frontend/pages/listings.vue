@@ -2351,7 +2351,9 @@ const mapPropertyItem = (p) => {
 const applyPropertiesData = (data, append = false, page = 1) => {
     if (!data) return;
     const list = data.data || (Array.isArray(data) ? data : []);
-    totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
+    if (!append || totalCount.value === 0) {
+        totalCount.value = data.total !== undefined ? Number(data.total) : list.length;
+    }
     hasNextPage.value = !!data.next_page_url;
     currentPage.value = data.current_page || page;
 
@@ -2369,6 +2371,9 @@ const fetchApiProperties = async (page = 1, append = false) => {
         const params = new URLSearchParams();
         params.set('page', String(page));
         params.set('per_page', '15');
+        if (page > 1) {
+            params.set('simple', '1');
+        }
 
         if (activeCity.value && activeCity.value !== 'All') {
             params.set('city', activeCity.value);
