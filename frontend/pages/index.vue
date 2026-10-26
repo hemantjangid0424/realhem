@@ -806,7 +806,7 @@
                         <div class="space-y-2">
                             <div class="flex items-center justify-between text-xs">
                                 <span class="font-semibold text-slate-600">Loan Amount:</span>
-                                <span class="font-black text-slate-900 text-sm">₹ {{ (loanAmount / 100000).toFixed(1) }} Lakhs</span>
+                                <span class="font-black text-slate-900 text-sm">{{ formatPriceWords(loanAmount) }}</span>
                             </div>
                             <input
                                 type="range"
@@ -817,6 +817,11 @@
                                 class="w-full cursor-pointer"
                                 :style="{ accentColor: brandPrimaryColor }"
                             />
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                                <span>₹ 5 Lakh</span>
+                                <span>₹ 1 Cr</span>
+                                <span>₹ 2 Cr</span>
+                            </div>
                         </div>
 
                         <!-- Interest Rate Slider -->
@@ -867,11 +872,11 @@
                         <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800 text-xs">
                             <div>
                                 <span class="text-slate-400 block">Principal Amount</span>
-                                <span class="font-bold text-slate-200">₹ {{ (loanAmount / 100000).toFixed(2) }} L</span>
+                                <span class="font-bold text-slate-200">{{ formatPriceWords(loanAmount) }}</span>
                             </div>
                             <div>
                                 <span class="text-slate-400 block">Total Interest</span>
-                                <span class="font-bold text-slate-200">₹ {{ (totalInterest / 100000).toFixed(2) }} L</span>
+                                <span class="font-bold text-slate-200">{{ formatPriceWords(totalInterest) }}</span>
                             </div>
                         </div>
 
@@ -1345,7 +1350,7 @@ const filterByCategory = (categoryType) => {
 };
 
 const applyHomeLoan = () => {
-    alert(`Home Loan pre-qualification initiated for ₹ ${(loanAmount.value / 100000).toFixed(1)} Lakhs at ${interestRate.value}%.`);
+    alert(`Home Loan pre-qualification initiated for ${formatPriceWords(loanAmount.value)} at ${interestRate.value}%.`);
 };
 
 // Home Loan Calculator Reactive State
@@ -1388,11 +1393,11 @@ const formatPriceWords = (val) => {
     }
     if (num >= 10000000) {
         const cr = (num / 10000000).toFixed(2);
-        return `₹ ${cr.replace(/\.00$/, '')} Cr`;
+        return `₹ ${cr.replace(/\.00$/, '').replace(/\.([0-9])0$/, '.$1')} Cr`;
     }
     if (num >= 100000) {
         const lk = (num / 100000).toFixed(2);
-        return `₹ ${lk.replace(/\.00$/, '')} L`;
+        return `₹ ${lk.replace(/\.00$/, '').replace(/\.([0-9])0$/, '.$1')} L`;
     }
     return `₹ ${num.toLocaleString('en-IN')}`;
 };
