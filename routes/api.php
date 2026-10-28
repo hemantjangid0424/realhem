@@ -31,6 +31,8 @@ Route::prefix('auth')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserAuthController::class, 'me']);
         Route::put('/profile', [UserAuthController::class, 'updateProfile']);
+        Route::post('/profile/avatar', [UserAuthController::class, 'uploadAvatar']);
+        Route::delete('/profile/avatar', [UserAuthController::class, 'deleteAvatar']);
         Route::post('/logout', [UserAuthController::class, 'logout']);
         Route::post('/email/resend', [UserAuthController::class, 'resendVerificationEmail']);
         Route::get('/email/status', [UserAuthController::class, 'emailVerificationStatus']);
@@ -59,6 +61,8 @@ Route::get('/property/{slugOrId}', [PropertyController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/user/profile', [UserAuthController::class, 'updateProfile']);
+    Route::post('/user/profile/avatar', [UserAuthController::class, 'uploadAvatar']);
+    Route::delete('/user/profile/avatar', [UserAuthController::class, 'deleteAvatar']);
     Route::post('/properties', [PropertyController::class, 'store']);
     Route::post('/properties/upload-photos', [PropertyController::class, 'uploadPhotos']);
     Route::post('/properties/upload-videos', [PropertyController::class, 'uploadVideos']);

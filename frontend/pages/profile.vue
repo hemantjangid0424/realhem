@@ -188,8 +188,30 @@
             <div class="max-w-5xl mx-auto">
                 <div v-if="currentUser" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                     <div class="flex items-center gap-4">
-                        <div class="w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg">
-                            {{ userInitials }}
+                        <!-- Avatar with Photo Upload Trigger -->
+                        <div class="relative group shrink-0">
+                            <img
+                                v-if="currentUser.avatar"
+                                :src="currentUser.avatar"
+                                :alt="currentUser.name"
+                                class="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/30"
+                            />
+                            <div
+                                v-else
+                                class="w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg"
+                            >
+                                {{ userInitials }}
+                            </div>
+                            <button
+                                type="button"
+                                @click="triggerAvatarFileSelect"
+                                :disabled="isUploadingAvatar"
+                                class="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-md border border-white/50 cursor-pointer transition transform hover:scale-110 disabled:opacity-50"
+                                title="Upload or change profile picture"
+                            >
+                                <Loader2 v-if="isUploadingAvatar" class="w-3.5 h-3.5 animate-spin" />
+                                <Camera v-else class="w-3.5 h-3.5" />
+                            </button>
                         </div>
                         <div>
                             <div class="flex items-center gap-2 flex-wrap">
@@ -565,89 +587,168 @@
                 <!-- ============================================== -->
                 <!-- TAB 2: EDIT PROFILE                            -->
                 <!-- ============================================== -->
-                <div v-else-if="activeTab === 'profile'" class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-2xl">
-                    <div class="border-b border-slate-100 pb-3 mb-6">
-                        <h3 class="text-lg font-black text-slate-900">Personal Information &amp; Preferences</h3>
-                        <p class="text-xs text-slate-500">Update your account name, email address, and real estate role.</p>
-                    </div>
-
-                    <form @submit.prevent="handleSaveProfile" class="space-y-5">
-                        <!-- Full Name -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Full Name</label>
-                            <input
-                                v-model="profileForm.name"
-                                type="text"
-                                required
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white"
-                            />
+                <div v-else-if="activeTab === 'profile'" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <!-- Left: Personal Information & Preferences Form (2 Cols) -->
+                    <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
+                        <div class="border-b border-slate-100 pb-3 mb-6">
+                            <h3 class="text-lg font-black text-slate-900">Personal Information &amp; Preferences</h3>
+                            <p class="text-xs text-slate-500">Update your account name, email address, and real estate role.</p>
                         </div>
 
-                        <!-- Email Address -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email Address</label>
-                            <input
-                                v-model="profileForm.email"
-                                type="email"
-                                required
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white"
-                            />
-                        </div>
-
-                        <!-- Mobile Number (Display Only / Verified) -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Mobile Number</label>
-                                <span class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                                    <Check class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span>Verified via OTP</span>
-                                </span>
-                            </div>
-                            <div class="relative">
+                        <form @submit.prevent="handleSaveProfile" class="space-y-5">
+                            <!-- Full Name -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Full Name</label>
                                 <input
-                                    :value="`${currentUser.country_code || '+91'} ${currentUser.mobile}`"
+                                    v-model="profileForm.name"
                                     type="text"
-                                    disabled
-                                    class="w-full bg-slate-100/80 border border-slate-200 text-slate-600 rounded-xl py-2.5 px-3.5 text-xs font-semibold cursor-not-allowed select-none"
+                                    required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white"
                                 />
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Phone number is verified and tied to OTP authentication.</p>
+
+                            <!-- Email Address -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email Address</label>
+                                <input
+                                    v-model="profileForm.email"
+                                    type="email"
+                                    required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white"
+                                />
+                            </div>
+
+                            <!-- Mobile Number (Display Only / Verified) -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Mobile Number</label>
+                                    <span class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                                        <Check class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Verified via OTP</span>
+                                    </span>
+                                </div>
+                                <div class="relative">
+                                    <input
+                                        :value="`${currentUser.country_code || '+91'} ${currentUser.mobile}`"
+                                        type="text"
+                                        disabled
+                                        class="w-full bg-slate-100/80 border border-slate-200 text-slate-600 rounded-xl py-2.5 px-3.5 text-xs font-semibold cursor-not-allowed select-none"
+                                    />
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-1">Phone number is verified and tied to OTP authentication.</p>
+                            </div>
+
+                            <!-- Role Selector -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">I am registered as:</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <button
+                                        v-for="r in [
+                                            { id: 'user', label: 'Buyer / Tenant' },
+                                            { id: 'owner', label: 'Property Owner' },
+                                            { id: 'agent', label: 'Real Estate Agent' },
+                                            { id: 'builder', label: 'Builder / Dev' }
+                                        ]"
+                                        :key="r.id"
+                                        type="button"
+                                        @click="profileForm.role = r.id"
+                                        class="py-2.5 px-2 rounded-xl text-xs font-bold border transition cursor-pointer text-center"
+                                        :class="profileForm.role === r.id ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
+                                    >
+                                        {{ r.label }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs text-slate-400">All changes update immediately across RealHem</span>
+                                <button
+                                    type="submit"
+                                    :disabled="isSavingProfile"
+                                    class="py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    <Loader2 v-if="isSavingProfile" class="w-3.5 h-3.5 animate-spin" />
+                                    <span>{{ isSavingProfile ? 'Saving...' : 'Save Profile Changes' }}</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right: Dedicated Profile Picture Card (1 Col) -->
+                    <div class="lg:col-span-1 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col items-center text-center">
+                        <div class="border-b border-slate-100 pb-3 mb-6 w-full text-left">
+                            <h3 class="text-lg font-black text-slate-900">Profile Picture</h3>
+                            <p class="text-xs text-slate-500">Your public photo or logo.</p>
                         </div>
 
-                        <!-- Role Selector -->
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">I am registered as:</label>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <button
-                                    v-for="r in [
-                                        { id: 'user', label: 'Buyer / Tenant' },
-                                        { id: 'owner', label: 'Property Owner' },
-                                        { id: 'agent', label: 'Real Estate Agent' },
-                                        { id: 'builder', label: 'Builder / Dev' }
-                                    ]"
-                                    :key="r.id"
-                                    type="button"
-                                    @click="profileForm.role = r.id"
-                                    class="py-2.5 px-2 rounded-xl text-xs font-bold border transition cursor-pointer text-center"
-                                    :class="profileForm.role === r.id ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'"
-                                >
-                                    {{ r.label }}
-                                </button>
+                        <!-- Avatar Preview -->
+                        <div class="relative group my-2">
+                            <img
+                                v-if="currentUser.avatar"
+                                :src="currentUser.avatar"
+                                :alt="currentUser.name"
+                                class="w-32 h-32 rounded-3xl object-cover shadow-md border-4 border-slate-50 ring-1 ring-slate-200"
+                            />
+                            <div
+                                v-else
+                                class="w-32 h-32 rounded-3xl bg-amber-400 text-slate-950 font-black text-4xl flex items-center justify-center shadow-md border-4 border-slate-50 ring-1 ring-slate-200"
+                            >
+                                {{ userInitials }}
+                            </div>
+                            <div v-if="isUploadingAvatar" class="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center backdrop-blur-xs">
+                                <Loader2 class="w-8 h-8 text-white animate-spin" />
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <span class="text-xs text-slate-400">All changes update immediately across RealHem</span>
+                        <!-- Controls -->
+                        <div class="w-full space-y-2.5 mt-5">
+                            <input
+                                ref="avatarFileInput"
+                                type="file"
+                                accept="image/png,image/jpeg,image/jpg,image/webp"
+                                class="hidden"
+                                @change="handleAvatarFileSelected"
+                            />
                             <button
-                                type="submit"
-                                :disabled="isSavingProfile"
-                                class="py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                type="button"
+                                @click="triggerAvatarFileSelect"
+                                :disabled="isUploadingAvatar"
+                                class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                <Loader2 v-if="isSavingProfile" class="w-3.5 h-3.5 animate-spin" />
-                                <span>{{ isSavingProfile ? 'Saving...' : 'Save Profile Changes' }}</span>
+                                <Upload class="w-4 h-4" />
+                                <span>{{ isUploadingAvatar ? 'Uploading...' : (currentUser.avatar ? 'Change Picture' : 'Upload Picture') }}</span>
+                            </button>
+                            <button
+                                v-if="currentUser.avatar"
+                                type="button"
+                                @click="openCropForCurrentAvatar"
+                                :disabled="isUploadingAvatar"
+                                class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <Crop class="w-4 h-4 text-slate-600" />
+                                <span>Crop &amp; Edit Current</span>
+                            </button>
+                            <button
+                                v-if="currentUser.avatar"
+                                type="button"
+                                @click="handleRemoveAvatar"
+                                :disabled="isUploadingAvatar"
+                                class="w-full py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <Trash2 class="w-4 h-4" />
+                                <span>Remove Picture</span>
                             </button>
                         </div>
-                    </form>
+
+                        <p v-if="avatarUploadError" class="text-xs font-semibold text-rose-600 mt-2 text-center">
+                            {{ avatarUploadError }}
+                        </p>
+
+                        <div class="mt-5 pt-4 border-t border-slate-100 w-full text-center space-y-1">
+                            <p class="text-[11px] font-semibold text-slate-500">Supports JPG, PNG, WebP</p>
+                            <p class="text-[11px] text-slate-400">Max file size 5MB &middot; 1:1 ratio recommended</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ============================================== -->
@@ -795,6 +896,15 @@
             @close="isGalleryOpen = false"
             @update:is-open="isGalleryOpen = $event"
         />
+
+        <!-- Avatar Crop & Edit Modal -->
+        <ImageCropModal
+            :is-open="isCropModalOpen"
+            :image-src="cropImageSrc"
+            :is-saving="isUploadingAvatar"
+            @close="isCropModalOpen = false"
+            @crop="handleCroppedAvatarSave"
+        />
     </div>
 </template>
 
@@ -818,9 +928,12 @@ import {
     Phone,
     Lightbulb,
     Loader2,
+    Upload,
+    Crop,
 } from 'lucide-vue-next';
 import AuthModal from '~/components/AuthModal.vue';
 import ImageGalleryModal from '~/components/ImageGalleryModal.vue';
+import ImageCropModal from '~/components/ImageCropModal.vue';
 import { isResidentialType, getPropertyIntentLabel } from '~/utils/propertyConstants';
 
 const route = useRoute();
@@ -975,6 +1088,137 @@ const fetchMyProperties = async () => {
         console.error('Failed to load user properties:', err);
     } finally {
         isLoadingProperties.value = false;
+    }
+};
+
+// Avatar Upload & Crop State & Methods
+const avatarFileInput = ref<HTMLInputElement | null>(null);
+const isUploadingAvatar = ref(false);
+const avatarUploadError = ref('');
+const isCropModalOpen = ref(false);
+const cropImageSrc = ref('');
+
+const triggerAvatarFileSelect = () => {
+    avatarUploadError.value = '';
+    avatarFileInput.value?.click();
+};
+
+const openCropForCurrentAvatar = () => {
+    if (!currentUser.value?.avatar) return;
+    cropImageSrc.value = currentUser.value.avatar;
+    avatarUploadError.value = '';
+    isCropModalOpen.value = true;
+};
+
+const handleAvatarFileSelected = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const files = target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    target.value = '';
+
+    if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
+        avatarUploadError.value = 'Profile picture must be a JPG, PNG, or WebP image.';
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        avatarUploadError.value = 'Profile picture size must not exceed 5MB.';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        cropImageSrc.value = (e.target?.result as string) || '';
+        avatarUploadError.value = '';
+        isCropModalOpen.value = true;
+    };
+    reader.onerror = () => {
+        avatarUploadError.value = 'Failed to load selected image file.';
+    };
+    reader.readAsDataURL(file);
+};
+
+const handleCroppedAvatarSave = async (payload: { file: File }) => {
+    const token = localStorage.getItem('realhem_user_token');
+    if (!token) {
+        isCropModalOpen.value = false;
+        isAuthModalOpen.value = true;
+        return;
+    }
+
+    isUploadingAvatar.value = true;
+    avatarUploadError.value = '';
+
+    try {
+        const formData = new FormData();
+        formData.append('avatar', payload.file);
+
+        const response = await fetch('/api/auth/profile/avatar', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            avatarUploadError.value = data.errors?.avatar?.[0] || data.message || 'Failed to upload profile picture.';
+            return;
+        }
+
+        if (data.user) {
+            currentUser.value = data.user;
+            localStorage.setItem('realhem_user', JSON.stringify(data.user));
+            window.dispatchEvent(new Event('storage'));
+            isCropModalOpen.value = false;
+            successMessage.value = 'Profile picture cropped and updated successfully!';
+        }
+    } catch (err) {
+        console.error(err);
+        avatarUploadError.value = 'Network error while uploading profile picture.';
+    } finally {
+        isUploadingAvatar.value = false;
+    }
+};
+
+const handleRemoveAvatar = async () => {
+    if (!confirm('Are you sure you want to remove your profile picture?')) return;
+
+    const token = localStorage.getItem('realhem_user_token');
+    if (!token) return;
+
+    isUploadingAvatar.value = true;
+    avatarUploadError.value = '';
+
+    try {
+        const response = await fetch('/api/auth/profile/avatar', {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.user) {
+            currentUser.value = data.user;
+            localStorage.setItem('realhem_user', JSON.stringify(data.user));
+            window.dispatchEvent(new Event('storage'));
+            successMessage.value = 'Profile picture removed.';
+        } else {
+            avatarUploadError.value = data.message || 'Failed to remove profile picture.';
+        }
+    } catch (err) {
+        console.error(err);
+        avatarUploadError.value = 'Network error while removing profile picture.';
+    } finally {
+        isUploadingAvatar.value = false;
     }
 };
 

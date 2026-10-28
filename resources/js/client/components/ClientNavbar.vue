@@ -261,7 +261,16 @@
                             class="flex items-center gap-2 py-1 px-2.5 rounded-full cursor-pointer transition select-none"
                             :class="isScrolled ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-100 text-slate-800'"
                         >
-                            <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
+                            <img
+                                v-if="currentUser.avatar"
+                                :src="currentUser.avatar"
+                                :alt="currentUser.name"
+                                class="w-8 h-8 rounded-full object-cover shadow-xs shrink-0"
+                            />
+                            <div
+                                v-else
+                                class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs"
+                            >
                                 {{ userInitials }}
                             </div>
                             <span class="text-xs font-bold hidden sm:inline max-w-[120px] truncate">{{ currentUser.name }}</span>

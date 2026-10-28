@@ -311,7 +311,16 @@
                             class="flex items-center gap-1.5 sm:gap-2 py-1 px-1.5 sm:px-2.5 rounded-full cursor-pointer transition select-none shrink-0"
                             :class="isScrolled ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-100 text-slate-800'"
                         >
-                            <div class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+                            <img
+                                v-if="currentUser.avatar"
+                                :src="currentUser.avatar"
+                                :alt="currentUser.name"
+                                class="w-8 h-8 rounded-full object-cover shadow-xs shrink-0"
+                            />
+                            <div
+                                v-else
+                                class="w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0"
+                            >
                                 {{ userInitials }}
                             </div>
                             <span class="text-xs font-bold hidden md:inline max-w-[120px] truncate">{{ currentUser.name }}</span>
@@ -430,9 +439,20 @@
                         :class="isScrolled ? 'text-white hover:bg-white/15' : 'text-slate-700 hover:bg-slate-100'"
                         aria-label="Toggle Navigation Menu"
                     >
-                        <div v-if="currentUser" class="sm:hidden w-7 h-7 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0">
-                            {{ userInitials }}
-                        </div>
+                        <template v-if="currentUser">
+                            <img
+                                v-if="currentUser.avatar"
+                                :src="currentUser.avatar"
+                                :alt="currentUser.name"
+                                class="sm:hidden w-7 h-7 rounded-full object-cover shadow-xs shrink-0"
+                            />
+                            <div
+                                v-else
+                                class="sm:hidden w-7 h-7 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs shrink-0"
+                            >
+                                {{ userInitials }}
+                            </div>
+                        </template>
                         <Menu v-if="!isMobileMenuOpen" class="w-5 h-5 shrink-0" />
                         <X v-else class="w-5 h-5 shrink-0" />
                     </button>
@@ -478,7 +498,16 @@
                         <!-- User Profile Card (if authenticated) -->
                         <div v-if="currentUser" class="p-4 bg-slate-50 border-b border-slate-100">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                                <img
+                                    v-if="currentUser.avatar"
+                                    :src="currentUser.avatar"
+                                    :alt="currentUser.name"
+                                    class="w-10 h-10 rounded-full object-cover shadow-xs shrink-0"
+                                />
+                                <div
+                                    v-else
+                                    class="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-xs shrink-0"
+                                >
                                     {{ userInitials }}
                                 </div>
                                 <div class="min-w-0 flex-1">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\CompleteProfileRequest;
 use App\Http\Requests\Auth\SendOtpRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
+use App\Http\Requests\Auth\UploadAvatarRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Models\User;
 use App\Services\OtpService;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -139,6 +141,7 @@ class UserAuthController extends Controller
                     'country_code' => $user->country_code ?? $countryCode,
                     'mobile' => $user->mobile,
                     'role' => $user->role,
+                    'avatar' => $user->avatar,
                     'email_verified' => $user->hasVerifiedEmail(),
                 ],
             ]);
@@ -186,6 +189,7 @@ class UserAuthController extends Controller
                 'country_code' => $user->country_code ?? $countryCode,
                 'mobile' => $user->mobile,
                 'role' => $user->role,
+                'avatar' => $user->avatar,
                 'email_verified' => true,
             ],
         ], 201);
@@ -242,6 +246,7 @@ class UserAuthController extends Controller
                 'country_code' => $user->country_code,
                 'mobile' => $user->mobile,
                 'role' => $user->role,
+                'avatar' => $user->avatar,
                 'email_verified' => $user->hasVerifiedEmail(),
             ],
         ]);
@@ -262,6 +267,7 @@ class UserAuthController extends Controller
                 'country_code' => $user->country_code ?? '+91',
                 'mobile' => $user->mobile,
                 'role' => $user->role,
+                'avatar' => $user->avatar,
             ],
         ]);
     }
@@ -277,6 +283,7 @@ class UserAuthController extends Controller
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'role' => $request->validated('role') ?? $user->role,
+            'avatar' => $request->has('avatar') ? $request->validated('avatar') : $user->avatar,
         ]);
 
         return response()->json([
@@ -289,6 +296,76 @@ class UserAuthController extends Controller
                 'country_code' => $user->country_code ?? '+91',
                 'mobile' => $user->mobile,
                 'role' => $user->role,
+                'avatar' => $user->avatar,
+            ],
+        ]);
+    }
+
+    /**
+     * Upload or update the authenticated user's profile picture.
+     */
+    public function uploadAvatar(UploadAvatarRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $file = $request->file('avatar');
+
+        // Delete previous avatar file if stored on public disk
+        if ($user->avatar && str_contains($user->avatar, '/storage/avatars/')) {
+            $oldPath = 'avatars/'.basename($user->avatar);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $filename = 'avatar_user_'.$user->id.'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs('avatars', $filename, 'public');
+        $avatarUrl = Storage::url($path);
+
+        $user->update(['avatar' => $avatarUrl]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile picture updated successfully.',
+            'avatar' => $avatarUrl,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country_code' => $user->country_code ?? '+91',
+                'mobile' => $user->mobile,
+                'role' => $user->role,
+                'avatar' => $user->avatar,
+            ],
+        ]);
+    }
+
+    /**
+     * Delete the authenticated user's profile picture.
+     */
+    public function deleteAvatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar && str_contains($user->avatar, '/storage/avatars/')) {
+            $oldPath = 'avatars/'.basename($user->avatar);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $user->update(['avatar' => null]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile picture removed successfully.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country_code' => $user->country_code ?? '+91',
+                'mobile' => $user->mobile,
+                'role' => $user->role,
+                'avatar' => null,
             ],
         ]);
     }

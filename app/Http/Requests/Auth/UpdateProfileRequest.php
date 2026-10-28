@@ -28,6 +28,7 @@ class UpdateProfileRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$userId],
             'role' => ['nullable', 'string', 'in:user,owner,agent,builder'],
+            'avatar' => ['nullable', 'string', 'max:500'],
         ];
     }
 }
