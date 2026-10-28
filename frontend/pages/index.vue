@@ -757,37 +757,6 @@
             </div>
         </section>
 
-        <!-- Top Developers in Spotlight -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Top Developers in Spotlight</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">India's most reputed real estate brands &amp; township builders</p>
-                </div>
-                <router-link to="/brokers" class="text-xs font-bold hover:underline" :style="{ color: brandPrimaryColor }">
-                    Builder Directory &rarr;
-                </router-link>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div
-                    v-for="dev in topDevelopers"
-                    :key="dev.name"
-                    class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition text-center group"
-                >
-                    <div class="w-12 h-12 rounded-xl bg-slate-900 text-white font-black text-sm flex items-center justify-center mx-auto mb-2.5">
-                        {{ dev.initials }}
-                    </div>
-                    <h4 class="font-bold text-slate-900 text-xs">{{ dev.name }}</h4>
-                    <p class="text-[10px] text-slate-500 mt-0.5">{{ dev.projects }} Projects</p>
-                    <div class="mt-2 text-[10px] font-bold text-amber-600 flex items-center justify-center gap-1">
-                        <Star class="w-3 h-3 fill-current text-amber-500" />
-                        <span>{{ dev.rating }}</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- Interactive Home Loan EMI Calculator Widget -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-md p-6 sm:p-10">
@@ -1449,15 +1418,6 @@ const propertyCategories = [
     { name: 'Independent Houses & Villas', type: 'buy', count: '11,200+', icon: Home },
     { name: 'Residential Plots & Land', type: 'plots', count: '8,900+', icon: LandPlot },
     { name: 'Commercial Shops & Offices', type: 'commercial', count: '6,450+', icon: Store },
-];
-
-const topDevelopers = [
-    { name: 'DLF Limited', initials: 'DLF', projects: 48, rating: '4.9' },
-    { name: 'Godrej Properties', initials: 'GPL', projects: 62, rating: '4.8' },
-    { name: 'Prestige Group', initials: 'PG', projects: 54, rating: '4.8' },
-    { name: 'Sobha Developers', initials: 'SOB', projects: 39, rating: '4.9' },
-    { name: 'Tata Housing', initials: 'TH', projects: 31, rating: '4.7' },
-    { name: 'M3M India', initials: 'M3M', projects: 42, rating: '4.6' },
 ];
 
 const handleActivityUpdated = (e) => {
