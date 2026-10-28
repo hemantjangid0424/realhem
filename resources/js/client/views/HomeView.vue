@@ -507,21 +507,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Trending Localities in Demand -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Trending Localities with High Price Growth</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div v-for="loc in trendingLocalities" :key="loc.name" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-900">{{ loc.name }}</span>
-                        <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{{ loc.growth }}</span>
-                    </div>
-                    <p class="text-xs font-black text-slate-800">{{ loc.avgRate }}</p>
-                    <p class="text-[10px] text-slate-500">{{ loc.city }} &bull; {{ loc.properties }} properties available</p>
-                </div>
-            </div>
-        </section>
     </div>
 </template>
 
@@ -887,12 +872,5 @@ const topDevelopers = [
     { name: 'Sobha Developers', initials: 'SOB', projects: 39, rating: '4.9' },
     { name: 'Tata Housing', initials: 'TH', projects: 31, rating: '4.7' },
     { name: 'M3M India', initials: 'M3M', projects: 42, rating: '4.6' },
-];
-
-const trendingLocalities = [
-    { name: 'Noida Expressway', city: 'Noida', avgRate: '₹ 8,450 / sq.ft', growth: '+14.2% YoY', properties: '3,200' },
-    { name: 'Golf Course Extension', city: 'Gurugram', avgRate: '₹ 15,200 / sq.ft', growth: '+18.5% YoY', properties: '4,100' },
-    { name: 'Whitefield', city: 'Bangalore', avgRate: '₹ 9,100 / sq.ft', growth: '+11.8% YoY', properties: '2,800' },
-    { name: 'Hinjawadi IT Corridor', city: 'Pune', avgRate: '₹ 7,300 / sq.ft', growth: '+9.4% YoY', properties: '1,950' },
 ];
 </script>

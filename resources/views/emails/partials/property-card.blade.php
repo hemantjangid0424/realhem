@@ -21,7 +21,7 @@
     if (!empty($property->property_type)) {
         $config .= ucwords(str_replace('_', ' ', $property->property_type));
     }
-    $propUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/listings/' . ($property->slug ?? $property->id);
+    $propUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/property/' . ($property->slug ?? $property->id);
 @endphp
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">

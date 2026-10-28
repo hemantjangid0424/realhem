@@ -4,6 +4,7 @@ use App\Models\Inquiry;
 use App\Models\Property;
 use App\Models\User;
 use App\Notifications\InquiryConfirmationNotification;
+use App\Notifications\ListingPublishedNotification;
 use App\Notifications\SendOtpNotification;
 use App\Notifications\VerifyEmailNotification;
 
@@ -125,4 +126,33 @@ test('inquiry confirmation notification produces valid mail message using RealHe
 
     expect($mailMessage->view)->toBe('emails.inquiries.buyer-confirmation');
     expect($mailMessage->subject)->toContain('RealHem');
+});
+
+test('listing published notification produces valid mail message using RealHem template', function () {
+    $property = new Property([
+        'title' => 'Sobha Dream Acres 2 BHK',
+        'city' => 'Bengaluru',
+        'locality' => 'Panathur',
+        'property_for' => 'Sell',
+        'property_type' => 'Apartment',
+        'bedrooms' => 2,
+        'carpet_area' => 1050,
+        'expected_price' => 8900000,
+        'slug' => 'sobha-dream-acres-2-bhk-panathur-42',
+    ]);
+    $property->id = 42;
+
+    $user = new User([
+        'name' => 'Meera Nair',
+        'email' => 'meera@example.com',
+    ]);
+    $user->id = 5;
+
+    $notification = new ListingPublishedNotification($property);
+    $mailMessage = $notification->toMail($user);
+
+    expect($mailMessage->view)->toBe('emails.properties.listing-published');
+    expect($mailMessage->subject)->toContain('Congratulations! Your Listing is Live on RealHem • #PROP-42');
+    expect($mailMessage->viewData['ownerName'])->toBe('Meera Nair');
+    expect($mailMessage->viewData['property'])->toBe($property);
 });

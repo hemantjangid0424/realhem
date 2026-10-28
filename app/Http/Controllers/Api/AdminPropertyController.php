@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property;
+use App\Notifications\ListingPublishedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class AdminPropertyController extends Controller
@@ -164,6 +166,14 @@ class AdminPropertyController extends Controller
         $property->save();
         $property->load('user:id,name,email,mobile,country_code,role');
         $this->clearCountsCache();
+
+        if ($property->user && ! empty($property->user->email)) {
+            try {
+                $property->user->notify(new ListingPublishedNotification($property));
+            } catch (\Throwable $e) {
+                Log::warning('Could not send property approved notification email: '.$e->getMessage());
+            }
+        }
 
         return response()->json([
             'success' => true,

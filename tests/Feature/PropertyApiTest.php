@@ -2,8 +2,10 @@
 
 use App\Models\Property;
 use App\Models\User;
+use App\Notifications\ListingPublishedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -476,4 +478,48 @@ test('public users can filter properties by furnishing, posted_by, bathrooms, fa
     $resAmen->assertStatus(200);
     $ids = collect($resAmen->json('data'))->pluck('id');
     expect($ids)->toContain($match->id)->not->toContain($other->id);
+});
+
+test('posting a new property sends live listing notification email to authenticated user', function () {
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'name' => 'Kavita Joshi',
+        'email' => 'kavita@example.com',
+        'mobile' => '9876501234',
+        'role' => 'owner',
+    ]);
+
+    $payload = [
+        'user_type' => 'Owner',
+        'property_for' => 'Sell',
+        'property_type' => 'Residential Apartment',
+        'title' => 'Stunning 2 BHK in Satellite',
+        'city' => 'Ahmedabad',
+        'locality' => 'Satellite',
+        'bedrooms' => 2,
+        'bathrooms' => 2,
+        'carpet_area' => 1100,
+        'furnishing_status' => 'Furnished',
+        'construction_status' => 'Ready to Move',
+        'expected_price' => 7500000,
+    ];
+
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/properties', $payload);
+
+    $response->assertStatus(201)
+        ->assertJson([
+            'status' => 'success',
+            'message' => 'Property posted successfully! Your listing is now live on RealHem.',
+        ]);
+
+    $propertyId = $response->json('property.id');
+
+    Notification::assertSentTo(
+        $user,
+        ListingPublishedNotification::class,
+        function (ListingPublishedNotification $notification) use ($propertyId) {
+            return $notification->property->id === $propertyId;
+        }
+    );
 });

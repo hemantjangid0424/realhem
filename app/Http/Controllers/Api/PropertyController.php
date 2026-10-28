@@ -11,6 +11,7 @@ use App\Http\Requests\Property\UploadPropertyPhotosRequest;
 use App\Http\Requests\Property\UploadPropertyVideosRequest;
 use App\Models\City;
 use App\Models\Property;
+use App\Notifications\ListingPublishedNotification;
 use App\Services\GooglePlacesService;
 use App\Services\ImageWatermarkService;
 use App\Services\PropertyService;
@@ -19,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -183,7 +185,16 @@ class PropertyController extends Controller
      */
     public function store(StorePropertyRequest $request, PropertyService $propertyService): JsonResponse
     {
-        $property = $propertyService->create($request->user(), $request->validated());
+        $user = $request->user();
+        $property = $propertyService->create($user, $request->validated());
+
+        if ($user && ! empty($user->email)) {
+            try {
+                $user->notify(new ListingPublishedNotification($property));
+            } catch (\Throwable $e) {
+                Log::warning('Could not send property listing published notification email: '.$e->getMessage());
+            }
+        }
 
         return response()->json([
             'status' => 'success',

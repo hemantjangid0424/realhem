@@ -33,7 +33,7 @@
 
     <!-- Live Listing Button -->
     @include('emails.partials.button', [
-        'url' => config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/listings/' . ($property->slug ?? $property->id),
+        'url' => config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/property/' . ($property->slug ?? $property->id),
         'color' => 'primary',
         'slot' => 'View Live Listing on RealHem &rarr;',
     ])
