@@ -13,12 +13,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class UserAuthController extends Controller
 {
     /**
-     * Send an OTP to the given mobile number.
+     * Send an OTP to the given mobile number and email.
      */
     public function sendOtp(SendOtpRequest $request, OtpService $otpService): JsonResponse
     {
@@ -27,27 +28,83 @@ class UserAuthController extends Controller
 
         $otpService->validateMobileFormat($mobile, $countryCode);
 
-        $otp = $otpService->generateAndStoreOtp($mobile, $countryCode);
-
-        $isRegistered = User::where(function ($query) use ($countryCode, $mobile) {
+        /** @var User|null $user */
+        $user = User::where(function ($query) use ($countryCode, $mobile) {
             $query->where('country_code', $countryCode)
                 ->where('mobile', $mobile);
         })->orWhere(function ($query) use ($mobile) {
             $query->where('mobile', $mobile);
-        })->exists();
+        })->first();
+
+        $isRegistered = (bool) $user;
+        $name = trim((string) ($request->validated('name') ?? ''));
+        $email = trim((string) ($request->validated('email') ?? ''));
+        $role = (string) ($request->validated('role') ?? 'user');
+
+        // If user is not registered and has not yet submitted name & email (Step 1 of new user)
+        if (! $isRegistered && (empty($email) || empty($name))) {
+            return response()->json([
+                'status' => 'requires_profile',
+                'next_step' => 'profile',
+                'message' => 'Please provide your name, email, and role to continue.',
+                'country_code' => $countryCode,
+                'mobile' => $mobile,
+                'full_mobile' => "{$countryCode} {$mobile}",
+                'is_registered' => false,
+            ]);
+        }
+
+        if (! $isRegistered) {
+            // Check if email already belongs to another user
+            $existingEmailUser = User::where('email', $email)->first();
+            if ($existingEmailUser) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email address is already associated with another account.'],
+                ]);
+            }
+
+            // Save pending registration details in cache
+            $otpService->storePendingRegistration($mobile, $countryCode, [
+                'name' => $name,
+                'email' => $email,
+                'role' => in_array($role, ['user', 'owner', 'agent'], true) ? $role : 'user',
+            ]);
+        }
+
+        // Generate unified OTP in DB and cache
+        $otp = $otpService->generateAndStoreOtp($mobile, $countryCode);
+
+        // Determine destination email
+        $targetEmail = $isRegistered ? $user->email : $email;
+        $targetName = $isRegistered ? $user->name : $name;
+
+        if ($targetEmail) {
+            $otpService->sendOtpEmail($targetEmail, $otp, $targetName);
+        }
+
+        $emailHint = $isRegistered
+            ? ($targetEmail ? $otpService->maskEmail($targetEmail) : null)
+            : $targetEmail;
+
+        $message = $isRegistered
+            ? "Verification code sent to {$countryCode} {$mobile}".($emailHint ? " and {$emailHint}" : '')
+            : "Verification code sent to {$countryCode} {$mobile} and {$targetEmail}";
 
         return response()->json([
-            'message' => "OTP has been sent to {$countryCode} {$mobile}",
+            'status' => 'otp_sent',
+            'next_step' => 'otp',
+            'message' => $message,
             'country_code' => $countryCode,
             'mobile' => $mobile,
             'full_mobile' => "{$countryCode} {$mobile}",
             'is_registered' => $isRegistered,
+            'email_hint' => $emailHint,
             'dev_otp' => $otp,
         ]);
     }
 
     /**
-     * Verify the entered OTP and authenticate user or initiate registration.
+     * Verify the entered OTP and authenticate user or complete registration.
      */
     public function verifyOtp(VerifyOtpRequest $request, OtpService $otpService): JsonResponse
     {
@@ -87,15 +144,51 @@ class UserAuthController extends Controller
             ]);
         }
 
-        $sessionToken = $otpService->createVerifiedSession($mobile, $countryCode);
+        // New user: check for pending registration data
+        $pendingProfile = $otpService->getPendingRegistration($mobile, $countryCode);
+
+        if (! $pendingProfile) {
+            // Fallback for legacy profile completion
+            $sessionToken = $otpService->createVerifiedSession($mobile, $countryCode);
+
+            return response()->json([
+                'status' => 'requires_profile',
+                'message' => 'OTP verified. Please complete your profile to register.',
+                'session_token' => $sessionToken,
+                'mobile' => $mobile,
+                'country_code' => $countryCode,
+            ]);
+        }
+
+        // Create new user account automatically!
+        $user = User::create([
+            'name' => $pendingProfile['name'],
+            'email' => $pendingProfile['email'],
+            'country_code' => $countryCode,
+            'mobile' => $mobile,
+            'role' => $pendingProfile['role'] ?? 'user',
+            'password' => bcrypt(Str::random(32)),
+            'email_verified_at' => now(),
+        ]);
+
+        $otpService->forgetPendingRegistration($mobile, $countryCode);
+
+        $token = $user->createToken('client-token')->plainTextToken;
 
         return response()->json([
-            'status' => 'requires_profile',
-            'message' => 'OTP verified. Please complete your profile to register.',
-            'session_token' => $sessionToken,
-            'mobile' => $mobile,
-            'country_code' => $countryCode,
-        ]);
+            'status' => 'logged_in',
+            'message' => 'Account created and logged in successfully.',
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country_code' => $user->country_code ?? $countryCode,
+                'mobile' => $user->mobile,
+                'role' => $user->role,
+                'email_verified' => true,
+            ],
+        ], 201);
     }
 
     /**

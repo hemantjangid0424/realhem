@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\Otp;
+use App\Notifications\SendOtpNotification;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -80,7 +83,8 @@ class OtpService
      */
     public function generateAndStoreOtp(string $mobile, string $countryCode = '+91'): string
     {
-        $otp = config('app.env') === 'production' ? (string) rand(1000, 9999) : '1234';
+        // Generate a random, cryptographically secure 4-digit OTP every time
+        $otp = (string) random_int(1000, 9999);
 
         // Store OTP in database table `otps`
         try {
@@ -127,9 +131,7 @@ class OtpService
         }
 
         $isValid = false;
-        if ($otp === '1234') {
-            $isValid = true;
-        } elseif ($dbOtp && $dbOtp->otp === $otp) {
+        if ($dbOtp && $dbOtp->otp === $otp) {
             $isValid = true;
         } elseif ($cachedOtp && $cachedOtp === $otp) {
             $isValid = true;
@@ -201,5 +203,72 @@ class OtpService
     public function forgetVerifiedSession(string $sessionToken): void
     {
         Cache::forget("verified_mobile_{$sessionToken}");
+    }
+
+    /**
+     * Store pending user registration details before OTP verification.
+     *
+     * @param  array{name: string, email: string, role: string}  $profile
+     */
+    public function storePendingRegistration(string $mobile, string $countryCode, array $profile): void
+    {
+        Cache::put("pending_reg_{$countryCode}_{$mobile}", $profile, now()->addMinutes(15));
+        Cache::put("pending_reg_{$mobile}", $profile, now()->addMinutes(15));
+    }
+
+    /**
+     * Retrieve pending registration details.
+     *
+     * @return array{name: string, email: string, role: string}|null
+     */
+    public function getPendingRegistration(string $mobile, string $countryCode = '+91'): ?array
+    {
+        return Cache::get("pending_reg_{$countryCode}_{$mobile}") ?? Cache::get("pending_reg_{$mobile}");
+    }
+
+    /**
+     * Forget pending registration details.
+     */
+    public function forgetPendingRegistration(string $mobile, string $countryCode = '+91'): void
+    {
+        Cache::forget("pending_reg_{$countryCode}_{$mobile}");
+        Cache::forget("pending_reg_{$mobile}");
+    }
+
+    /**
+     * Send an OTP via email notification.
+     */
+    public function sendOtpEmail(string $email, string $otp, ?string $userName = null): void
+    {
+        try {
+            Notification::route('mail', $email)->notify(new SendOtpNotification($otp, $userName));
+        } catch (\Throwable $e) {
+            Log::warning('Could not send OTP email: '.$e->getMessage(), [
+                'email' => $email,
+            ]);
+        }
+    }
+
+    /**
+     * Mask an email for privacy display (e.g. h****t@gmail.com).
+     */
+    public function maskEmail(string $email): string
+    {
+        $parts = explode('@', $email, 2);
+        if (count($parts) !== 2) {
+            return $email;
+        }
+
+        $name = $parts[0];
+        $domain = $parts[1];
+        $len = strlen($name);
+
+        if ($len <= 2) {
+            $maskedName = substr($name, 0, 1).'*';
+        } else {
+            $maskedName = substr($name, 0, 1).str_repeat('*', min(4, $len - 2)).substr($name, -1);
+        }
+
+        return $maskedName.'@'.$domain;
     }
 }

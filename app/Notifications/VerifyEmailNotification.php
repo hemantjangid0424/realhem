@@ -32,13 +32,10 @@ class VerifyEmailNotification extends Notification
 
         return (new MailMessage)
             ->subject('Verify Your Email Address • RealHem')
-            ->greeting('Hello '.($notifiable->name ?? 'there').'!')
-            ->line('Thank you for registering on RealHem, India’s premier real estate marketplace.')
-            ->line('Please click the button below to verify your email address and activate all features of your account.')
-            ->action('Verify Email Address', $verificationUrl)
-            ->line('This verification link will expire in 60 minutes.')
-            ->line('If you did not create an account or request this verification, please ignore this email.')
-            ->salutation("Best regards,\nThe RealHem Team");
+            ->view('emails.auth.verify-email', [
+                'verificationUrl' => $verificationUrl,
+                'notifiable' => $notifiable,
+            ]);
     }
 
     /**

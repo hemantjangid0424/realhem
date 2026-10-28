@@ -36,13 +36,16 @@ class InquiryConfirmationNotification extends Notification
             default => 'Property Inquiry & Visit Reservation',
         };
 
+        // Load property relation if not already loaded
+        if ($this->inquiry->property_id && ! $this->inquiry->relationLoaded('property')) {
+            $this->inquiry->load('property');
+        }
+
         return (new MailMessage)
             ->subject("Confirmation: {$typeLabel} Received • RealHem")
-            ->greeting("Hello {$this->inquiry->name}!")
-            ->line("Thank you for submitting your {$typeLabel} with RealHem.")
-            ->line('Your request has been registered in our system and assigned to a verified property specialist.')
-            ->line("Message Details: \"{$this->inquiry->message}\"")
-            ->line('Our team will review your request and get back to you shortly.')
-            ->salutation("Best regards,\nThe RealHem Team");
+            ->view('emails.inquiries.buyer-confirmation', [
+                'inquiry' => $this->inquiry,
+                'typeLabel' => $typeLabel,
+            ]);
     }
 }

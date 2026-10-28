@@ -25,6 +25,9 @@ class SendOtpRequest extends FormRequest
         return [
             'country_code' => ['nullable', 'string', 'max:8'],
             'mobile' => ['required', 'string'],
+            'name' => ['nullable', 'string', 'max:100'],
+            'email' => ['nullable', 'string', 'email:rfc,filter', 'max:150'],
+            'role' => ['nullable', 'string', 'in:user,owner,agent'],
         ];
     }
 }
